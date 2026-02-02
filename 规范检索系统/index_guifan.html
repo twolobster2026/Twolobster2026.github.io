@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>规范检索系统｜Twolobster</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #ffffff;
+      color: #222;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+
+    /* ===== 头部 ===== */
+    header {
+      border-bottom: 1px solid #eee;
+      padding: 40px 10px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 15px;
+      color: #666;
+    }
+
+    /* ===== 分类卡片 ===== */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .category-card {
+      border: 1px solid #eee;
+      border-radius: 14px;
+      padding: 28px;
+      transition: all 0.3s ease;
+      background: #fff;
+    }
+
+    .category-card:hover {
+      box-shadow: 0 14px 36px rgba(0,0,0,0.08);
+      transform: translateY(-6px);
+    }
+
+    .category-title {
+      font-size: 20px;
+      margin-bottom: 14px;
+    }
+
+    .category-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tag {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #f2f2f2;
+      color: #555;
+    }
+
+    .category-desc {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .enter-btn {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 8px;
+      background: #222;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .enter-btn:hover {
+      background: #000;
+    }
+
+    /* ===== 页脚 ===== */
+    footer {
+      border-top: 1px solid #eee;
+      padding: 40px 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      margin-top: 80px;
+    }
+
+    @media (max-width: 900px) {
+      .category-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .category-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>规范检索系统</h1>
+  <p>    本模块用于在设计过程中快速定位常见园林设计场景下的相关规范要求，
+    内容已按使用频率与设计逻辑进行分类整理，重点服务于方案与施工图阶段的快速决策。</p>
+</header>
+
+<div class="container">
+
+  <div class="category-grid">
+
+    <div class="category-card">
+      <div class="category-title">水体与驳岸设计规范</div>
+      <div class="category-tags">
+        <span class="tag">方案设计</span>
+        <span class="tag">施工图</span>
+        <span class="tag">安全控制</span>
+      </div>
+      <div class="category-desc">
+        涉及水体形式、驳岸结构、安全防护及相关控制要求的规范汇总。
+      </div>
+      <a class="enter-btn" href="01规范检索_水体驳岸v2.0.html">进入检索</a>
+    </div>
+
+    <div class="category-card">
+      <div class="category-title">停车场与交通组织规范</div>
+      <div class="category-tags">
+        <span class="tag">总图</span>
+        <span class="tag">交通组织</span>
+      </div>
+      <div class="category-desc">
+        停车位尺度、通道组织、无障碍及消防相关规范要求。
+      </div>
+      <a class="enter-btn" href="02规范检索_停车场v2.0.html">进入检索</a>
+    </div>
+
+    <div class="category-card">
+      <div class="category-title">无障碍设计规范</div>
+      <div class="category-tags">
+        <span class="tag">强制性条文</span>
+        <span class="tag">公共空间</span>
+      </div>
+      <div class="category-desc">
+        无障碍通行、设施布置及细部构造的规范要点。
+      </div>
+      <a class="enter-btn" href="03规范检索_无障碍设计v2.0.html">进入检索</a>
+    </div>
+
+    <div class="category-card">
+      <div class="category-title">防水与构造设计规范</div>
+      <div class="category-tags">
+        <span class="tag">构造设计</span>
+        <span class="tag">常见问题</span>
+      </div>
+      <div class="category-desc">
+        景观构造中涉及防水、防渗及节点设计的相关规范。
+      </div>
+      <a class="enter-btn" href="04规范检索_防水设计规范v2.0.html">进入检索</a>
+    </div>
+
+    <div class="category-card">
+      <div class="category-title">市政与基础设施设计规范</div>
+      <div class="category-tags">
+        <span class="tag">水利</span>
+        <span class="tag">电力</span>
+        <span class="tag">轨道交通</span>
+      </div>
+      <div class="category-desc">
+        涉及水利、电力、铁路及轨道交通等专业的设计控制规范。
+      </div>
+      <a class="enter-btn" href="05规范检索_水利电力铁路轨道交通v2.0.html">进入检索</a>
+    </div>
+
+    <div class="category-card">
+      <div class="category-title">屋顶绿化设计规范</div>
+      <div class="category-tags">
+        <span class="tag">结构荷载</span>
+        <span class="tag">构造做法</span>
+      </div>
+      <div class="category-desc">
+        屋顶绿化相关的荷载、防水、构造与安全控制要求。
+      </div>
+      <a class="enter-btn" href="06规范检索_屋顶绿化v2.0.html">进入检索</a>
+    </div>
+
+    <div class="category-card">
+      <div class="category-title">防火与安全设计规范</div>
+      <div class="category-tags">
+        <span class="tag">建筑防火</span>
+        <span class="tag">电动自行车</span>
+      </div>
+      <div class="category-desc">
+        园林及相关建筑空间中涉及防火与安全的规范要求。
+      </div>
+      <a class="enter-btn" href="08规范检索_防火安全（建筑、电动自行车）v2.0.html">进入检索</a>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <div>© Twolobster ｜ 我是李工也是涛哥</div>
+</footer>
+
+</body>
+</html>

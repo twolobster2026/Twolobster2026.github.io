@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>规范条文检索系统｜Twolobster</title>
+
+    <style>
+        /* ===== 全局风格（对齐 Twolobster） ===== */
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px 160px;
+            background: #ffffff;
+            color: #222;
+        }
+
+        /* ===== 搜索控制区 ===== */
+        #searchBox {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #f7f7f7;
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            z-index: 100;
+        }
+
+        input[type="text"],
+        select {
+            width: 220px;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 18px;
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #000;
+        }
+
+        /* ===== 结果区 ===== */
+        #results {
+            max-width: 960px;
+            margin: 0 auto;
+            min-height: calc(100vh - 260px);
+            padding: 0;
+        }
+
+        .result-item {
+            margin-bottom: 24px;
+            padding: 22px 24px;
+            background: #ffffff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+        }
+
+        .result-item > div:first-child {
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .source {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        /* ===== 分页 ===== */
+        .pagination {
+            margin: 30px 0 10px;
+            text-align: center;
+        }
+
+        .pagination button {
+            margin: 0 6px;
+        }
+
+        /* ===== 图片缩略与放大 ===== */
+        .thumbnail {
+            max-width: 320px;
+            margin: 14px 0;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .thumbnail:hover {
+            transform: scale(1.03);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .enlarge-img {
+            max-width: 80%;
+            max-height: 80%;
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+        }
+
+        /* ===== 版权信息 ===== */
+        #version {
+            position: fixed;
+            bottom: 12px;
+            right: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* ===== 高亮关键词（保持逻辑） ===== */
+        span[style*="background-color"] {
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            #searchBox {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="results"></div>
+
+    <div id="searchBox">
+        <input type="text" id="keyword" placeholder="输入关键词进行检索">
+        <select id="sourceFilter">
+            <option value="all">全部来源</option>
+        </select>
+        <button onclick="searchDocuments()">检索</button>
+        <button onclick="resetSearch()">重置</button>
+    </div>
+
+    <div id="version">
+        版权所有：我是李工也是涛哥 ｜ 数据更新：2025年5月 ｜ v2.0
+    </div>
+
+    <div class="overlay" onclick="closeEnlarge()">
+        <img class="enlarge-img" src="" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- ===== 原 JS 逻辑：完全未改动 ===== -->
+    <script>
+        const documents = [
+            {
+                content: "3.3.3 公园内用地面积计算应符合下列规定：3 林荫停车场、林荫铺装场地的硬化部分应计人园路及铺装场地用地;",
+                source: "公园设计规范 GB 51192-2016"
+            },
+            {
+                content: "3.5.6 公园配建地面停车位指标可符合表3.5.6的规定。",
+                source: "公园设计规范 GB 51192-2016",
+                image: "images/停车场/公园配建地面停车位指标.jpg" 
+            },
+            {
+                content: "4.2.9 停车场的布置应符合下列规定：1 机动车停车场的出入口应有良好的视野，位置应设于公园出入口附近，但不应占用出入口内外游人集散广场；2 地下停车场应在地上建筑及出入口广场用地范围下设置；3 机动车停车场的出入口距离人行过街天桥、地道和桥梁、隧道引道应大于50m，距离交叉路口应大于80m;4 机动车停车场的停车位少于 50个时，可设一个出入口，其宽度宜采用双车道；50个~300个时，出入口不应少于2个；大于300个时，出口和入口应分开设置，两个出入口之间的距离应大于20m；5 停车场在满足停车要求的条件下，应种植乔木或采取立体绿化的方式，遮阴面积不宜小于停车场面积的 30%。",
+                source: "公园设计规范 GB 51192-2016"
+            },
+            {
+                content: "7.1.17  园路两侧的种植应符合下列规定：1 乔木种植点距路缘应大于0.75m；2 植物不应遮挡路旁标识；3 通行机动车辆的园路，两侧的植物应符合下列规定：1)车辆通行范围内不应有低于4.0m高度的枝条；2)车道的弯道内侧及交叉口视距三角形范围内，不应种植高于车道中线处路面标高 1.2m 的植物，弯道外侧宜加密种植以引导视线；3)交叉路口处应保证行车视线通透，并对视线起引导作用。",
+                source: "公园设计规范 GB 51192-2016"
+            },
+            {
+                content: "7.1.18 停车场的种植应符合下列规定：1 树木间距应满足车位、通道、转弯、回车半径的要求；2 庇荫乔木枝下净空应符合下列规定：1)大、中型客车停车场:大于4.0m；2)小汽车停车场:大于2.5m；3)自行车停车场:大于2.2m；3 场内种植池宽度应大于1.5m。",
+                source: "公园设计规范 GB 51192-2016"
+            },
+            {
+                content: "7.2.3 苗木种类的选择应考虑栽植场地的特点，并符合下列规定：1 游憩场地及停车场不宜选用有浆果或分泌物坠地的植物;",
+                source: "公园设计规范 GB 51192-2016"
+            },
+            {
+                content: "10.5.3 公园停车场宜设置停车场管理系统。",
+                source: "公园设计规范 GB 51192-2016"
+            },
+            {
+                content: "2.9.1 应将通行方便、路线短的停车位设为无障碍机动车停车位。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.2 无障碍机动车停车位一侧，应设宽度不小于1.20m的轮椅通道。轮椅通道与其所服务的停车位不应有高差，和人行通道有高差处应设置缘石坡道，且应与无障碍通道衔接。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.3 无障碍机动车停车位的地面坡度不应大于1:50。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.4 无障碍机动车停车位的地面应设置停车线、轮椅通道线和无障碍标志，并应设置引导标识。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.5 总停车数在100辆以下时应至少设置1个无障碍机动车停车位，100辆以上时应设置不少于总停车数1%的无障碍机动车停车位；城市广场、公共绿地、城市道路等场所的停车位应设置不少于总停车数2%的无障碍机动车停车位。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.6 无障碍小汽(客)车上客和落客区的尺寸不应小于2.40mx7.00m，和人行通道有高差处应设置缘石坡道，且应与无障碍通道街接。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "5.2.1 城市广场的公共停车场的停车数在50辆以下时应设置不少于1个无障碍机动车停车位，100辆以下时应设置不少于2个无障碍机动车停车位，100辆以上时应设置不少于总停车数2%的无障碍机动车停车位。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "6.2.1 公园绿地停车场的总停车数在50辆以下时应设置不少于1个无障碍机动车停车位，100辆以下时应设置不少于2个无障碍机动车停车位，100辆以上时应设置不少于总停车数2%的无障碍机动车停车位。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "7.3.3 停车场和车库应符合下列规定：1 居住区停车场和车库的总停车位应设置不少于0.5%的无障碍机动车停车位；若设有多个停车场和车库，宜每处设置不少于1个无障碍机动车停车位；2 地面停车场的无障碍机动车停车位宜靠近停车场的出入口设置，有条件的居住区宜靠近住宅出入口设置无障碍机动车停车位；",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "8.1.2 建筑基地内总停车数在100辆以下时应至少设置1个无障碍机动车停车位，100辆以上时应设置不少于总停车数1%的无障碍机动车停车位。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "无障碍设施标志牌",
+                source: "无障碍设计规范 GB 50763-2012",
+                image: "images/停车场/无障碍设施标志牌.jpg" 
+            },
+            {
+                content: "3.停车场宜针对公园类型及不同停车需求进行设置，包括集中停车场及临时停车场。(1) 在公园的主次入口处设置集中停车场，高峰时段可借用园外空地设置临时停车场，在园内必要区域可设置林下停车区，其中集中停车场的车位数根据公园占地面积测算(附件4)。(2) 集中停车场的出入口应与市政道路相接，根据人流方向合理分散布置机动和非机动停车设施。建设形式宜采用生态停车场，遮荫面积不宜小于停车场面积的30%，植物栽植需保障司机视线通透，铺装宜选择低成本耐用材料。",
+                source: "《北京市绿隔地区公园建设与管理规范(试行)》京绿办发〔2021〕286号"
+            },
+            {
+                content: "4.林下停车区是除了与市政道路相接的集中停车场之外，针对郊野型公园及生态涵养型公园设置，用于控制停车场规模的区域。(1)在园内机动车可达的主要游览区或游憩场地附近，可设置林下停车区满足停车需求；(2) 每个林下停车区面积不宜超过1hm，其车位数不计入停车场指标中；(3) 林下停车区附近游人相对集中的区域，可适当建设公厕、垃圾桶等设施，并保证机动车通道与非机动车道及步行道分流，互不干扰。",
+                source: "《北京市绿隔地区公园建设与管理规范(试行)》京绿办发〔2021〕286号"
+            },
+            {
+                content: "绿隔地区公园停车场指标",
+                source: "《北京市绿隔地区公园建设与管理规范(试行)》京绿办发〔2021〕286号",
+                image: "images/停车场/绿隔地区公园停车场指标.jpg" 
+            },
+            {
+                content: "4.3.4 建筑基地机动车出入口位置应符合下列规定：1 不应直接与城市快速路相连接；2 距周边中小学及幼儿园的出入口最近边缘不应小于20.0m；3 应有良好的视线，行车视距范围内不应有遮挡视线的障碍物。",
+                source: "民用建筑通用规范 GB 55031-2022"
+            },
+            {
+                content: "4.3.6 建筑基地内机动车道路应符合下列规定：1 单车道宽度不应小于3.0m，兼作消防车道时不应小于4.0m；2 双车道宽度不应小于6.0m；3 尽端式道路长度大于120m时，应设置回车场地。",
+                source: "民用建筑通用规范 GB 55031-2022"
+            },
+            {
+                content: "4.2.4 建筑基地机动车出入口位置，应符合所在地控制性详细规划，并应符合下列规定：1 中等城市、大城市的主干路交叉口，自道路红线交叉点起沿线70.0m 范围内不应设置机动车出入口；2 距人行横道、人行天桥、人行地道(包括引道、引桥)的最近边缘线不应小于5.0m；3 距地铁出入口、公共交通站台边缘不应小于15.0m；4 距公园、学校及有儿童、老年人、残疾人使用建筑的出入口最近边缘不应小于20.0m。",
+                source: "民用建筑设计统一标准 GB 50352-2019"
+            },
+            {
+                content: "5.2.2 基地道路设计应符合下列规定：1 单车道路宽不应小于4.0m，双车道路宽住宅区内不应小于6.0m，其他基地道路宽不应小于7.0m；2 当道路边设停车位时，应加大道路宽度且不应影响车辆正常通行；3 人行道路宽度不应小于1.5m，人行道在各路口、入口处的设计应符合现行国家标准《无障碍设计规范》GB 50763 的相关规定；4 道路转弯半径不应小于3.0m，消防车道应满足消防车最小转弯半径要求；5尽端式道路长度大于 120.0m 时，应在尽端设置不小于12.0mx12.0m 的回车场地。",
+                source: "民用建筑设计统一标准 GB 50352-2019"
+            },
+            {
+                content: "5.2.5 室外机动车停车场应符合下列规定：1 停车场地应满足排水要求，排水坡度不应小于0.3%；2 停车场出入口的设计应避免进出车辆交叉；3 停车场应设置无障碍停车位，且设置要求和停车位数量应符合现行国家标准《无障碍设计规范》GB 50763的相关规定；4 停车场应结合绿化合理布置，可利用乔木遮阳。",
+                source: "民用建筑设计统一标准 GB 50352-2019"
+            },
+            {
+                content: "5.2.6 室外机动车停车场的出入口数量应符合下列规定：1 当停车数为50辆及以下时，可设1个出入口，宜为双向行驶的出入口；2 当停车数为51辆~300辆时，应设置2个出入口，宜为双向行驶的出入口；3 当停车数为301辆~500辆时，应设置2个双向行驶的出入口；4 当停车数大于500辆时，应设置3个出入口，宜为双向行驶的出入口。",
+                source: "民用建筑设计统一标准 GB 50352-2019"
+            },
+            {
+                content: "5.2.7室外机动车停车场的出入口设置应符合下列规定：1 大于300辆停车位的停车场，各出入口的间距不应小于15.0m；2 单向行驶的出入口宽度不应小于4.0m，双向行驶的出入口宽度不应小于7.0m。",
+                source: "民用建筑设计统一标准 GB 50352-2019"
+            },
+            {
+                content: "5.2.8 室外非机动车停车场应设置在基地边界线以内，出入口不宜设置在交叉路口附近，停车场布置应符合下列规定：1 停车场出入口宽度不应小于2.0m；2 停车数大于等于300 辆时，应设置不少于2个出入口；3 停车区应分组布置，每组停车区长度不宜超过 20.0m。",
+                source: "民用建筑设计统一标准 GB 50352-2019"
+            },
+            {
+                content: "7.4.5 配套停车场、自行车停车处宜建设为绿荫停车场，并应符合下列规定：1 树木间距应满足车位、通道、转弯、回车半径的要求；2 庇荫乔木枝下净空应符合下列规定：1)大、中型汽车停车场应大于4.0m；2)小汽车停车场应大于2.5m；3)自行车停车场应大于2.2m；3 场内种植池宽度应大于1.5m，并应设保护措施。",
+                source: "居住绿地设计标准 CJJ_T294-2019"
+            },
+            {
+                content: "9.3.4 车挡应与居住区道路的景观相协调；球形车挡高度宜为0.3m~0.4m，柱形车挡高不宜大于 0.7m；间距宜为 0.6m~1.2m。",
+                source: "居住绿地设计标准 CJJ_T294-2019"
+            },
+            {
+                content: "2.0.22 机动车最小转弯半径 vehicular minimum turning radius  机动车回转时，当转向盘转到极限位置，机动车以最低稳定车速转向行驶时，外侧转向轮的中心平面在支承平面上滚过的轨迹圆半径，表示机动车能够通过狭窄弯曲地带或绕过不可越过的障碍物的能力。",
+                source: "车库建筑设计规范 JGJ100-2015"
+            },
+            {
+                content: "2.0.27 机动车道路转弯半径:turning radius of the vehicle lane  能够保持机动车辆正常行驶与转弯状态下的弯道内侧道路边缘处半径。",
+                source: "车库建筑设计规范 JGJ100-2015"
+            },
+            {
+                content: "3.2.5 车库总平面内，单向行驶的机动车道宽度不应小于 4m，双向行驶的小型车道不应小于6m，双向行驶的中型车以上车道不应小于7m；单向行驶的非机动车道宽度不应小于1.5m，双向行驶不宜小于 3.5m。",
+                source: "车库建筑设计规范 JGJ100-2015"
+            },
+            {
+                content: "3.2.6 机动车道路转弯半径应根据通行车辆种类确定。微型、小型车道路转弯半径不应小于 3.5m;消防车道转弯半径应满足消防车辆最小转弯半径要求。",
+                source: "车库建筑设计规范 JGJ100-2015"
+            },
+            {
+                content: "3.2.7 道路转弯时，应保证良好的通视条件，弯道内侧的边坡、绿化及建(构)筑物等均不应影响行车视距。",
+                source: "车库建筑设计规范 JGJ100-2015"
+            },
+            {
+                content: "机动车设计车型外廓尺寸",
+                source: "车库建筑设计规范 JGJ100-2015",
+                image: "images/停车场/机动车设计车型外廓尺寸.jpg" 
+            },
+            {
+                content: "4.1.2 机动车库应以小型车为计算当量进行停车当量的换算，各类车辆的换算当量系数应符合表 4.1.2 的规定。",
+                source: "车库建筑设计规范 JGJ100-2015",
+                image: "images/停车场/机动车换算当量系数.jpg" 
+            },
+            {
+                content: "4.1.3 机动车最小转弯半径应符合表 4.1.3的规定。",
+                source: "车库建筑设计规范 JGJ100-2015",
+                image: "images/停车场/机动车最小转弯半径.jpg" 
+            },
+            {
+                content: "4.1.4 机动车的环形车道最小外半径(R,)和内半径(ro)的尺寸应按下列公式计算(图4.1.4)：式中：a机动车长度;b机动车宽度；d前悬尺寸；e后悬尺寸；L轴距；m后轮距； n前轮距；r1机动车最小转弯半径(按本规范表4.1.3 取值)； R。环形车道外半径;；r。环形车道内半径；R机动车环行外半径；r机动车环行内半径；W环形车道最小净宽(按本规范表 4.2.10-1取值)； x机动车环行时最外点至环道外边安全距离，宜大于或等于 250mm，当两侧为连续障碍物时宜大于或等于500mm；y机动车环行时最内点至环道内边安全距离，宜大于或等于 250mm，当两侧为连续障碍物时宜大于或等于500mm。",
+                source: "车库建筑设计规范 JGJ100-2015",
+                image: "images/停车场/机动车环形车道平面图.jpg" 
+            },
+            {
+                content: "4.3.3 停车方式可采用平行式、斜列式(倾角 30°、45°、60°)和垂直式(图4.3.3)，或混合式。注: Wu为停车带宽度；We1为停车位毗邻墙体或连续分隔物时，垂直于通(停)车道的停车位尺寸；We2为停车位毗邻时，垂直于通(停)车道的停车位尺寸；Wd为通车道宽度；Lt为平行于通车道的停车位尺寸；Qt为机动车倾斜角度。",
+                source: "车库建筑设计规范 JGJ100-2015",
+                image: "images/停车场/停车方式1.jpg" 
+            },
+            {
+                content: "停车方式2。注: Wu为停车带宽度；We1为停车位毗邻墙体或连续分隔物时，垂直于通(停)车道的停车位尺寸；We2为停车位毗邻时，垂直于通(停)车道的停车位尺寸；Wd为通车道宽度；Lt为平行于通车道的停车位尺寸；Qt为机动车倾斜角度。",
+                source: "车库建筑设计规范 JGJ100-2015",
+                image: "images/停车场/停车方式2.jpg" 
+            },
+            {
+                content: "4.3.4 机动车最小停车位、通(停)车道宽度可通过计算或作图法求得，且库内通车道宽度应大于或等于3.0m。小型车的最小停车位、通(停)车道宽度宜符合表4.3.4的规定。",
+                source: "车库建筑设计规范 JGJ100-2015",
+                image: "images/停车场/小型车的最小停车位、通（停）车道宽度.jpg" 
+            },
+            {
+                content: "4.2.1 除本规范另有规定外，汽车库、修车库、停车场之间及汽车库、修车库、停车场与除甲类物品仓库外的其他建筑物的防火间距，不应小于表4.2.1的规定。其中，高层汽车库与其他建筑物，汽车库、修车库与高层建筑的防火间距应按表4.2.1的规定值增加3m；汽车库、修车库与甲类厂房的防火间距应按表4.2.1的规定值增加2m。注：1.防火间距应按相邻建筑物外墙的最近距离算起，如外墙有凸出的可燃物构件时，则应从其凸出部分外缘算起，停车场从靠近建筑物的最近停车位置边缘算起； 2.厂房、仓库的火灾危险性分类应符合现行国家标准《建筑设计防火规范》GB 50016的有关规定。",
+                source: "汽车库、修车库、停车场设计防火规范 GB 50067-2014",
+                image: "images/停车场/停车场与其他建筑物的防火空间.jpg" 
+            },
+            {
+                content: "1.停车场车位数规模可以按照景区占地面积和旅游人数两种计算。前一种是粗略的估算，后一种计算方式相对准确。",
+                source: "旅游风景区停车场规划设计规范"
+            },
+            {
+                content: "(1)按景区面积预测  根据以上表格的数据计算出：1.在市区的景区： N=AA*0.80/100；2.在郊区的景区： N=AA*0.12/100；3.城市公园的： N=AA*0.02/100；（其中：N—景区车位数；AA—景区占地面积）",
+                source: "旅游风景区停车场规划设计规范",
+                image: "images/停车场/游览场所停车位指标.jpg" 
+            },
+            {
+                content: "(2)按旅游人数预测  旅游出行停车需求的主体是旅游出行车辆，其规模显然取决于景区接待的游客数量。因此，首先对景区未来接待游客数量进行预测(以最大容纳能力可作为未来景区接待游客规模预测的重要控制指标)；然后结合对未来景区接待游客的出行方式分析，从而确定未来景区由旅游出行而引发的交通量规模，并以此计算得到景区未来停车需求规模。确定不同出行方式各交通运输方式构成比率，并结合景区主要运输车辆的核定载量及实际载量进行抽样调查，确定各类车型实载率，最终参照以下计算公式得到未来景区由旅游出行引发的交通量规模。M=A*32.48%/(Ci*Pi) N =A*67.52%/(Ci*Pi)。其中：V一景区旅游车辆总数(即车位数)；A一旅游人数；T-第种公路出行方式分担率；Ci-第1种公路出行方式核定座数；Pi-第i种公路出行方式实载率；M一小车的车辆数；N一大客车的车辆数；车位所需宽度:W”=W+2D 车位所需面积:A=(W”/2)*W' ，其中:W-停车通道的宽度；D-与通道垂直的停车深度；W'-停车宽度；A-停车场面积；W”-车位宽度；一般而言，小型客车以6M长、2.5M宽为准，大型客车以12M长、4M宽为准。",
+                source: "旅游风景区停车场规划设计规范",
+                image: "images/停车场/风景区交通运输方式分担比例预测.jpg" 
+            },
+            {
+                content: "各种停车方式所需停车面积一览表，车位所需宽度:W”=W+2D 车位所需面积:A=(W”/2)*W' ，其中:W-停车通道的宽度；D-与通道垂直的停车深度；W'-停车宽度；A-停车场面积；W”-车位宽度；一般而言，小型客车以6M长、2.5M宽为准，大型客车以12M长、4M宽为准。",
+                source: "旅游风景区停车场规划设计规范",
+                image: "images/停车场/各种停车方式所需停车面积一览表.jpg" 
+            },
+            {
+                content: "六、停车场设计具体规范：1.  机动车停车场的出入口应有良好的视野。出入口距离人行过街天桥、地道和桥梁、隧道引道须大于50 米;距离交叉路口须大于八十米；2.  机动车停车场车位指标大于 50个时,出入口不得少于2个;大于 500个时，出入口不得少于3个。出入口之间的净距须大于10米，出入口宽度不得小于7米；3.  机动车停车场内的停车方式应以占地面积小、疏散方便，保证安全为原则；4.  机动车停车场车位指标，以小型汽车为计算当量。设计时，应将其他类型车辆按表一所列换算系数换算成当量车型，以当量车型核算车位总指标；5.  机动车停车场内的主要通道宽度不得小于6米；6.  自行车停车场原则上不设在交叉路口附近。出入口应不少于二个，宽度不小于2.5米；7.  自行车停车方式应以出入方便为原则；8.  专用自行车停车场的停车位指标应不小于本单位职工人数的30%。",
+                source: "旅游风景区停车场规划设计规范",
+                image: "images/停车场/停车场设计车型外廓尺寸和换算系数.jpg" 
+            },
+            {
+                content: "3.1绿化停车场栽植乔木为主，乔木株行距在6×6米以下，种植数量一般不少于4行×4列，可计算为绿化用地面积的停车场。",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1 停车场绿化设计要点",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1.1 停车场内可设置停车位隔离绿化带;绿化带的宽度应≥1.5m；绿化形式应以乔木为主；乔木树干中心至路缘石距离应≥0.75m；乔木种植间距应以其树种壮年期冠幅为准，以不小于4.0m为宜。",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1.2 停车场边缘应种植大型乔灌木,有条件的可采用乔、灌、草相结合的复层种植形式，为停放车辆提供庇荫保护.起到隔离防护和减噪的作用。",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1.3 停车场庇荫乔木枝下净空标准：小型汽车应大于2.5m；中型汽车应大于3.5m；大型汽车应大于4.0m。",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1.4 停车场绿化植物选择应遵循以下原则:",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1.4.1  所选主要植物应是适应性强、少病虫害、根系发达、无树脂分泌、无生物污染、栽培管理简便、易于大苗移栽、应用效果好的常见植物。(推荐乔木种类见附表1)",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1.4.2 新植落叶乔木胸径不宜小于8cm",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016"
+            },
+            {
+                content: "5.1.5 停车场内道路两侧种植的乔木，应避免在道路上方搭接，形成绿化“隧道”,以利于汽车尾气及时向上扩散,减少汽车尾气污染道路环境。",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016",
+                image: "images/停车场/机动车停车场设计参数.jpg" 
+            },
+            {
+                content: "车辆纵横向净距",
+                source: "北京地区停车场绿化指导书 北京市园林绿化局 2016",
+                image: "images/停车场/车辆纵横向净距.jpg" 
+            },
+            {
+                content: "1.停车场通道的最小平曲线半径",
+                source: "停车场规划设计规则 [88]公（交管）字90号",
+                image: "images/停车场/停车场通道的最小平曲线半径.jpg" 
+            },
+            {
+                content: "2.停车场通道最大纵坡度(%)",
+                source: "停车场规划设计规则 [88]公（交管）字90号",
+                image: "images/停车场/停车场通道最大纵坡度.jpg" 
+            },
+            {
+                content: "13.1.4  机动车停车场应规划电动汽车充电设施。公共建筑配建停车场、公共停车场应设置不少于总停车位10%的充电停车位。",
+                source: "城市综合交通体系规划标准 GBT 51328-2018"
+            }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        let currentResults = [];
+
+        function showEnlarge(imgSrc) {
+            const overlay = document.querySelector('.overlay');
+            const enlargeImg = document.querySelector('.enlarge-img');
+            enlargeImg.src = imgSrc;
+            overlay.style.display = 'flex';
+        }
+
+        function closeEnlarge() {
+            document.querySelector('.overlay').style.display = 'none';
+        }
+
+        function displayResults() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginated = currentResults.slice(start, end);
+
+            let html = '';
+            paginated.forEach(doc => {
+                html += `
+                    <div class="result-item">
+                        <div>${highlightKeywords(doc.content)}</div>
+                        ${doc.image ? 
+                            `<img class="thumbnail" 
+                                  src="${doc.image}" 
+                                  onclick="showEnlarge('${doc.image}')">` : ''}
+                        <div class="source">《${doc.source}》</div>
+                    </div>
+                `;
+            });
+
+            html += `<div class="pagination">`;
+            if (currentPage > 1) html += `<button onclick="changePage(-1)">上一页</button>`;
+            if (end < currentResults.length) html += `<button onclick="changePage(1)">下一页</button>`;
+            html += `</div>`;
+
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function initSourceFilter() {
+            const sources = [...new Set(documents.map(doc => doc.source))];
+            const filter = document.getElementById('sourceFilter');
+            sources.forEach(source => {
+                const option = document.createElement('option');
+                option.value = source;
+                option.textContent = source;
+                filter.appendChild(option);
+            });
+        }
+
+        function searchDocuments() {
+            const keyword = document.getElementById('keyword').value.toLowerCase();
+            const selectedSource = document.getElementById('sourceFilter').value;
+
+            currentResults = documents.filter(doc => {
+                const matchKeyword = doc.content.toLowerCase().includes(keyword) ||
+                    doc.source.toLowerCase().includes(keyword);
+                const matchSource = selectedSource === 'all' || doc.source === selectedSource;
+                return matchKeyword && matchSource;
+            });
+
+            currentPage = 1;
+            displayResults();
+        }
+
+        function highlightKeywords(text) {
+            const keyword = document.getElementById('keyword').value;
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword})`, 'gi');
+            return text.replace(regex, '<span style="background-color:#ffeb3b">$1</span>');
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            displayResults();
+        }
+
+        function resetSearch() {
+            document.getElementById('keyword').value = '';
+            document.getElementById('sourceFilter').value = 'all';
+            currentPage = 1;
+            currentResults = [...documents];
+            displayResults();
+        }
+
+        initSourceFilter();
+        currentResults = [...documents];
+        displayResults();
+    </script>
+
+</body>
+</html>

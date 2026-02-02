@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目案例分享数据库 | Twolobster</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<style>
+/* ================== 全局风格 ================== */
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+}
+body{
+    background:#f6f7f9;
+    color:#333;
+    padding:32px 16px;
+}
+
+/* ================== 主容器 ================== */
+.container{
+    max-width:1200px;
+    margin:0 auto;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    overflow:hidden;
+}
+
+/* ================== 头部 ================== */
+header{
+    padding:36px 32px 28px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+header h1{
+    font-size:26px;
+    font-weight:700;
+    margin-bottom:8px;
+}
+header p{
+    color:#666;
+    font-size:14px;
+}
+
+/* ================== 搜索区 ================== */
+.search-section{
+    padding:32px;
+    background:#fafafa;
+}
+.search-title{
+    font-size:18px;
+    font-weight:600;
+    margin-bottom:20px;
+    text-align:center;
+}
+.search-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:20px;
+}
+label{
+    font-size:13px;
+    margin-bottom:6px;
+    display:block;
+    color:#555;
+}
+input,select{
+    width:100%;
+    padding:12px 14px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    background:#fff;
+    font-size:14px;
+}
+input:focus,select:focus{
+    outline:none;
+    border-color:#3b82f6;
+    box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+.btn-group{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    margin-top:26px;
+}
+button{
+    padding:12px 28px;
+    border-radius:8px;
+    border:none;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:.2s;
+}
+.search-btn{background:#2563eb;color:#fff;}
+.search-btn:hover{background:#1e40af;}
+.reset-btn{background:#e5e7eb;color:#333;}
+.reset-btn:hover{background:#d1d5db;}
+
+/* ================== 案例区 ================== */
+.case-list{display:none;padding:32px;}
+.case-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+.back-btn{
+    background:#e5e7eb;
+    color:#333;
+    padding:10px 18px;
+    border-radius:8px;
+}
+.case-details{
+    position: relative;
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:12px;
+    padding:28px 28px 28px 36px;
+    margin-bottom:26px;
+}
+
+/* 左侧竖线（案例信息总线） */
+.case-details::before{
+    content:'';
+    position:absolute;
+    left:18px;
+    top:28px;
+    bottom:28px;
+    width:4px;
+    border-radius:2px;
+    background:#2563eb;
+}
+.case-section{
+    position: relative;
+    margin-bottom:26px;
+    padding-left:20px;
+}
+
+/* 每个段落自己的竖线 */
+.case-section::before{
+    content:'';
+    position:absolute;
+    left:6px;
+    top:6px;
+    bottom:6px;
+    width:2px;
+    border-radius:1px;
+    background:#93c5fd; /* 比主竖线浅一级 */
+}
+
+.section-title{
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.section-content{
+    font-size:14px;
+    line-height:1.8;
+    color:#444;
+}
+.section-content p{
+    text-indent:2em;
+    margin-bottom:6px;
+}
+#caseName,#caseType,#caseKeywords p{ text-indent:0; }
+
+.projectType,.keyword{
+    display:inline-block;
+    padding:4px 12px;
+    border-radius:999px;
+    font-size:12px;
+    margin:4px 6px 4px 0;
+    background:#eff6ff;
+    color:#1e40af;
+    border:1px solid #dbeafe;
+}
+
+/* ================== 操作按钮 ================== */
+.case-actions{
+    display:flex;
+    justify-content:center;
+    gap:16px;
+}
+.next-btn,.prev-btn,.export-btn{
+    background:#2563eb;
+    color:#fff;
+}
+.export-btn{background:#059669;}
+.next-btn:hover,.prev-btn:hover{background:#1e40af;}
+.export-btn:hover{background:#047857;}
+
+/* ================== 版本信息 ================== */
+.version-info{
+    text-align:center;
+    padding:18px;
+    font-size:13px;
+    color:#666;
+    border-top:1px solid #eee;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header>
+    <h1>项目案例分享数据库</h1>
+    <p>规范应用中的真实问题 · 决策过程 · 可复用经验</p>
+</header>
+
+<div class="search-section" id="searchSection">
+    <h2 class="search-title">案例检索</h2>
+
+
+    <div class="search-row">
+        <div>
+            <label>项目名称</label>
+            <input type="text" id="projectName" placeholder="输入项目名称">
+        </div>
+        <div>
+            <label>专题类型</label>
+            <select id="projectType">
+                <option value="">全部</option>
+                <option value="水体驳岸设计">水体驳岸设计</option>
+                <option value="停车场设计">停车场设计</option>
+                <option value="无障碍设计">无障碍设计</option>
+                <option value="防水设计">防水设计</option>
+                <option value="覆土绿化设计">覆土绿化设计</option>
+                <option value="水利电力设计">水利电力设计</option>
+                <option value="城市轨道交通设计">城市轨道交通设计</option>
+                <option value="消防安全">消防安全</option>
+                <option value="花园城市老旧街巷更新设计">花园城市老旧街巷更新设计</option>
+                <option value="花境设计">花境设计</option>
+                <option value="运营设计">运营设计</option>
+            </select>
+        </div>
+        <div>
+            <label>关键词</label>
+            <select id="keywords">
+                <option value="">全部</option>
+                <option value="驳岸">驳岸</option>
+                <option value="池底">池底</option>
+                <option value="转弯半径">转弯半径</option>
+                <option value="车挡">车挡</option>
+                <option value="坡度">坡度</option>
+                <option value="防水">防水</option>
+                <option value="抗浮">抗浮</option>
+                <option value="防冻胀">防冻胀</option>
+                <option value="地下水">地下水</option>
+                <option value="排水">排水</option>
+                <option value="荷载">荷载</option>
+                <option value="植物">植物</option>
+                <option value="花境">花境</option>
+                <option value="古树">古树</option>
+                <option value="防洪">防洪</option>
+                <option value="电力线路">电力线路</option>
+                <option value="地铁">地铁</option>
+                <option value="自行车棚">自行车棚</option>
+                <option value="消防通道">消防通道</option>
+                <option value="大门">大门</option>
+                <option value="运营">运营</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i>检索</button>
+        <button class="reset-btn" id="resetBtn"><i class="fas fa-rotate-left"></i>重置</button>
+    </div>
+</div>
+
+<div class="case-list" id="caseList">
+    <div class="case-header">
+        <button class="back-btn" id="backBtn"><i class="fas fa-arrow-left"></i> 返回</button>
+        <h2>案例详情</h2>
+    </div>
+
+    <div class="case-details" id="caseDetails">
+        <div class="case-section">
+            <div class="section-title"><i class="fas fa-file"></i>项目名称</div>
+            <div class="section-content" id="caseName"></div>
+        </div>
+
+        <div class="case-section">
+            <div class="section-title"><i class="fas fa-tags"></i>专题类型</div>
+            <div class="section-content" id="caseType"></div>
+        </div>
+
+        <div class="case-section">
+            <div class="section-title"><i class="fas fa-key"></i>关键词</div>
+            <div class="section-content" id="caseKeywords"></div>
+        </div>
+
+        <div class="case-section">
+            <div class="section-title"><i class="fas fa-info-circle"></i>案例简介</div>
+            <div class="section-content" id="caseIntro"></div>
+        </div>
+
+        <div class="case-section">
+            <div class="section-title"><i class="fas fa-search"></i>问题分析</div>
+            <div class="section-content" id="caseAnalysis"></div>
+        </div>
+
+        <div class="case-section">
+            <div class="section-title"><i class="fas fa-book"></i>规范要求</div>
+            <div class="section-content" id="caseRequirement"></div>
+        </div>
+
+        <div class="case-section">
+            <div class="section-title"><i class="fas fa-lightbulb"></i>处理建议</div>
+            <div class="section-content" id="caseSuggestion"></div>
+        </div>
+    </div>
+
+    <div class="case-actions">
+        <button class="prev-btn" id="prevBtn">上一个</button>
+        <button class="export-btn" id="exportBtn">导出图片</button>
+        <button class="next-btn" id="nextBtn">下一个</button>
+    </div>
+</div>
+    <!-- 原有案例结构，未改 -->
+
+    <div class="version-info" id="caseVersion" style="display:none;"></div>
+</div>
+
+<div class="version-info" id="homeVersion">
+© Twolobster ｜ 我是李工也是涛哥 v3.0
+</div>
+
+</div>
+
+<script>
+        // 模拟数据库中的案例数据
+        const projects = [
+            {
+                id: 1,
+                name: "未来科学城南部核心区绿地E区园林景观工程（水环）",
+                type: "城市轨道交通设计",
+                keywords: ["地铁", "荷载"],
+                intro: "本项目为一处商业综合体景观工程，场地内设有下沉广场，非下沉区域下方为在建城市轨道交通线路。<br>在方案阶段，设计团队主要基于人流动线组织对广场及水景布置进行了空间规划，未充分考虑地下轨道工程的控制性条件。<br>施工图提交后，甲方要求设计文件报送地铁施工单位审核。审核单位指出：根据相关规定，轨道结构两侧各15米范围内为轨道交通工程安全保护区，该范围内不得进行大幅增加或减少荷载的作业；若在该区域上方布设水景，需执行一级防水标准，采用双层防水钢筋混凝土结构。设计方案因此被迫调整。<br>后因施工进度推迟未及时实施，数月后地铁施工单位根据试运行阶段管理要求，再次提出安全保护区范围扩大至两侧各50米，致使项目再次进行重大调整。",
+                analysis: "设计团队对跨专业规范掌握不充分，未充分考虑地下轨道工程的控制性条件。缺乏对关键设计前置条件的系统识别和预判，影响了项目的连续性与设计效率。",
+                requirement: "《城市轨道交通工程项目规范 GB55033-2022》2.1.21 下列区域或场所应划分为轨道交通地下和地上工程安全保护区的范围：<br>1 出人口、风亭、冷却塔、变电所和无障碍电梯等附属设施结构外边线外侧10m内；<br>2 地面车站和地面线路、高架车站和高架线路结构、车辆基地用地范围外边线外侧30m内；<br>3 地下车站与隧道结构外边线外侧50m内；<br>4 轨道交通穿（跨）越水域的隧道或桥梁结构外边线外侧100m内。",
+                suggestion: "设计前期阶段，项目负责人认真填写《园林项目关键条件核查表》，充分考虑地下轨道工程的控制性条件，轨道交通地下工程安全保护区的范围为地下车站与隧道结构外边线外侧50m内。",
+                date: "2025年6月"
+            },
+            {
+                id: 2,
+                name: "未来科学城南部核心区绿地E区园林景观工程（水环）",
+                type: ["水体驳岸设计","防水设计"],
+                keywords: ["抗浮","防冻胀","地下水","植物"],
+                intro: "由于甲方提出园林专业不需要考虑原有地勘资料中地下水位影响，相关问题由止水工程负责解决，园林施工图设计中未考虑防冻胀、抗浮、植物耐水湿设计，后续施工过程中，已实施的止水工程出现问题，地下水升高，多处出现积水，园林的水池、植物受到影响，设计条件的改变对原设计有重大影响，调整设计会增加工程造价，需要甲方决策施工图纸是否调整及调整内容。",
+                analysis: "地勘资料地下水位高，对园林的水池驳岸池底、铺装、植物影响大，需要配合结构专业，采取防冻胀、抗浮、植物耐水湿设计等有效措施解决。注意做好设计过程中会议记录，明确设计内容和责任。",
+                requirement: "无",
+                suggestion: "发甲方联系单说明项目进展情况，采取措施确认后再开展设计工作。联系单主要内容：<br>1、种植：根据地下水位 23.52的条件，部分种植点位低于25.02的乔木及种植点位低于24.52的灌木，成活率均会受到影响，经核对共有113株乔木、47株灌木受影响，其中5棵玉兰已种植。针对以上情况，请贵司决策，已种植苗木是否更换为耐水湿品种、未种植苗木是否调整原设计苗木品种，更换品种后，植物风貌会有变化。<br>2、水系：经核对，地下水位23.52的高度位于原设计水池中的防水卷材层，针对此情况需在原设计基础上做防冻胀措施，防冻胀措施中需在防水层下增加200厚混凝土层，替换原设计级配砂石。根据地下水位23.52的条件，经结构专业计算核对可不设计抗浮措施，但由于地下水位存在不确定性，如雨季时，地下水位有可能升高，当水位达到 24.20左右时，存在地下水对池底结构破坏的风险，我司建议设计抗浮措施预防风险，请贵司决策是否需要。<br>3、铺装：需施工单位现场实测北部场地各处土质，根据土质决定是否对基础换填，原则上如实测为粉质土，可不需换填，按原设计施工即可；如为粘土则需对基础换填，换填措施为在原基础上增加 200厚级配砂石。具体需结合施工开挖观察情况判断做法。<br>4、假山等构筑物：如在施工过程中，构筑物基础不能达到结构要求，需参建各方协商后，按现场施工实际情况做相应调整。<br>请贵司根据以上说明决策施工图纸是否调整及调整内容，其中水系图纸如做抗浮，需找专业厂家与我司对接，我司收到明确回复后，作为下一步设计依据开展后续工作。",
+                date: "2025年11月"
+            },
+            {
+                id: 3,
+                name: "左家庄街道新源南路12号院环境提升项目",
+                type: ["花园城市老旧街巷更新设计", "消防安全"], 
+                keywords:  ["自行车棚"],
+                intro: "项目为左家庄街道花园城市更新项目，属于老旧小区，方案提出拆除现有自行车棚，结合遮雨和景观需求重新设计构筑物。新设计的构筑物不考虑电动自行车停车充电功能，不设置充电设施。街道办提出要具有电动自行车棚功能。",
+                analysis: "老旧小区自行车棚有电动自行车停车充电需要，根据最新规范要求，这类车棚需要满足距建筑安全距离、专用充电设施、消防设施、电气火灾监控系统、视频监控系统、材料防火、防雷及防雷击电磁脉冲措施等要求，涉及内容多且复杂，如不满足存在安全隐患。",
+                requirement: "《电动自行车停放场所防火设计标准 DB11/T 1624-2025》在开展北京市行政区域内新建、改建和扩建的电动自行车停车场、电动自行车停车棚和电动自行车库等电动自行车停放场所的防火设计工作中按照本规范认真执行。<br>4.0.6 规定：电动自行车停车棚与相邻建筑之间的防火间距应不小于6m。<br>4.0.9 规定：室外独立设置的电动自行车充电柜，其与相邻建(构)筑物之间的防火间距不应小于 3.5m。充电柜与建筑的安全出口距离不应小于 6m。",
+                suggestion:  "根据实际情况描述设计要求，明确设计责任，施工图补充设计说明如下：<br>此项目为老旧小区改造，根据实际需求，如需充电设施，须由专业厂家按照现行国家及北京市相关法律法规技术标准实施。",
+                date: "2025年11月"
+            },
+            {
+                id: 4,
+                name: "左家庄街道新源南路12号院环境提升项目",
+                type:  ["花园城市老旧街巷更新设计", "消防安全"],
+                keywords:  ["消防通道", "大门"],
+                intro: "项目为左家庄街道花园城市更新项目，属于老旧小区，方案提出拆除现有立柱式大门，设计新建横梁式大门。现状大门后直接是坡度21%的消防通道连接建筑外铺装广场，街道办强烈要求方案尽量利用现有空间减缓道路坡度。",
+                analysis: "场地现状条件不能满足最新消防安全规范要求，现状立柱式大门间距3.5m，如按原大门图纸重建没有问题，如拆除后新建需要符合新规范对消防通道净宽和净高分别不小于4.0m的要求，通过的改造方案设计大门净宽3.5m、净高4.1m存在问题。<br>消防通道规范要求坡度一般不大于8%，最大不应大于10%。现状大门后直接是坡度21%的消防通道连接建筑外铺装广场，街道办通过的方案提出尽量利用现有空间减缓道路坡度到15%，改善通行条件，但与大门改造相似，设计存在风险。",
+                requirement: "《建筑防火通用规范 GB 55037-2022》在道路规划和建筑的建设中，要特别注意穿过建筑物、桥梁、城市地道的车道及地下车道需要通行消防车时的道路净宽度和净空高度应满足消防车通行的要求。常用消防车的宽度为 2.5 ~3.5m，高度为 2.5~4.2m，转弯半径为 9~12m，常用消防车通道的净宽度和净空高度若分别不小于4.0m，基本能满足实际需要。<br>消防车道的坡度应满足消防车满载时正常通行的要求，一般按照不大于 8% 考虑，最大坡度不应大于 10%。",
+                suggestion:  "消防中队给出的意见要求：新建需要符合新规范对消防通道净宽和净高分别不小于4.0m的要求，调整大门设计方案为净宽4.0m，净高4.5m（需要考虑入口坡道对通行高度的影响）。<br>消防中队没有对改造消防通道坡度到15%提出意见。<br>建议该类型改造项目，方案中消防安全相关内容，需消防中队给出确认意见，再进行施工图设计和施工。",
+                date: "2025年11月"
+            },
+            {
+                id: 5,
+                name: "昆玉河河畔紫菀花境",
+                type: "花境设计",
+                keywords: ["花境", "植物"],
+                intro: "位于昆玉河河畔，在河道护坡六棱砖上实施，春、夏、秋花期延续，重点是秋季紫菀效果。",
+                analysis: "要求花期延续、重点突出，需要考虑六棱砖裸露遮挡，紫菀不同品种的合理搭配。",
+                requirement: "无",
+                suggestion: "1.紫菀品种分析：高山紫菀，植株高，花色杂；卵叶紫菀，花色蓝；鞑靼紫菀，花色粉。<br>2.紫菀种植比例：卵叶紫菀和鞑靼紫菀1:1混合栽种（高山紫菀植株高，花色杂不适宜一起混栽。)<br>3.主要搭配植物：甘野菊，黄，秋季搭配紫菀；赛菊芋，黄，夏季搭配紫菀；苔草，遮挡护坡六棱砖，不裸露地面。<br>4.其他搭配植物：荆芥（春夏）、紫松果菊（夏）、纤须芒。",
+                date: "2025年11月"
+            }
+        ];
+
+        // DOM元素
+        const searchSection = document.getElementById('searchSection');
+        const caseList = document.getElementById('caseList');
+        const searchBtn = document.getElementById('searchBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const backBtn = document.getElementById('backBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        // 案例详情元素
+        const caseName = document.getElementById('caseName');
+        const caseType = document.getElementById('caseType');
+        const caseKeywords = document.getElementById('caseKeywords');
+        const caseIntro = document.getElementById('caseIntro');
+        const caseAnalysis = document.getElementById('caseAnalysis');
+        const caseRequirement = document.getElementById('caseRequirement');
+        const caseSuggestion = document.getElementById('caseSuggestion');
+        
+        let currentCaseIndex = 0;
+        let filteredCases = [];/* 
+
+===== 版本信息显示控制（仅此新增） ===== */
+function showHomeVersion(){
+    document.getElementById('homeVersion').style.display = 'block';
+}
+function hideHomeVersion(){
+    document.getElementById('homeVersion').style.display = 'none';
+}
+
+        
+        // 搜索按钮事件 - 修复后的检索逻辑
+        searchBtn.addEventListener('click', function() {
+            const projectName = document.getElementById('projectName').value.toLowerCase();
+            const projectType = document.getElementById('projectType').value;
+            const keyword = document.getElementById('keywords').value;
+            
+            // 过滤案例 - 修复专题类型检索逻辑
+            filteredCases = projects.filter(project => {
+                const nameMatch = project.name.toLowerCase().includes(projectName);
+                
+                // 修复专题类型检索逻辑
+                const typeMatch = projectType ? 
+                    (Array.isArray(project.type) ? 
+                        project.type.includes(projectType) : 
+                        project.type === projectType) : 
+                    true;
+                
+                const keywordMatch = keyword ? project.keywords.includes(keyword) : true;
+                
+                return nameMatch && typeMatch && keywordMatch;
+            });
+            
+            if (filteredCases.length > 0) {
+                currentCaseIndex = 0;
+                displayCase(filteredCases[currentCaseIndex]);
+                searchSection.style.display = 'none';
+                caseList.style.display = 'block';
+
+            hideHomeVersion();
+            } else {
+                alert('未找到匹配的项目案例，请调整检索条件！');
+            }
+        });
+        
+        // 重置按钮事件
+        resetBtn.addEventListener('click', function() {
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectType').value = '';
+            document.getElementById('keywords').value = '';
+        });
+        
+        // 返回按钮事件
+backBtn.addEventListener('click', function() {
+    searchSection.style.display = 'block';
+    caseList.style.display = 'none';
+
+    const caseVersion = document.getElementById('caseVersion');
+    if (caseVersion) caseVersion.style.display = 'none';
+    showHomeVersion();
+});
+        
+        // 下一个案例按钮事件
+        nextBtn.addEventListener('click', function() {
+            if (filteredCases.length > 0) {
+                currentCaseIndex = (currentCaseIndex + 1) % filteredCases.length;
+                displayCase(filteredCases[currentCaseIndex]);
+            }
+        });
+        
+        // 上一个案例按钮事件
+        prevBtn.addEventListener('click', function() {
+            if (filteredCases.length > 0) {
+                currentCaseIndex = (currentCaseIndex - 1 + filteredCases.length) % filteredCases.length;
+                displayCase(filteredCases[currentCaseIndex]);
+            }
+        });
+        
+        // 导出按钮事件
+        exportBtn.addEventListener('click', function() {
+            html2canvas(document.getElementById('caseDetails')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '项目案例-' + filteredCases[currentCaseIndex].name + '.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            });
+        });
+        
+        // 将文本转换为带缩进段落的HTML
+        function formatTextWithIndent(text) {
+            if (!text) return '';
+            
+            // 将<br>标签替换为段落分隔
+            const paragraphs = text.split('<br>');
+            
+            // 为每个段落添加<p>标签和缩进
+            return paragraphs.map(para => {
+                if (para.trim() === '') return '';
+                return `<p>${para.trim()}</p>`;
+            }).join('');
+        }
+        
+        // 显示案例详情 - 修复处理建议显示逻辑
+        function displayCase(project) {
+            caseName.textContent = project.name;
+            
+            // 修复专题类型显示逻辑
+            caseType.innerHTML = '';
+            if (Array.isArray(project.type)) {
+                project.type.forEach(type => {
+                    const span = document.createElement('span');
+                    span.className = 'projectType';
+                    span.textContent = type;
+                    caseType.appendChild(span);
+                });
+            } else {
+                const span = document.createElement('span');
+                span.className = 'projectType';
+                span.textContent = project.type;
+                caseType.appendChild(span);
+            }
+            
+            // 使用innerHTML来支持<br>标签，并添加首行缩进
+            caseIntro.innerHTML = formatTextWithIndent(project.intro);
+            caseAnalysis.innerHTML = formatTextWithIndent(project.analysis);
+            caseRequirement.innerHTML = formatTextWithIndent(project.requirement);
+            caseSuggestion.innerHTML = formatTextWithIndent(project.suggestion);
+            
+            // 更新版本信息
+            const caseVersion = document.getElementById('caseVersion');
+if (caseVersion) {
+    caseVersion.style.display = 'block';
+    caseVersion.innerHTML =
+        `版权所有 : 我是李工也是涛哥 | 数据更新：${project.date} | v3.0`;
+}
+            
+            // 更新关键词
+            caseKeywords.innerHTML = '';
+            project.keywords.forEach(keyword => {
+                const span = document.createElement('span');
+                span.className = 'keyword';
+                span.textContent = keyword;
+                caseKeywords.appendChild(span);
+            });
+        }
+        
+// 初始化：仅显示首页版本，不显示案例版本
+showHomeVersion();
+
+</script>
+
+</body>
+</html>

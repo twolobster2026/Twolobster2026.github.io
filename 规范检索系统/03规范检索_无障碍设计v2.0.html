@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>规范条文检索系统｜Twolobster</title>
+
+    <style>
+        /* ===== 全局风格（对齐 Twolobster） ===== */
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px 160px;
+            background: #ffffff;
+            color: #222;
+        }
+
+        /* ===== 搜索控制区 ===== */
+        #searchBox {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #f7f7f7;
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            z-index: 100;
+        }
+
+        input[type="text"],
+        select {
+            width: 220px;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 18px;
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #000;
+        }
+
+        /* ===== 结果区 ===== */
+        #results {
+            max-width: 960px;
+            margin: 0 auto;
+            min-height: calc(100vh - 260px);
+            padding: 0;
+        }
+
+        .result-item {
+            margin-bottom: 24px;
+            padding: 22px 24px;
+            background: #ffffff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+        }
+
+        .result-item > div:first-child {
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .source {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        /* ===== 分页 ===== */
+        .pagination {
+            margin: 30px 0 10px;
+            text-align: center;
+        }
+
+        .pagination button {
+            margin: 0 6px;
+        }
+
+        /* ===== 图片缩略与放大 ===== */
+        .thumbnail {
+            max-width: 320px;
+            margin: 14px 0;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .thumbnail:hover {
+            transform: scale(1.03);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .enlarge-img {
+            max-width: 80%;
+            max-height: 80%;
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+        }
+
+        /* ===== 版权信息 ===== */
+        #version {
+            position: fixed;
+            bottom: 12px;
+            right: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* ===== 高亮关键词（保持逻辑） ===== */
+        span[style*="background-color"] {
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            #searchBox {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="results"></div>
+
+    <div id="searchBox">
+        <input type="text" id="keyword" placeholder="输入关键词进行检索">
+        <select id="sourceFilter">
+            <option value="all">全部来源</option>
+        </select>
+        <button onclick="searchDocuments()">检索</button>
+        <button onclick="resetSearch()">重置</button>
+    </div>
+
+    <div id="version">
+        版权所有：我是李工也是涛哥 ｜ 数据更新：2025年5月 ｜ v2.0
+    </div>
+
+    <div class="overlay" onclick="closeEnlarge()">
+        <img class="enlarge-img" src="" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- ===== 原 JS 逻辑：完全未改动 ===== -->
+    <script>
+        const documents = [
+            {
+                content: "1.0.2 新建、改建和扩建的市政和建筑工程的无障碍设施的建设和运行维护必须执行本规范。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "1.0.3 无障碍设施的建设和运行维护应遵循下列基本原则:6 各级文物保护单位根据需要在不破坏文物的前提下进行无障碍设施建设。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.1.1 城市开敞空间、建筑场地、建筑内部及其之间应提供连贯的无障碍通行流线。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.1.2 无障碍通行流线上的标识物、垃圾桶、座椅、灯柱、隔离墩、地灯和地面布线(线槽)等设施均不应妨碍行动障碍者的独立通行。固定在无障碍通道、轮椅坡道、楼梯的墙或柱面上的物体，突出部分大于100mm且底面距地面高度小于2.00m时，其底面距地面高度不应大于600mm，且应保证有效通行净宽。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.1.3 无障碍通行流线在临近地形险要地段处应设置安全防护设施，必要时应同时设置安全警示线。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.1.4 无障碍通行设施的地面应坚固、平整、防滑、不积水。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.2.1 无障碍通道上有地面高差时，应设置轮椅坡道或缘石坡道。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.2.2 无障碍通道的通行净宽不应小于1.20m，人员密集的公共场所的通行净宽不应小于1.80m。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.2.3 无障碍通道上的门洞口应满足轮椅通行，各类检票口、结算口等应设轮椅通道，通行净宽不应小于900mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.2.4 无障碍通道上有井盖、箅子时，井盖、箅子孔洞的宽度或直径不应大于 13mm，条状孔洞应垂直于通行方向。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.2.5 自动扶梯、楼梯的下部和其他室内外低矮空间可以进人时，应在净高不大于2.00m处采取安全阻挡措施。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.3.1 轮椅坡道的坡度和坡段提升高度应符合下列规定:1 横向坡度不应大于1:50，纵向坡度不应大于1:12，当条件受限且坡段起止点的高差不大于150mm 时，纵向坡度不应大于1:10；2 每段坡道的提升高度不应大于750mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.3.2 轮椅坡道的通行净宽不应小于1.20m。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.3.3 轮椅坡道的起点、终点和休息平台的通行净宽不应小于坡道的通行净宽，水平长度不应小于1.50m，门扇开启和物体不应占用此范围空间。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.3.4 轮椅坡道的高度大于300mm 且纵向坡度大于1:20时，应在两侧设置扶手，坡道与休息平台的扶手应保持连贯。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.3.5 设置扶手的轮椅坡道的临空侧应采取安全阻挡措施。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.4.1 无障碍出入口应为下列3种出入口之一：1 地面坡度不大于1∶20 的平坡出入口；2 同时设置台阶和轮椅坡道的出入口；3 同时设置台阶和升降平台的出入口。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.4.2 除平坡出人口外，无障碍出入口的门前应设置平台;在门完全开启的状态下，平台的净深度不应小于1.50m；无障碍出人口的上方应设置雨篷。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.4.3 设置出入口闸机时，至少有一台开启后的通行净宽不应小于900mm，或者在紧邻闸机处设置供乘轮椅者通行的出入口，通行净宽不应小于900mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.6.1 无障碍电梯的候梯厅应符合下列规定：1 电梯门前应设直径不小于1.50m的轮椅回转空间，公共建筑的候梯厅深度不应小于1.80m;",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.7.1 视觉障碍者主要使用的楼梯和台阶应符合下列规定：1 距踏步起点和终点 250mm~300mm 处应设置提示盲道，提示盲道的长度应与梯段的宽度相对应；2 上行和下行的第一阶踏步应在颜色或材质上与平台有明显区别；3 不应采用无踢面和直角形突缘的踏步；4 踏步防滑条、警示条等附着物均不应突出踏面。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "视觉障碍者主要使用的楼梯和台阶示意图",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021",
+                image: "images/无障碍设计/视觉障碍者主要使用的楼梯和台阶示意图.jpg"
+            },
+            {
+                content: "2.7.2 行动障碍者和视觉障碍者主要使用的三级及三级以上的台阶和楼梯应在两侧设置扶手。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.8.1 满足无障碍要求的单层扶手的高度应为850mm~900mm;设置双层扶手时，上层扶手高度应为850mm~900mm，下层扶手高度应为650mm~700mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.8.2 行动障碍者和视觉障碍者主要使用的楼梯、台阶和轮椅坡道的扶手应在全长范围内保持连贯。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.8.3 行动障碍者和视觉障碍者主要使用的楼梯和台阶、轮椅坡道的扶手起点和终点处应水平延伸，延伸长度不应小于300mm;扶手末端应向墙面或向下延伸，延伸长度不应小于100mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.8.4 扶手应固定且安装牢固，形状和截面尺寸应易于抓握，截面的内侧边缘与墙面的净距离不应小于40mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.1 应将通行方便、路线短的停车位设为无障碍机动车停车位。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.2 无障碍机动车停车位一侧，应设宽度不小于1.20m的轮椅通道。轮椅通道与其所服务的停车位不应有高差，和人行通道有高差处应设置缘石坡道，且应与无障碍通道衔接。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.3 无障碍机动车停车位的地面坡度不应大于1:50。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.4 无障碍机动车停车位的地面应设置停车线、轮椅通道线和无障碍标志，并应设置引导标识。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.5 总停车数在100辆以下时应至少设置1个无障碍机动车停车位，100辆以上时应设置不少于总停车数1%的无障碍机动车停车位；城市广场、公共绿地、城市道路等场所的停车位应设置不少于总停车数2%的无障碍机动车停车位。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.9.6 无障碍小汽(客)车上客和落客区的尺寸不应小于2.40mx7.00m，和人行通道有高差处应设置缘石坡道，且应与无障碍通道街接。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.10.1  各种路口、出入口和人行横道处，有高差时应设置缘石坡道。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.10.2  缘石坡道的坡口与车行道之间应无高差。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.10.3  缘石坡道距坡道下口路缘石250mm~300mm处应设置提示盲道，提示盲道的长度应与缘石坡道的宽度相对应。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.10.4  缘石坡道的坡度应符合下列规定:1 全宽式单面坡缘石坡道的坡度不应大于1:20；2 其他形式缘石坡道的正面和侧面的坡度不应大于1:12。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.10.5  缘石坡道的宽度应符合下列规定：1 全宽式单面坡缘石坡道的坡道宽度应与人行道宽度相同；2三面坡缘石坡道的正面坡道宽度不应小于1.20m；3 其他形式的缘石坡道的坡口宽度均不应小于 1.50m。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.10.6  缘石坡道顶端处应留有过渡空间，过渡空间的宽度不应小于 900mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "2.10.7  缘石坡道上下坡处不应设置雨水箅子。设置阻车桩时，阻车桩的净间距不应小于900mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "3.1.1 通往无障碍服务设施的通道应为无障碍通道。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "3.1.2 具有内部使用空间的无障碍服务设施的入口和室内空间应方便乘轮椅者进入和使用，内部应设轮椅回转空间，轮椅需要通行的区域通行净宽不应小于900mm。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "3.5.2 轮椅席位应设置在便于疏散的位置，并不应设置在公共通道范围内。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "3.5.3 轮椅席位区应通过无障碍通行设施与疏散出口、公共服务、卫生间、讲台等必要的功能空间和设施连接。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "3.5.4 轮椅席位应符合下列规定：1 每个轮椅席位的净尺寸深度不应小于1.30m，宽度不应小于800mm；2 观众席为100 座及以下时应至少设置1个轮椅席位；101座~400座时应至少设置2个轮椅席位；400座以上时，每增加 200 个座位应至少增设1个轮椅席位；3 在轮椅席位旁或邻近的座席处应设置1:1的陪护席位；4 轮椅席位的地面坡度不应大于1:50。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "4.0.1 无障碍标识应纳入室内外环境的标识系统，应连续并清楚地指明无障碍设施的位置和方向。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "4.0.2 无障碍标志的安装位置和高度应保证从站立和座位的视觉角度都能够看见，并且不应被其他任何物品遮挡。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "4.0.3 无障碍设施处均应设置无障碍标识。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "4.0.4 对需要安全警示处，应同时提供包括视觉标识和听觉标识的警示标识。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "4.0.5 语音信息密集的公共场所和以声音为主要传播手段的公共服务应提供文字信息的辅助服务。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "5.0.1 工程竣工验收时，建设单位应组织对无障碍设施的系统性进行检查验收。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "5.0.2 工程验收时，应对无障碍设施的地面防滑性能、扶手和安全抓杆的受力性能进行验收。",
+                source: "建筑与市政工程无障碍通用规范 GB 55019-2021"
+            },
+            {
+                content: "3.8.5 扶手应安装坚固，形状易于抓握。圆形扶手的直径应为35mm~50mm，矩形扶手的截面尺寸应为 35mm~50mm。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "5.2.1 城市广场的公共停车场的停车数在50辆以下时应设置不少于1个无障碍机动车停车位，100辆以下时应设置不少于2个无障碍机动车停车位，100辆以上时应设置不少于总停车数2%的无障碍机动车停车位。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "6.2.1 公园绿地停车场的总停车数在50辆以下时应设置不少于1个无障碍机动车停车位，100辆以下时应设置不少于2个无障碍机动车停车位，100辆以上时应设置不少于总停车数2%的无障碍机动车停车位。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "6.2.4 无障碍游览路线应符合下列规定：4 紧邻湖岸的无障碍游览园路应设置护栏，高度不低于900mm；5 在地形险要的地段应设置安全防护设施和安全警示线。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "6.2.6 常规设施的无障碍设计应符合下列规定：2 游憩设施的无障碍设计应符合下列规定：4)  码头与无障碍园路和广场衔接处有高差时应设置轮椅坡道；5)  无障碍游览路线上的桥应为平桥或坡度在8%以下的小拱桥，宽度不应小于1.20m，桥面应防滑，两侧应设栏杆。桥面与园路、广场衔接有高差时应设轮椅坡道。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "7.3.3 停车场和车库应符合下列规定：1 居住区停车场和车库的总停车位应设置不少于0.5%的无障碍机动车停车位；若设有多个停车场和车库，宜每处设置不少于1个无障碍机动车停车位；2 地面停车场的无障碍机动车停车位宜靠近停车场的出入口设置，有条件的居住区宜靠近住宅出入口设置无障碍机动车停车位;",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "8.1.2 建筑基地内总停车数在100辆以下时应至少设置1个无障碍机动车停车位，100辆以上时应设置不少于总停车数1%的无障碍机动车停车位。",
+                source: "无障碍设计规范 GB 50763-2012"
+            },
+            {
+                content: "无障碍设施标志牌",
+                source: "无障碍设计规范 GB 50763-2012",
+                image: "images/无障碍设计/无障碍设施标志牌.jpg"
+            },
+            {
+                content: "悬空通道无障碍保护区域示意图",
+                source: "无障碍设计 12J926",
+                image: "images/无障碍设计/悬空通道无障碍保护区域示意图.jpg"
+            },
+            {
+                content: "障碍物或设施的设置范围",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/障碍物或设施的设置范围.jpg"
+            },
+            {
+                content: "路缘坡道位置示例",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/路缘坡道位置示例.jpg"
+            },
+            {
+                content: "路缘坡道平面形式",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/路缘坡道平面形式.jpg"
+            },
+            {
+                content: "轮椅坡道高度、长度限值表",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/轮椅坡道高度、长度限值表.jpg"
+            },
+            {
+                content: "轮椅坡度示意",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/轮椅坡度示意.jpg"
+            },
+            {
+                content: "人行天桥无障碍设计",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/人行天桥无障碍设计.jpg"
+            },
+            {
+                content: "轮椅通过示意图",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/轮椅通过示意图.jpg"
+            },
+            {
+                content: "无障碍栏杆转弯处设计",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/无障碍栏杆转弯处设计.jpg"
+            },
+            {
+                content: "无障碍坡道栏杆详图",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/无障碍坡道栏杆详图.jpg"
+            },
+            {
+                content: "平坡出入口",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/平坡出入口.jpg"
+            },
+            {
+                content: "设置台阶和轮椅坡道的出入口1",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/设置台阶和轮椅坡道的出入口1.jpg"
+            },
+            {
+                content: "设置台阶和轮椅坡道的出入口2",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/设置台阶和轮椅坡道的出入口2.jpg"
+            },
+            {
+                content: "设置台阶和升降平台的出入口",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/设置台阶和升降平台的出入口.jpg"
+            },
+            {
+                content: "室外坡道和台阶1",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/室外坡道和台阶1.jpg"
+            },
+            {
+                content: "室外坡道和台阶2",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/室外坡道和台阶2.jpg"
+            },
+            {
+                content: "公共走廊",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/公共走廊.jpg"
+            },
+            {
+                content: "无障碍楼梯2",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/无障碍楼梯2.jpg"
+            },
+            {
+                content: "靠墙扶手",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/靠墙扶手.jpg"
+            },
+            {
+                content: "三面坡及全宽式单面坡缘石坡道",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/三面坡及全宽式单面坡缘石坡道.jpg"
+            },
+            {
+                content: "胡同出入处缘石坡道",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/胡同出入处缘石坡道.jpg"
+            },
+            {
+                content: "路口处三面坡缘石坡道",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/路口处三面坡缘石坡道.jpg"
+            },
+            {
+                content: "路口处全宽式单面坡缘石坡道及人行道内休息座椅示意图",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/路口处全宽式单面坡缘石坡道及人行道内休息座椅示意图.jpg"
+            },
+            {
+                content: "无障碍园路及室外坡道1",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/无障碍园路及室外坡道1.jpg"
+            },
+            {
+                content: "室外轮椅坡道2",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/室外轮椅坡道2.jpg"
+            },
+            {
+                content: "室外坡道扶手做法详图1",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/室外坡道扶手做法详图1.jpg"
+            },
+            {
+                content: "室外坡道扶手做法详图2",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/室外坡道扶手做法详图2.jpg"
+            },
+            {
+                content: "室外剧场轮椅席位",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/室外剧场轮椅席位.jpg"
+            },
+            {
+                content: "乘轮椅者设计参数3",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/乘轮椅者设计参数3.jpg"
+            },
+            {
+                content: "使用助行器者设计参数",
+                source: "北京无障碍城市设计导则",
+                image: "images/无障碍设计/使用助行器者设计参数.jpg"
+            },
+            {
+                content: "1.5.2 休息平台  坡道的顶端和底端都应设置水平休息平台。休息平台的水平长度不应小于1.50m。门扇及其它类似的物体不应占用平台的空间。当一个平台连接多个坡道时，这个平台的宽度必须至少与其连接的最宽坡道相同。当坡道转弯时,休息平台的水平长度和宽度不应小于1.80m。",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/坡道设置休息平台.jpg"
+            },
+            {
+                content: "1.5.4 安全阻挡措施  设置扶手的轮椅坡道临空侧应设置安全阻挡措施，安全阻挡措施应符合以下做法中的至少一种：1坡面从扶手外边缘向外扩宽 300mm；2坡道及平台设置高度不小于 50mm 的安全挡台；3坡道及平台设置距离坡面不大于 100mm 的斜向栏杆。",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南"
+            },
+            {
+                content: "全宽式单面坡与三面坡缘石坡道",
+                source: "无障碍设施 21BJ12-1",
+                image: "images/无障碍设计/全宽式单面坡与三面坡缘石坡道.jpg"
+            },
+            {
+                content: "坡道扶手",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/坡道扶手.jpg"
+            },
+            {
+                content: "无障碍通道",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/无障碍通道.jpg"
+            },
+            {
+                content: "无障碍检票口和结算通道",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/无障碍检票口和结算通道.jpg"
+            },
+            {
+                content: "消除行进风险",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/消除行进风险.jpg"
+            },
+            {
+                content: "主要技术指标表1",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/主要技术指标表1.jpg"
+            },
+            {
+                content: "主要技术指标表2",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/主要技术指标表2.jpg"
+            },
+            {
+                content: "主要技术指标表3",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/主要技术指标表3.jpg"
+            },
+            {
+                content: "主要技术指标表4",
+                source: "北京2022年冬奥会和冬残奥会无障碍设计指南",
+                image: "images/无障碍设计/主要技术指标表4.jpg"
+            }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        let currentResults = [];
+
+        function showEnlarge(imgSrc) {
+            const overlay = document.querySelector('.overlay');
+            const enlargeImg = document.querySelector('.enlarge-img');
+            enlargeImg.src = imgSrc;
+            overlay.style.display = 'flex';
+        }
+
+        function closeEnlarge() {
+            document.querySelector('.overlay').style.display = 'none';
+        }
+
+        function displayResults() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginated = currentResults.slice(start, end);
+
+            let html = '';
+            paginated.forEach(doc => {
+                html += `
+                    <div class="result-item">
+                        <div>${highlightKeywords(doc.content)}</div>
+                        ${doc.image ? 
+                            `<img class="thumbnail" 
+                                  src="${doc.image}" 
+                                  onclick="showEnlarge('${doc.image}')">` : ''}
+                        <div class="source">《${doc.source}》</div>
+                    </div>
+                `;
+            });
+
+            html += `<div class="pagination">`;
+            if (currentPage > 1) html += `<button onclick="changePage(-1)">上一页</button>`;
+            if (end < currentResults.length) html += `<button onclick="changePage(1)">下一页</button>`;
+            html += `</div>`;
+
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function initSourceFilter() {
+            const sources = [...new Set(documents.map(doc => doc.source))];
+            const filter = document.getElementById('sourceFilter');
+            sources.forEach(source => {
+                const option = document.createElement('option');
+                option.value = source;
+                option.textContent = source;
+                filter.appendChild(option);
+            });
+        }
+
+        function searchDocuments() {
+            const keyword = document.getElementById('keyword').value.toLowerCase();
+            const selectedSource = document.getElementById('sourceFilter').value;
+
+            currentResults = documents.filter(doc => {
+                const matchKeyword = doc.content.toLowerCase().includes(keyword) ||
+                    doc.source.toLowerCase().includes(keyword);
+                const matchSource = selectedSource === 'all' || doc.source === selectedSource;
+                return matchKeyword && matchSource;
+            });
+
+            currentPage = 1;
+            displayResults();
+        }
+
+        function highlightKeywords(text) {
+            const keyword = document.getElementById('keyword').value;
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword})`, 'gi');
+            return text.replace(regex, '<span style="background-color:#ffeb3b">$1</span>');
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            displayResults();
+        }
+
+        function resetSearch() {
+            document.getElementById('keyword').value = '';
+            document.getElementById('sourceFilter').value = 'all';
+            currentPage = 1;
+            currentResults = [...documents];
+            displayResults();
+        }
+
+        initSourceFilter();
+        currentResults = [...documents];
+        displayResults();
+    </script>
+
+</body>
+</html>

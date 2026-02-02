@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>规范条文检索系统｜Twolobster</title>
+
+    <style>
+        /* ===== 全局风格（对齐 Twolobster） ===== */
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px 160px;
+            background: #ffffff;
+            color: #222;
+        }
+
+        /* ===== 搜索控制区 ===== */
+        #searchBox {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #f7f7f7;
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            z-index: 100;
+        }
+
+        input[type="text"],
+        select {
+            width: 220px;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 18px;
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #000;
+        }
+
+        /* ===== 结果区 ===== */
+        #results {
+            max-width: 960px;
+            margin: 0 auto;
+            min-height: calc(100vh - 260px);
+            padding: 0;
+        }
+
+        .result-item {
+            margin-bottom: 24px;
+            padding: 22px 24px;
+            background: #ffffff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+        }
+
+        .result-item > div:first-child {
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .source {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        /* ===== 分页 ===== */
+        .pagination {
+            margin: 30px 0 10px;
+            text-align: center;
+        }
+
+        .pagination button {
+            margin: 0 6px;
+        }
+
+        /* ===== 图片缩略与放大 ===== */
+        .thumbnail {
+            max-width: 320px;
+            margin: 14px 0;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .thumbnail:hover {
+            transform: scale(1.03);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .enlarge-img {
+            max-width: 80%;
+            max-height: 80%;
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+        }
+
+        /* ===== 版权信息 ===== */
+        #version {
+            position: fixed;
+            bottom: 12px;
+            right: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* ===== 高亮关键词（保持逻辑） ===== */
+        span[style*="background-color"] {
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            #searchBox {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="results"></div>
+
+    <div id="searchBox">
+        <input type="text" id="keyword" placeholder="输入关键词进行检索">
+        <select id="sourceFilter">
+            <option value="all">全部来源</option>
+        </select>
+        <button onclick="searchDocuments()">检索</button>
+        <button onclick="resetSearch()">重置</button>
+    </div>
+
+    <div id="version">
+        版权所有：我是李工也是涛哥 ｜ 数据更新：2025年5月 ｜ v2.0
+    </div>
+
+    <div class="overlay" onclick="closeEnlarge()">
+        <img class="enlarge-img" src="" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- ===== 原 JS 逻辑：完全未改动 ===== -->
+    <script>
+        const documents = [
+            {
+                content: "3.4.3 除受环境地理条件限制只能设置1条消防车道的公共建筑外，其他高层公共建筑和占地面积大于3000㎡的其他单、多层公共建筑应至少沿建筑的两条长边设置消防车道。住宅建筑应至少沿建筑的一条长边设置消防车道。当建筑仅设置1条消防车道时，该消防车道应位于建筑的消防车登高操作场地一侧。",
+                source: "建筑防火通用规范 GB 55037-2022"
+            },
+            {
+                content: "3.4.5 消防车道或兼作消防车道的道路应符合下列规定：1道路的净宽度和净空高度应满足消防车安全、快速通行的要求；2转弯半径应满足消防车转弯的要求；3 路面及其下面的建筑结构、管道、管沟等，应满足承受消防车满载时压力的要求；4 坡度应满足消防车满载时正常通行的要求，且不应大于10%，兼作消防救援场地的消防车道，坡度尚应满足消防车停靠和消防救援作业的要求；5 消防车道与建筑外墙的水平距离应满足消防车安全通行的要求，位于建筑消防扑救面一侧兼作消防救援场地的消防车道应满足消防救援作业的要求；6 长度大于40m的尽头式消防车道应设置满足消防车回转要求的场地或道路；7 消防车道与建筑消防扑救面之间不应有妨碍消防车操作的障碍物，不应有影响消防车安全作业的架空高压电线。",
+                source: "建筑防火通用规范 GB 55037-2022"
+            },
+            {
+                content: "3.4.7 消防车登高操作场地应符合下列规定：1 场地与建筑之间不应有进深大于4m的裙房及其他妨碍消防车操作的障碍物或影响消防车作业的架空高压电线；2 场地及其下面的建筑结构、管道、管沟等应满足承受消防车满载时压力的要求；3 场地的坡度应满足消防车安全停靠和消防救援作业的要求。",
+                source: "建筑防火通用规范 GB 55037-2022"
+            },
+            {
+                content: "在道路规划和建筑的建设中，要特别注意穿过建筑物、桥梁、城市地道的车道及地下车道需要通行消防车时的道路净宽度和净空高度应满足消防车通行的要求。常用消防车的宽度为2.5 ~3.5m，高度为2.5~4.2m，转弯半径为9~12m，常用消防车通道的净宽度和净空高度若分别不小于4.0m，基本能满足实际需要。",
+                source: "建筑防火通用规范 GB 55037-2022 实施指南"
+            },
+            {
+                content: "消防车道的坡度应满足消防车满载时正常通行的要求，一般按照不大于8%考虑，最大坡度不应大于10%。",
+                source: "建筑防火通用规范 GB 55037-2022 实施指南"
+            },
+            {
+                content: "建筑消防扑救面对应范围内道路坡度不能影响消防车展开后的稳定和安全作业，一般不应大于3%",
+                source: "建筑防火通用规范 GB 55037-2022 实施指南"
+            },
+            {
+                content: "1.0.2 本标准适用于北京市行政区域内新建、改建和扩建的电动自行车停车场、电动自行车停车棚和电动自行车库等电动自行车停放场所的防火设计。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "4.0.2 电动自行车停放场所的设置不应占用消防车道、消防车登高操作场地，不应影响室内外消防设施、疏散通道、救援通道等的正常使用。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "4.0.4 电动自行车停放场所不应与火灾危险性为甲、乙类的厂房、仓库贴邻或组合设置。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "4.0.5 电动自行车停放场所不应与托儿所、幼儿园、老年人照料设施、医院病房楼等建筑贴邻或组合设置。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "4.0.6 电动自行车停车场、电动自行车停车棚、地上电动自行车库与相邻建筑之间的防火间距应符合表4.0.6条的规定。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025",
+                image: "images/防火安全（建筑、电动自行车）/电动自行车停放场所与相邻建筑之间的防火间距.jpg"
+            },
+            {
+                content: "4.0.7 除本标准第 4.0.4条、4.0.5条规定的情况外，电动自行车停车场、电动自行车停车棚与耐火等级不低于一、二级的民用建筑、尽房和仓库的防火间距可适当减少，但应符合以下规定：1 与电动自行车停车场、电动自行车停车棚相邻的建筑，其外墙的耐火极限不低于2.00h，外墙无外保温或外保温为不燃烧材料，且比电动自行车停车场地面、电动自行车停车棚顶面高15m及以下范围内的外墙无门、窗、洞口时，其防火间距不限；2 对于电动自行车停车场、电动自行车停车棚，在靠近相邻建筑的一侧采用耐火完整性不低于1.00h 的不燃烧墙体，顶棚的耐火完整性不低于1.00h 时，其与相邻建筑的防火间距不应小于3.5m；3 电动自行车停车场、电动自行车停车棚侧边及顶面的开口部位与相邻建筑的门、窗、洞口间最近边缘的水平距离不应小于6m。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "4.0.8 电动自行车停车棚侧边不应完全封闭，其侧边敞开区域的面积应不小于该停车棚各侧边总面积的50%，敞开区域的总长度应不小于电动自行车停车棚周长的 50%。当敞开区域不满足上述要求时，应按照电动自行车库的相关要求执行。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "4.0.9 室外独立设置的电动自行车充电柜，其与相邻建(构)筑物之间的防火间距不应小于 3.5m。除火灾危险性为甲、乙类的厂房和仓库外，当相邻建筑的外墙为耐火极限不低于2.00h的不燃烧墙体，外墙无外保温或外保温为不燃烧材料，且充电柜周围3.5m范围内无门、窗、洞口时，可贴邻设置。充电柜与建筑的安全出口距离不应小于6m。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "5.0.3 电动自行车停放场所内的停车位应分组设置，每组长度不宜大于10m，不应大于15m，组与组之间应设置高度不低于1.5m、耐火完整性不低于1.00h 的实体隔墙或隔板进行分隔。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "5.0.5 电动自行车停车场、电动自行车停车棚的车辆出入口净宽不应小于1.8m。大型、中型电动自行车停车场、电动自行车停车棚，应设置不少于两个车辆出入口。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "6.0.5 电动自行车停车棚的承重结构、围护构件及顶棚应采用不燃烧材料或难燃材料。电动自行车库的承重结构、围护及内部构件均应采用不燃烧材料，其内部装修材料的燃烧性能应为A级。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "7.0.1 电动自行车停放场所应设置室外消火栓系统。电动自行车库应设置室内消火栓系统。消火栓系统的设计应符合现行国家标准《消防设施通用规范》GB55036、《消防给水及消火栓系统技术规范》GB 50974 中的规定。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "8.0.1 电动自行车充电区域应采用专用充电设施，充电设施应符合现行国家及北京市有关电动自行车充电设施的技术标准要求。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "8.0.2 电动自行车的充电设施应设置专用配电箱，电源引自上一级专用回路，并应具备过载、短路、欠压、过压、剩余电流保护功能。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "8.0.4 有充电设施的电动自行车停放场所应设置电气火灾监控系统，报警信号宜传输至消防控制室或有人值守的值班室。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "8.0.5 电动自行车停放场所应在视频监控范围内，视频监控系统应符合现行北京市地方标准《图像信息管理系统技术规范》DB11/T 384 的规定。视频监控系统宜与火灾自动报警系统联动，火灾视频图像保存期限不应小于30d，视频监控信号应实时传至消防控制室或有人值守的值班室。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            },
+            {
+                content: "8.0.6 电动自行车停放场所及充电设施应采取防雷及防雷击电磁脉冲的措施，应优先利用建筑物基础作为接地装置，且应符合现行国家标准《建筑物防雷设计规范》GB 50057 的规定。",
+                source: "电动自行车停放场所防火设计标准 DB11/T 1624-2025"
+            }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        let currentResults = [];
+
+        function showEnlarge(imgSrc) {
+            const overlay = document.querySelector('.overlay');
+            const enlargeImg = document.querySelector('.enlarge-img');
+            enlargeImg.src = imgSrc;
+            overlay.style.display = 'flex';
+        }
+
+        function closeEnlarge() {
+            document.querySelector('.overlay').style.display = 'none';
+        }
+
+        function displayResults() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginated = currentResults.slice(start, end);
+
+            let html = '';
+            paginated.forEach(doc => {
+                html += `
+                    <div class="result-item">
+                        <div>${highlightKeywords(doc.content)}</div>
+                        ${doc.image ? 
+                            `<img class="thumbnail" 
+                                  src="${doc.image}" 
+                                  onclick="showEnlarge('${doc.image}')">` : ''}
+                        <div class="source">《${doc.source}》</div>
+                    </div>
+                `;
+            });
+
+            html += `<div class="pagination">`;
+            if (currentPage > 1) html += `<button onclick="changePage(-1)">上一页</button>`;
+            if (end < currentResults.length) html += `<button onclick="changePage(1)">下一页</button>`;
+            html += `</div>`;
+
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function initSourceFilter() {
+            const sources = [...new Set(documents.map(doc => doc.source))];
+            const filter = document.getElementById('sourceFilter');
+            sources.forEach(source => {
+                const option = document.createElement('option');
+                option.value = source;
+                option.textContent = source;
+                filter.appendChild(option);
+            });
+        }
+
+        function searchDocuments() {
+            const keyword = document.getElementById('keyword').value.toLowerCase();
+            const selectedSource = document.getElementById('sourceFilter').value;
+
+            currentResults = documents.filter(doc => {
+                const matchKeyword = doc.content.toLowerCase().includes(keyword) ||
+                    doc.source.toLowerCase().includes(keyword);
+                const matchSource = selectedSource === 'all' || doc.source === selectedSource;
+                return matchKeyword && matchSource;
+            });
+
+            currentPage = 1;
+            displayResults();
+        }
+
+        function highlightKeywords(text) {
+            const keyword = document.getElementById('keyword').value;
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword})`, 'gi');
+            return text.replace(regex, '<span style="background-color:#ffeb3b">$1</span>');
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            displayResults();
+        }
+
+        function resetSearch() {
+            document.getElementById('keyword').value = '';
+            document.getElementById('sourceFilter').value = 'all';
+            currentPage = 1;
+            currentResults = [...documents];
+            displayResults();
+        }
+
+        initSourceFilter();
+        currentResults = [...documents];
+        displayResults();
+    </script>
+
+</body>
+</html>

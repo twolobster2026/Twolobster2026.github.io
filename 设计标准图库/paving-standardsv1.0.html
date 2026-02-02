@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>铺装 | 设计标准图库</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* ================== 全局统一风格 ================== */
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+}
+
+body{
+    background:#f6f7f9;
+    color:#333;
+    padding:32px 16px;
+}
+
+/* ================== 主容器 ================== */
+.container{
+    max-width:1200px;
+    margin:0 auto;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    overflow:hidden;
+}
+
+/* ================== 头部 ================== */
+header{
+    padding:36px 32px 28px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+
+header h1{
+    font-size:26px;
+    font-weight:700;
+    margin-bottom:8px;
+}
+
+header p{
+    color:#666;
+    font-size:14px;
+}
+
+/* ================== 标准图列表 ================== */
+.main{
+    padding:40px 32px 48px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:28px;
+}
+
+.drawing-card{
+    border:1px solid #eee;
+    border-radius:14px;
+    padding:16px;
+    transition:.25s;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+}
+
+.drawing-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 12px 26px rgba(0,0,0,.12);
+    border-color:#dbeafe;
+}
+
+.thumb{
+    width:100%;
+    height:180px;
+    background:#f1f5f9;
+    border-radius:10px;
+    overflow:hidden;
+    cursor:pointer;
+}
+
+.thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.drawing-title{
+    font-size:16px;
+    font-weight:600;
+    margin:14px 0 6px;
+}
+
+.drawing-desc{
+    font-size:14px;
+    color:#666;
+    line-height:1.6;
+    flex:1;
+}
+
+/* ================== 下载区（保留蓝色方案） ================== */
+.downloads{
+    display:flex;
+    gap:12px;
+    margin-top:14px;
+}
+
+.downloads a{
+    flex:1;
+    text-align:center;
+    padding:8px 0;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:none;
+    color:#2563eb;
+    border:1px solid #dbeafe;
+    background:#eff6ff;
+    transition:.2s;
+}
+
+.downloads a i{
+    margin-right:6px;
+}
+
+.downloads a:hover{
+    background:#dbeafe;
+}
+
+/* 内部文件默认隐藏 */
+.internal-only{
+    display:none;
+}
+
+/* 下载统计 */
+.count{
+    font-size:12px;
+    color:#666;
+    margin-left:4px;
+}
+
+/* ================== 图片放大弹窗 ================== */
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
+
+.modal img{
+    max-width:90%;
+    max-height:90%;
+    border-radius:12px;
+    box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+
+.modal.active{
+    display:flex;
+}
+
+/* ================== 底部 ================== */
+.version-info{
+    text-align:center;
+    padding:18px;
+    font-size:13px;
+    color:#666;
+    border-top:1px solid #eee;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+    <h1>铺装 | 设计标准图库</h1>
+    <p>园路、广场及车行铺装的标准化构造做法参考</p>
+</header>
+
+<div class="main">
+
+    <!-- 标准图 1 -->
+    <div class="drawing-card">
+        <div class="thumb" onclick="openModal(this)">
+            <img src="images/paving01.jpg" alt="混凝土人行路做法">
+        </div>
+        <div class="drawing-title">混凝土人行路铺装做法</div>
+        <div class="drawing-desc">
+            适用于园区内部人行路、慢行系统及广场边缘通行区域。
+        </div>
+        <div class="downloads">
+            <a href="files/paving01.dwg" class="internal-only" onclick="countDownload(this)">
+                <i class="fas fa-download"></i>DWG <span class="count">(0)</span>
+            </a>
+            <a href="files/paving01.pdf" onclick="countDownload(this)">
+                <i class="fas fa-file-pdf"></i>PDF <span class="count">(0)</span>
+            </a>
+            <a href="files/paving01.skp" class="internal-only" onclick="countDownload(this)">
+                <i class="fas fa-cube"></i>SKP <span class="count">(0)</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 标准图 2 -->
+    <div class="drawing-card">
+        <div class="thumb" onclick="openModal(this)">
+            <img src="images/paving02.jpg">
+        </div>
+        <div class="drawing-title">透水砖车行路做法（一）</div>
+        <div class="drawing-desc">
+            适用于荷载 ≤ 5 吨的轻型车行路。
+        </div>
+        <div class="downloads">
+            <a href="files/paving02.dwg" class="internal-only" onclick="countDownload(this)">
+                <i class="fas fa-download"></i>DWG <span class="count">(0)</span>
+            </a>
+            <a href="files/paving02.pdf" onclick="countDownload(this)">
+                <i class="fas fa-file-pdf"></i>PDF <span class="count">(0)</span>
+            </a>
+            <a href="files/paving01.skp" class="internal-only" onclick="countDownload(this)">
+                <i class="fas fa-cube"></i>SKP <span class="count">(0)</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<div class="version-info">
+版权所有 : 我是李工也是涛哥 | 数据更新：2026年1月 | v1.0
+</div>
+
+</div>
+
+<!-- 图片放大 -->
+<div class="modal" id="imgModal" onclick="closeModal()">
+    <img id="modalImg">
+</div>
+
+<script>
+/* 放大查看 */
+function openModal(el){
+    document.getElementById('modalImg').src = el.querySelector('img').src;
+    document.getElementById('imgModal').classList.add('active');
+}
+function closeModal(){
+    document.getElementById('imgModal').classList.remove('active');
+}
+document.addEventListener('keydown',e=>{
+    if(e.key==='Escape') closeModal();
+});
+
+/* 下载统计 */
+function countDownload(el){
+    const span = el.querySelector('.count');
+    let n = parseInt(span.textContent.replace(/[()]/g,'')) || 0;
+    span.textContent = `(${++n})`;
+}
+
+/* 权限控制 */
+(function(){
+    const internal = new URLSearchParams(location.search).get('internal') === '1';
+    if(internal){
+        document.querySelectorAll('.internal-only').forEach(el=>{
+            el.style.display = 'inline-block';
+        });
+    }
+})();
+</script>
+
+</body>
+</html>

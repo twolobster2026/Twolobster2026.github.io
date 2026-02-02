@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>规范学习与培训｜Twolobster</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC","Microsoft YaHei",Arial,sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px 120px;
+            background: #ffffff;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.7;
+            max-width: 780px;
+            margin-bottom: 50px;
+        }
+
+        /* ===== 模块区 ===== */
+        .section {
+            margin-bottom: 70px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .section-desc {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 28px;
+            max-width: 720px;
+        }
+
+        /* ===== 视频卡片 ===== */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 26px;
+        }
+
+        .video-card {
+            border: 1px solid #eee;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 10px 26px rgba(0,0,0,0.06);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+        }
+
+        .video-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.1);
+        }
+
+        .cover {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #f1f1f1;
+            overflow: hidden;
+        }
+
+        .cover img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cover::after {
+            content: "▶";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: rgba(255,255,255,0.85);
+            text-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .video-content {
+            padding: 22px 24px 24px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: #f1f1f1;
+            color: #555;
+            margin-bottom: 12px;
+            width: fit-content;
+        }
+
+        .video-content h3 {
+            font-size: 20px;
+            margin: 0 0 10px;
+        }
+
+        .video-desc {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .meta {
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 20px;
+        }
+
+        .action {
+            margin-top: auto;
+        }
+
+        .action a {
+            display: inline-block;
+            padding: 10px 18px;
+            background: #222;
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .action a:hover {
+            background: #000;
+        }
+
+        /* ===== 页脚版权 ===== */
+        .footer {
+            position: fixed;
+            bottom: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>规范学习与培训</h1>
+    <p class="intro">
+        本模块通过视频形式，结合真实设计运用场景，对工程规范与专业知识进行可视化讲解。
+        重点解决“规范怎么用、什么时候用、容易错在哪里”的实际问题。
+    </p>
+
+    <!-- 规范类视频 -->
+    <div class="section">
+        <h2 class="section-title">规范讲解</h2>
+        <p class="section-desc">
+            围绕具体设计场景，对常用规范进行直观讲解。
+        </p>
+
+        <div class="video-grid">
+
+            <div class="video-card">
+                <div class="cover">
+                    <img src="images/cover_water.jpg" alt="水体驳岸规范讲解">
+                </div>
+                <div class="video-content">
+                    <span class="tag">水景 · 安全 · 做法</span>
+                    <h3>水体驳岸规范讲解</h3>
+                    <p class="video-desc">
+                        结合实际水景设计场景，讲解水体驳岸相关规范在安全防护、尺度控制与构造做法中的应用。
+                    </p>
+                    <div class="meta">适用阶段：方案 / 扩初 / 施工图</div>
+                    <div class="action"><a href="video_water.html">进入学习</a></div>
+                </div>
+            </div>
+
+            <div class="video-card">
+                <div class="cover">
+                    <img src="images/cover_barrierfree.jpg" alt="无障碍规范讲解">
+                </div>
+                <div class="video-content">
+                    <span class="tag">公共空间 · 使用公平性</span>
+                    <h3>无障碍规范讲解</h3>
+                    <p class="video-desc">
+                        从真实场地条件出发，讲解无障碍通行、坡道、停车位等规范要求，避免常见理解偏差。
+                    </p>
+                    <div class="meta">适用阶段：方案 / 扩初 / 施工图</div>
+                    <div class="action"><a href="video_barrierfree.html">进入学习</a></div>
+                </div>
+            </div>
+
+            <div class="video-card">
+                <div class="cover">
+                    <img src="images/cover_parking.jpg" alt="停车场设计规范讲解">
+                </div>
+                <div class="video-content">
+                    <span class="tag">交通 · 场地组织</span>
+                    <h3>停车场设计规范讲解</h3>
+                    <p class="video-desc">
+                        系统讲解停车位尺度、行车组织及出入口设置等规范在园林及综合项目中的应用要点。
+                    </p>
+                    <div class="meta">适用阶段：方案 / 扩初 / 施工图</div>
+                    <div class="action"><a href="video_parking.html">进入学习</a></div>
+                </div>
+            </div>
+
+            <div class="video-card">
+                <div class="cover">
+                    <img src="images/cover_waterproof.jpg" alt="防水设计规范讲解">
+                </div>
+                <div class="video-content">
+                    <span class="tag">防水设计 · 材料选择</span>
+                    <h3>防水设计规范讲解</h3>
+                    <p class="video-desc">
+                        系统讲解防水设计相关规范要求， 帮助在方案与施工图阶段提前规避防水风险。
+                    </p>
+                    <div class="meta">适用阶段：方案 / 扩初 / 施工图</div>
+                    <div class="action"><a href="video_waterproof.html">进入学习</a></div>
+                </div>
+            </div>    
+
+        </div>
+    </div>
+
+    <!-- 专业讲座 -->
+    <div class="section">
+        <h2 class="section-title">专业讲座与知识培训</h2>
+        <p class="section-desc">
+            面向设计实践中的通用问题与方法论，提供系统性的专业知识讲解与经验分享。
+            本模块将随内容逐步扩展。
+        </p>
+
+        <div class="video-grid">
+            <div class="video-card">
+                <div class="cover">
+                    <img src="cover-placeholder.jpg" alt="专业讲座">
+                </div>
+                <div class="video-content">
+                    <span class="tag">规划中</span>
+                    <h3>专业知识与方法论讲座</h3>
+                    <p class="video-desc">
+                        用于承载非单一规范导向的专业培训内容，如设计方法、技术整合与经验复盘。
+                    </p>
+                    <div class="meta">当前状态：内容筹备中</div>
+                    <div class="action"><a href="#" onclick="return false;">敬请期待</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">© Twolobster ｜ 我是李工也是涛哥</div>
+
+</body>
+</html>

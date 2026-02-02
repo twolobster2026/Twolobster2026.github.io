@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>花境设计工具</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+:root{
+  --primary:#2563eb;
+  --primary-soft:#eff6ff;
+  --border:#e5e7eb;
+  --bg:#f5f7fb;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --card-radius:12px;
+  --shadow:0 8px 24px rgba(0,0,0,.06);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.7;
+}
+
+/* ===== Header ===== */
+.header{
+  background:#fff;
+  border-bottom:1px solid var(--border);
+}
+.header-content{
+  max-width:1200px;
+  margin:auto;
+  padding:28px 20px;
+}
+.header h1{
+  margin:0;
+  font-size:26px;
+  font-weight:700;
+}
+.header p{
+  margin-top:8px;
+  color:var(--muted);
+}
+
+/* ===== Container ===== */
+.container{
+  max-width:1200px;
+  margin:32px auto;
+  padding:0 16px;
+}
+
+/* ===== Card ===== */
+.card{
+  background:#fff;
+  border-radius:var(--card-radius);
+  box-shadow:var(--shadow);
+  padding:28px;
+  margin-bottom:32px;
+}
+
+/* 卡片标题：左竖线 + 下分割线 */
+.card-title{
+  font-size:20px;
+  font-weight:700;
+  padding-left:12px;
+  border-left:4px solid var(--primary);
+  margin:0 0 20px;
+}
+
+/* 二级标题 */
+.section-title{
+  font-size:16px;
+  font-weight:600;
+  margin:32px 0 16px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+}
+
+.hidden{
+  display:none !important;
+}
+
+/* ===== Buttons ===== */
+.btn-group{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.btn{
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  padding:10px 20px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-secondary{
+  background:#6b7280;
+}
+.btn-accent{
+  background:#22c55e;
+}
+
+/* ===== Table ===== */
+.table-container{
+  overflow:auto;
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+th,td{
+  padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  text-align: left;  /* 添加或确保这一行存在 */
+}
+th{
+  background:#f9fafb;
+  font-weight:600;
+}
+tr:hover{
+  background:#f1f5ff;
+}
+
+/* ===== Analysis Cards ===== */
+.role-analysis,
+.color-analysis{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:20px;
+}
+.analysis-card{
+  background:#f9fafb;
+  border-left:4px solid var(--primary);
+  padding:16px 18px;
+  border-radius:10px;
+  text-align:left;
+}
+.analysis-card h4{
+  margin:0 0 10px;
+  font-size:15px;
+  display:flex;
+  justify-content:space-between;
+}
+.analysis-card h4,
+.analysis-card ul,
+.analysis-card p{
+  margin-left:0;
+  padding-left:0;
+  text-align:left;
+}
+.count{
+  background:var(--primary);
+  color:#fff;
+  padding:2px 10px;
+  border-radius:999px;
+  font-size:12px;
+}
+.analysis-list{
+  padding-left:18px;
+  margin:0;
+}
+.muted{
+  color:var(--muted);
+}
+
+/* ===== Bloom Table ===== */
+.bloom-table th{
+  text-align:left;
+  padding:6px;
+}
+
+.bloom-table td{
+  text-align:left;
+  padding:6px;
+}
+
+/* ================== 花色圆点恢复 ================== */
+.color-dot{
+    display:inline-block;
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    margin-right:6px;
+    vertical-align:middle;
+    border:1px solid rgba(0,0,0,.15);
+}
+
+.section-content .color-dot,
+.flower-list .color-dot,
+.color-stat .color-dot{
+    display:inline-block;
+}
+
+/* ===== Footer ===== */
+footer{
+  text-align:center;
+  color:#888;
+  font-size:13px;
+  margin:40px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="header-content">
+    <h1>花境设计工具</h1>
+    <p>专业的花卉配置与花期管理辅助系统</p>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 原有 HTML 结构 + JS 全部保持不变 -->
+  <!-- 你提供的 FLOWER_DB / JS 原样放这里即可 -->
+  <section id="design">
+    <div class="card">
+      <h2 class="card-title">花境设计</h2>
+
+      <div class="btn-group">
+        <button class="btn" onclick="generateMyDesign()">生成设计清单</button>
+        <button class="btn btn-secondary" onclick="resetMyDesign()">重置选择</button>
+        <button class="btn btn-accent" onclick="exportDesignPDF()">导出PDF报告</button>
+      </div>
+      <div id="flowerSelection"></div>
+    </div>
+
+    <!-- 注意：把 designOutput 和 designBloom 包到一个总容器里，方便整体导出 -->
+    <div id="pdfContent">
+      <div id="designOutput" class="card hidden"></div>
+      <div id="designBloom" class="card hidden"></div>
+    </div>
+  </section>
+</div>
+
+  <footer>
+    版权所有 : 我是李工也是涛哥 | 数据更新: 2025年12月 | v3.0
+  </footer>
+
+<script>
+/* 你的 FLOWER_DB、mapColorToCss、parseMonths、initFlowerSelection 等函数都保持不变 */
+    const FLOWER_DB = [
+      {
+        id: "f1",
+        name: "大花金鸡菊",
+        habitat: "开阔绿地",
+        role: "主题锚点-主角特色植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: [ "黄"],
+        bloom: "5-9",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f1 大花金鸡菊.jpg",
+      },
+      {
+        id: "f2",
+        name: "高山紫菀",
+        habitat: "开阔绿地",
+        role: "结构锚点-空间定位植物",
+        height: "60-150cm",
+        lifespan: "多年生",
+        color:  ["紫", "粉", "蓝"],
+        bloom: "9-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f2 高山紫菀.jpg",
+      },
+      {
+        id: "f3",
+        name: "大滨菊",
+        habitat:  ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "40-110cm",
+        lifespan: "多年生",
+        color: ["白"],
+        bloom: "5-6",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f3 大滨菊.jpg",
+      },
+      {
+        id: "f4",
+        name: "赛菊芋",
+        habitat:  ["开阔绿地","林缘"],
+        role: "主题锚点-主角特色植物",
+        height: "60-80cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "6-9",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f4 赛菊芋.jpg",
+      },
+      {
+        id: "f5",
+        name: "桔梗",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "40-60cm",
+        lifespan: "多年生",
+        color: ["蓝紫"],
+        bloom: "6-9",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f5 桔梗.jpg",
+      },
+      {
+        id: "f6",
+        name: "柳叶马鞭草",
+        habitat: "开阔绿地",
+        role: "自由浮动-特约散点植物",
+        height: "90-150cm",
+        lifespan: "一年生",
+        color: ["紫"],
+        bloom: "5-9",
+        crown: "20-25cm",
+        thumb:
+          "images/花境设计/f6 柳叶马鞭草.jpg",
+      },
+      {
+        id: "f7",
+        name: "紫松果菊",
+        habitat: "开阔绿地",
+        role: "主题锚点-主角特色植物",
+        height: "60-90cm",
+        lifespan: "多年生",
+        color: ["粉"],
+        bloom: "6-9",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f7 紫松果菊.jpg",
+      },
+      {
+        id: "f8",
+        name: "甘野菊",
+        habitat: "林缘",
+        role: "卫星锚点-配角伴生植物",
+        height: "60-90cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "10-11",
+        crown: "50-80cm",
+        thumb:
+          "images/花境设计/f8 甘野菊.jpg",
+      },
+      {
+        id: "f9",
+        name: "‘蓝山’林荫鼠尾草",
+        habitat: "开阔绿地",
+        role: "主题锚点-主角特色植物",
+        height: "35-40cm",
+        lifespan: "多年生",
+        color: ["蓝紫"],
+        bloom: "5-7，9-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f9 蓝山林荫鼠尾草.jpg",
+      },
+      {
+        id: "f10",
+        name: "德国鸢尾",
+        habitat: "开阔绿地",
+        role:  "卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color: ["紫", "黄"],
+        bloom: "5-6",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f10 德国鸢尾.jpg",
+      },
+      {
+        id: "f11",
+        name: "‘皇冠'蓍草",
+        habitat: "开阔绿地",
+        role: "主题锚点-主角特色植物",
+        height: "60-80cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "6-8",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f11 皇冠蓍草.jpg",
+      },
+      {
+        id: "f12",
+        name: "白花山桃草",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "60-100cm",
+        lifespan: "多年生",
+        color: ["白"],
+        bloom: "5-10",
+        crown: "60-80cm",
+        thumb:
+          "images/花境设计/f12 白花山桃草.jpg",
+      },
+      {
+        id: "f13",
+        name: "‘蓝色忧伤’荆芥",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "45-60cm",
+        lifespan: "多年生",
+        color: ["蓝紫"],
+        bloom: "5-7，10",
+        crown: "60-90cm",
+        thumb:
+          "images/花境设计/f13 蓝色忧伤荆芥.jpg",
+      },
+      {
+        id: "f14",
+        name: "‘紫雾’荆芥",
+        habitat: "开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "10-20cm",
+        lifespan: "多年生",
+        color: ["蓝紫"],
+        bloom: "5-6，10",
+        crown: "75cm",
+        thumb:
+          "images/花境设计/f14 紫雾荆芥.jpg",
+      },
+      {
+        id: "f15",
+        name: "‘达尔文之蓝’婆婆纳",
+        habitat: "开阔绿地",
+        role:"主题锚点-主角特色植物",
+        height: "25-30cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "5-7",
+        crown: "20-25cm",
+        thumb:
+          "images/花境设计/f15 达尔文之蓝婆婆纳.jpg",
+      },
+      {
+        id: "f16",
+        name: "绵毛水苏",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "20-30cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "5-7",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f16 绵毛水苏.jpg",
+      },
+      {
+        id: "f17",
+        name: "*百里香",
+        habitat: "开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "15-20cm",
+        lifespan: "多年生",
+        color: ["粉"],
+        bloom: "6-7",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f17 百里香.jpg",
+      },
+      {
+        id: "f18",
+        name: "柳叶白菀",
+        habitat: "开阔绿地",
+        role: "结构锚点-空间定位植物",
+        height: "130-150cm",
+        lifespan: "多年生",
+        color: ["白"],
+        bloom: "10-11",
+        crown: "50-60cm",
+        thumb:
+          "images/花境设计/f18 柳叶白菀.jpg",
+      },
+      {
+        id: "f19",
+        name: "‘蓝碟’鸽子蓝盆花",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "20-25cm",
+        lifespan: "多年生",
+        color: ["蓝"],
+        bloom: "5-11",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f19 蓝盆花.jpg",
+      },
+      {
+        id: "f20",
+        name: "山韭",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "20-35cm",
+        lifespan: "多年生",
+        color: ["粉"],
+        bloom: "6-7",
+        crown: "15-20cm",
+        thumb:
+          "images/花境设计/f20 山韭.jpg",
+      },
+      {
+        id: "f21",
+        name: "*地榆",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color: ["紫红"],
+        bloom: "6-10",
+        crown: "40-45cm",
+        thumb:
+          "images/花境设计/f21 地榆.jpg",
+      },
+      {
+        id: "f22",
+        name: "千叶蓍",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color: ["粉", "红", "黄", "白"],
+        bloom: "6-7",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f22 千叶蓍.jpg",
+      },
+      {
+        id: "f23",
+        name: "中华景天",
+        habitat: "开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "10-15cm",
+        lifespan: "多年生",
+        color: ["绿"],
+        bloom: "4-11",
+        crown: "15-20cm",
+        thumb:
+          "images/花境设计/f23 中华景天.jpg",
+      },
+      {
+        id: "f24",
+        name: "八宝景天",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: ["粉"],
+        bloom: "7-9",
+        crown: "20-35cm",
+        thumb:
+          "images/花境设计/f24 八宝景天.jpg",
+      },
+      {
+        id: "f25",
+        name: "藁本",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "30-50cm",
+        lifespan: "多年生",
+        color: ["白"],
+        bloom: "8-9",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f25 藁本.jpg",
+      },
+      {
+        id: "f26",
+        name: "蓝羊茅",
+        habitat: "开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "30-35cm",
+        lifespan: "多年生",
+        color: ["蓝"],
+        bloom: "5-11",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f26 蓝羊茅.jpg",
+      },
+      {
+        id: "f27",
+        name: "‘卡尔’拂子茅",
+        habitat: "开阔绿地",
+        role: "结构锚点-空间定位植物",
+        height: "90-100cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "6-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f27 卡尔拂子茅.jpg",
+      },
+      {
+        id: "f28",
+        name: "‘小兔子’狼尾草",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "50-60cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "8-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f28 小兔子狼尾草.jpg",
+      },
+      {
+        id: "f29",
+        name: "荚果蕨",
+        habitat:  ["林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: ["绿"],
+        bloom: "5-10",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f29 荚果蕨.jpg",
+      },
+      {
+        id: "f30",
+        name: "紫露草",
+        habitat:  ["林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "25-35cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "6-9",
+        crown: "30-50cm",
+        thumb:
+          "images/花境设计/f30 紫露草.jpg",
+      },
+      {
+        id: "f31",
+        name: "蛇鞭菊",
+        habitat:  ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "50-80cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "7-8",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f31 蛇鞭菊.jpg",
+      },
+      {
+        id: "f32",
+        name: "大麻叶泽兰",
+        habitat:  ["开阔绿地","林缘"],
+        role: "结构锚点-空间定位植物",
+        height: "80-90cm",
+        lifespan: "多年生",
+        color: ["粉"],
+        bloom: "7-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f32 大麻叶泽兰.jpg",
+      },
+      {
+        id: "f33",
+        name: "连钱草",
+        habitat:  ["林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "10-20cm",
+        lifespan: "多年生",
+        color: ["淡紫"],
+        bloom: "3-5",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f33 连钱草.jpg",
+      },
+      {
+        id: "f34",
+        name: "假龙头",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "50-60cm",
+        lifespan: "多年生",
+        color: ["粉"],
+        bloom: "6-9",
+        crown: "25-35cm",
+        thumb:
+          "images/花境设计/f34 假龙头.jpg",
+      },
+      {
+        id: "f35",
+        name: "华北香薷",
+        habitat: "开阔绿地",
+        role: "结构锚点-空间定位植物",
+        height: "50-60cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "9-10",
+        crown: "50-60cm",
+        thumb:
+          "images/花境设计/f35 华北香薷.jpg",
+      },
+      {
+        id: "f36",
+        name: "美丽月见草",
+        habitat: ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: ["粉"],
+        bloom: "5-8",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f36 美丽月见草.jpg",
+      },
+      {
+        id: "f37",
+        name: "射干",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "50-70cm",
+        lifespan: "多年生",
+        color: ["橙"],
+        bloom: "6-8",
+        crown: "15-20cm",
+        thumb:
+          "images/花境设计/f37 射干.jpg",
+      },
+      {
+        id: "f38",
+        name: "*马利筋",
+        habitat: "开阔绿地",
+        role:"自由浮动-特约散点植物",
+        height: "80-100cm",
+        lifespan: "一年生",
+        color:  ["橙",  "黄"],
+        bloom: "3-11",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f38 马利筋.jpg",
+      },
+      {
+        id: "f39",
+        name: "*醉鱼草",
+        habitat:  ["开阔绿地","林缘"],
+        role: "结构锚点-空间定位植物",
+        height: "100-300cm",
+        lifespan: "多年生",
+        color: ["紫", "白", "粉"],
+        bloom: "4-10",
+        crown: "40-60cm",
+        thumb:
+          "images/花境设计/f39 醉鱼草.jpg",
+      },
+      {
+        id: "f40",
+        name: "*毛茛",
+        habitat:  ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "30-70cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "4-8",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f40 毛茛.jpg",
+      },
+      {
+        id: "f41",
+        name: "蓝雪花",
+        habitat:  "林缘",
+        role: "卫星锚点-配角伴生植物",
+        height: "20-30cm",
+        lifespan: "多年生",
+        color: ["蓝"],
+        bloom: "7-9",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f41 蓝雪花.jpg",
+      },
+      {
+        id: "f42",
+        name: "*龙牙草",
+        habitat:  ["林缘","林地"],
+        role:"卫星锚点-配角伴生植物",
+        height: "40-60cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "5-12",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f42 龙牙草.jpg",
+      },
+      {
+        id: "f43",
+        name: "夏枯草",
+        habitat:  "开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "20-30cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "4-6",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f43 夏枯草.jpg",
+      },
+      {
+        id: "f44",
+        name: "玉簪",
+        habitat:  ["林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "30-80cm",
+        lifespan: "多年生",
+        color: ["白"],
+        bloom: "7-9",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f44 玉簪.jpg",
+      },
+      {
+        id: "f45",
+        name: "朝雾草",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "20-25cm",
+        lifespan: "多年生",
+        color: ["白"],
+        bloom: "7-8",
+        crown: "15-20cm",
+        thumb:
+          "images/花境设计/f45 朝雾草.jpg",
+      },
+      {
+        id: "f46",
+        name: "*耧斗菜",
+        habitat: "林缘",
+        role: "卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "5-7",
+        crown: "35-45cm",
+        thumb:
+          "images/花境设计/f46 耧斗菜.jpg",
+      },
+      {
+        id: "f47",
+        name: "*蓝雾草（裂叶锥托泽兰）",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: ["蓝紫"],
+        bloom: "5-8",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f47 蓝雾草（裂叶锥托泽兰）.jpg",
+      },
+      {
+        id: "f48",
+        name: "大花葱（巨韭）",
+        habitat: "开阔绿地",
+        role: "自由浮动-特约散点植物",
+        height: "25-35cm",
+        lifespan: "多年生",
+        color: ["紫", "紫红", "白"],
+        bloom: "5-6",
+        crown: "30-45cm",
+        thumb:
+          "images/花境设计/f48 大花葱（巨韭）.jpg",
+      },
+      {
+        id: "f49",
+        name: "落新妇",
+        habitat:  ["林缘","林地"],
+        role: "结构锚点-空间定位植物",
+        height: "50-100cm",
+        lifespan: "多年生",
+        color: ["紫", "紫红"],
+        bloom: "7-8",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f49 落新妇.jpg",
+      },
+      {
+        id: "f50",
+        name: "马蔺",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "40-60cm",
+        lifespan: "多年生",
+        color: ["蓝"],
+        bloom: "4-5",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f50 马蔺.jpg",
+      },
+      {
+        id: "f51",
+        name: "大叶铁线莲",
+        habitat: ["林缘","林地"],
+        role: "结构锚点-空间定位植物",
+        height: "40-80cm",
+        lifespan: "多年生",
+        color: ["蓝"],
+        bloom: "7-9",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f51 大叶铁线莲.jpg",
+      },
+      {
+        id: "f52",
+        name: "丽色画眉草",
+        habitat: ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "50-60cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "5-11",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f52 丽色画眉草.jpg",
+      },
+      {
+        id: "f53",
+        name: "披针叶苔草",
+        habitat:["林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "20-30cm",
+        lifespan: "多年生",
+        color: ["绿"],
+        bloom: "3-4",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f53 披针叶苔草.jpg",
+      },
+      {
+        id: "f54",
+        name: "涝峪苔草",
+        habitat:["林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "25-35cm",
+        lifespan: "多年生",
+        color: ["绿"],
+        bloom: "3-4",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f54 涝峪苔草.jpg",
+      },
+      {
+        id: "f55",
+        name: "芸香",
+        habitat:"开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "60-80cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "3-6",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f55 芸香.jpg",
+      },
+      {
+        id: "f56",
+        name: "宿根亚麻",
+        habitat: ["开阔绿地","林缘"],
+        role:"卫星锚点-配角伴生植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: ["蓝"],
+        bloom: "6-7",
+        crown: "25-30cm",
+        thumb:
+          "images/花境设计/f56 宿根亚麻.jpg",
+      },
+      {
+        id: "f57",
+        name: "绢毛匍匐委陵菜",
+        habitat: ["开阔绿地","林缘"],
+        role: "基质锚点-群演填充植物",
+        height: "5-20cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "4-6",
+        crown: "10-20cm",
+        thumb:
+          "images/花境设计/f57 绢毛匍匐委陵菜.jpg",
+      },
+      {
+        id: "f58",
+        name: "垂盆草",
+        habitat: ["开阔绿地","林缘"],
+        role: "基质锚点-群演填充植物",
+        height: "5-20cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "5-6",
+        crown: "10-20cm",
+        thumb:
+          "images/花境设计/f58 垂盆草.jpg",
+      },
+      {
+        id: "f59",
+        name: "青绿苔草",
+        habitat: ["林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "15-30cm",
+        lifespan: "多年生",
+        color: ["绿"],
+        bloom: "4-5",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f59 青绿苔草.jpg",
+      },
+      {
+        id: "f60",
+        name: "紫菀",
+        habitat: "开阔绿地",
+        role: "主题锚点-主角特色植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "9-10",
+        crown: "30-45cm",
+        thumb:
+          "images/花境设计/f60 紫菀.jpg",
+      },
+      {
+        id: "f61",
+        name: "裂叶金光菊",
+        habitat: "开阔绿地",
+        role: "结构锚点-空间定位植物",
+        height: "150-200cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "6-8",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f61 裂叶金光菊.jpg",
+      },
+      {
+        id: "f62",
+        name: "冬凌草",
+        habitat: ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "30-130cm",
+        lifespan: "多年生",
+        color: ["蓝"],
+        bloom: "8-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f62 冬凌草.jpg",
+      },
+      {
+        id: "f63",
+        name: "水杨梅",
+        habitat:"开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "20-25cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "4-6",
+        crown: "30-35cm",
+        thumb:
+          "images/花境设计/f63 水杨梅.jpg",
+      },
+      {
+        id: "f64",
+        name: "紫花地丁",
+        habitat: ["开阔绿地","林缘","林地"],
+        role: "基质锚点-群演填充植物",
+        height: "10-15cm",
+        lifespan: "多年生",
+        color: ["紫"],
+        bloom: "4-5",
+        crown: "10-20cm",
+        thumb:
+          "images/花境设计/f64 紫花地丁.jpg",
+      },
+      {
+        id: "f65",
+        name: "蒲棒菊",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "40-50cm",
+        lifespan: "多年生",
+        color: ["黄"],
+        bloom: "6-8",
+        crown: "45-55cm",
+        thumb:
+          "images/花境设计/f65 蒲棒菊.jpg",
+      },
+      {
+        id: "f66",
+        name: "蓝刺头",
+        habitat:  ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color: ["蓝", "蓝紫"],
+        bloom: "6-8",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f66 蓝刺头.jpg",
+      },
+      {
+        id: "f67",
+        name: "硫磺菊",
+        habitat:  "开阔绿地",
+        role: "自由浮动-特约散点植物",
+        height: "30-40cm",
+        lifespan: "一年生",
+        color: ["橙","黄", "红"],
+        bloom:"6-10",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f67 硫磺菊.jpg",
+      },
+      {
+        id: "f68",
+        name: "刺芹",
+        habitat:  ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color:  ["紫"],
+        bloom:  "5-9",
+        crown: "30-35cm",
+        thumb:
+          "images/花境设计/f68 刺芹.jpg",
+      },
+      {
+        id: "f69",
+        name: "美国薄荷",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "70-75cm",
+        lifespan: "多年生",
+        color:  ["红","紫"],
+        bloom:  "7-8",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f69 美国薄荷.jpg",
+      },
+      {
+        id: "f70",
+        name: "火尾抱茎蓼",
+        habitat: "林缘",
+        role:  "结构锚点-空间定位植物",
+        height: "70-80cm",
+        lifespan: "多年生",
+        color:  ["红"],
+        bloom:  "6-10",
+        crown: "70-80cm",
+        thumb:
+          "images/花境设计/f70 火尾抱茎蓼.jpg",
+      },
+      {
+        id: "f71",
+        name: "千日红",
+        habitat: "开阔绿地",
+        role: "自由浮动-特约散点植物",
+        height: "20-60cm",
+        lifespan: "一年生",
+        color:  ["紫红"],
+        bloom:  "6-9",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f71 千日红.jpg",
+      },
+      {
+        id: "f72",
+        name: "*虞美人",
+        habitat: ["开阔绿地","林缘"],
+        role: "自由浮动-特约散点植物",
+        height: "25-90cm",
+        lifespan: "一年生",
+        color:   ["橙","黄","紫","白","红"],
+        bloom:  "5-7",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f72 虞美人.jpg",
+      },
+      {
+        id: "f73",
+        name: "千屈菜",
+        habitat: "开阔绿地",
+        role:  "主题锚点-主角特色植物",
+        height: "30-100cm",
+        lifespan: "多年生",
+        color:   ["紫"],
+        bloom:  "7-8",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f73 千屈菜.jpg",
+      },
+      {
+        id: "f74",
+        name: "美国石竹（须苞石竹）",
+        habitat: "林缘",
+        role:  "基质锚点-群演填充植物",
+        height: "30-60cm",
+        lifespan: "多年生",
+        color:   ["粉","紫"],
+        bloom:  "5-10",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f74 美国石竹（须苞石竹）.jpg",
+      },
+      {
+        id: "f75",
+        name: "蒲公英",
+        habitat: "开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "10-15cm",
+        lifespan: "多年生",
+        color:   ["黄"],
+        bloom:  "4-9",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f75 蒲公英.jpg",
+      },
+      {
+        id: "f76",
+        name: "宿根天人菊",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "35-40cm",
+        lifespan: "多年生",
+        color:   ["橙"],
+        bloom:  "6-10",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f76 宿根天人菊.jpg",
+      },
+      {
+        id: "f77",
+        name: "红花钓钟柳",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "40-60cm",
+        lifespan: "多年生",
+        color:   ["红"],
+        bloom:  "5-6",
+        crown: "20-30cm",
+        thumb:
+          "images/花境设计/f77 红花钓钟柳.jpg",
+      },
+      {
+        id: "f78",
+        name: "*一枝黄花",
+        habitat: ["林缘","林地"],
+        role: "结构锚点-空间定位植物",
+        height: "90-120cm",
+        lifespan: "多年生",
+        color:   ["黄"],
+        bloom:  "7-8",
+        crown: "50-60cm",
+        thumb:
+          "images/花境设计/f78 一枝黄花.jpg",
+      },
+      {
+        id: "f79",
+        name: "火炬花",
+        habitat: "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "80-100cm",
+        lifespan: "多年生",
+        color:   ["橙"],
+        bloom:  "6-10",
+        crown: "40-45cm",
+        thumb:
+          "images/花境设计/f79 火炬花.jpg",
+      },
+      {
+        id: "f80",
+        name: "堆心菊",
+        habitat: "开阔绿地",
+        role: "卫星锚点-配角伴生植物",
+        height: "80-100cm",
+        lifespan: "多年生",
+        color:   ["黄"],
+        bloom:  "7-9",
+        crown: "40-60cm",
+        thumb:
+          "images/花境设计/f80 堆心菊.jpg",
+      },
+      {
+        id: "f81",
+        name: "紫斑风铃草",
+        habitat:  ["开阔绿地","林缘"],
+        role:"卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color:  ["粉", "紫"],
+        bloom:  "6-8",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f81 紫斑风铃草.jpg",
+      },
+      {
+        id: "f82",
+        name: "藿香",
+        habitat:  "开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "60-80cm",
+        lifespan: "多年生",
+        color:  ["蓝紫"],
+        bloom:  "6-9",
+        crown: "50-60cm",
+        thumb:
+          "images/花境设计/f82 藿香.jpg",
+      },
+      {
+        id: "f83",
+        name: "玉带草",
+        habitat:  "开阔绿地",
+        role: "基质锚点-群演填充植物",
+        height: "50-60cm",
+        lifespan: "多年生",
+        color:  ["紫"],
+        bloom:  "6-7",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f83 玉带草.jpg",
+      },
+      {
+        id: "f84",
+        name: "*唐松草",
+        habitat: ["开阔绿地","林缘"],
+        role: "卫星锚点-配角伴生植物",
+        height: "50-80cm",
+        lifespan: "多年生",
+        color:  ["白"],
+        bloom:  "6-7",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f84 唐松草.jpg",
+      },
+      {
+        id: "f85",
+        name: "芒颖大麦草",
+        habitat:"开阔绿地",
+        role:"卫星锚点-配角伴生植物",
+        height: "30-40cm",
+        lifespan: "多年生",
+        color:  ["粉"],
+        bloom:  "5-7",
+        crown: "25-35cm",
+        thumb:
+          "images/花境设计/f85 芒颖大麦草.jpg",
+      },
+      {
+        id: "f86",
+        name: "重金属柳枝稷",
+        habitat:"开阔绿地",
+        role:"结构锚点-空间定位植物",
+        height: "90-100cm",
+        lifespan: "多年生",
+        color:  ["绿"],
+        bloom:  "6-10",
+        crown: "50-60cm",
+        thumb:
+          "images/花境设计/f86 重金属柳枝稷.jpg",
+      },
+      {
+        id: "f87",
+        name: "黄花败酱",
+        habitat:"开阔绿地",
+        role:"结构锚点-空间定位植物",
+        height: "50-130cm",
+        lifespan: "多年生",
+        color:  ["黄"],
+        bloom:  "7-8",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f87 黄花败酱.jpg",
+      },
+      {
+        id: "f88",
+        name: "荷包牡丹",
+        habitat:"林缘",
+        role:"卫星锚点-配角伴生植物",
+        height: "25-35cm",
+        lifespan: "多年生",
+        color:   ["粉", "紫"],
+        bloom:  "4-6",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f88 荷包牡丹.jpg",
+      },
+      {
+        id: "f89",
+        name: "斑叶芒",
+        habitat:"开阔绿地",
+        role:"结构锚点-空间定位植物",
+        height: "100-150cm",
+        lifespan: "多年生",
+        color:   ["黄"],
+        bloom:  "5-11",
+        crown: "60-80cm",
+        thumb:
+          "images/花境设计/f89 斑叶芒.jpg",
+      },
+      {
+        id: "f90",
+        name: "细叶芒",
+        habitat:"开阔绿地",
+        role:"结构锚点-空间定位植物",
+        height: "100-150cm",
+        lifespan: "多年生",
+        color:   ["红"],
+        bloom:  "9-10",
+        crown: "60-80cm",
+        thumb:
+          "images/花境设计/f90 细叶芒.jpg",
+      },
+      {
+        id: "f91",
+        name: "毛地黄吊钟柳",
+        habitat: ["开阔绿地","林缘"],
+        role:"结构锚点-空间定位植物",
+        height: "60-100cm",
+        lifespan: "多年生",
+        color:   ["粉", "白", "蓝紫"],
+        bloom:  "6-8",
+        crown: "25-30cm",
+        thumb:
+          "images/花境设计/f91 毛地黄吊钟柳.jpg",
+      },
+      {
+        id: "f92",
+        name: "晨光芒",
+        habitat: "开阔绿地",
+        role:"结构锚点-空间定位植物",
+        height: "100-200cm",
+        lifespan: "多年生",
+        color:   ["褐"],
+        bloom:  "7-12",
+        crown: "60-80cm",
+        thumb:
+          "images/花境设计/f92 晨光芒.jpg",
+      },
+      {
+        id: "f93",
+        name: "芨芨草",
+        habitat: "开阔绿地",
+        role:"主题锚点-主角特色植物",
+        height: "50-250cm",
+        lifespan: "多年生",
+        color:   ["绿"],
+        bloom:  "6-9",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f93 芨芨草.jpg",
+      },
+      {
+        id: "f94",
+        name: "大花萱草",
+        habitat:  ["开阔绿地","林缘"],
+        role:"卫星锚点-配角伴生植物",
+        height: "60-90cm",
+        lifespan: "多年生",
+        color:   ["黄", "橙"],
+        bloom:  "6-7",
+        crown: "25-30cm",
+        thumb:
+          "images/花境设计/f94 大花萱草.jpg",
+      },
+      {
+        id: "f95",
+        name: "卵叶紫菀 ",
+        habitat: "开阔绿地",
+        role:"主题锚点-主角特色植物",
+        height: "50-60cm",
+        lifespan: "多年生",
+        color:   ["蓝紫"],
+        bloom:  "9-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f95 卵叶紫菀.jpg",
+      },
+      {
+        id: "f96",
+        name: "鞑靼紫菀 ",
+        habitat: "开阔绿地",
+        role:"主题锚点-主角特色植物",
+        height: "50-60cm",
+        lifespan: "多年生",
+        color:   ["粉"],
+        bloom:  "9-10",
+        crown: "40-50cm",
+        thumb:
+          "images/花境设计/f96 鞑靼紫菀.jpg",
+      },
+      {
+        id: "f97",
+        name: "波斯菊 ",
+        habitat: "开阔绿地",
+        role:"自由浮动-特约散点植物",
+        height: "100-200cm",
+        lifespan: "一年生",
+        color:   ["粉", "白", "红"],
+        bloom:  "6-8",
+        crown: "30-60cm ",
+        thumb:
+          "images/花境设计/f97 波斯菊.jpg",
+      },
+      {
+        id: "f100",
+        name: "金盏菊",
+        habitat: "开阔绿地",
+        role: "自由浮动-特约散点植物",
+        height: "20-75cm",
+        lifespan: "一年生",
+        color: ["黄", "橙"],
+        bloom: "4-9",
+        crown: "30-40cm",
+        thumb:
+          "images/花境设计/f100 金盏菊.jpg",
+      },
+    ];
+
+const ROLE_OPTIONS = ['结构锚点-空间定位植物', '主题锚点-主角特色植物', '卫星锚点-配角伴生植物', '基质锚点-群演填充植物', '自由浮动-特约散点植物'];
+
+let selectedFlowerIds = new Set();
+
+// 初始化花卉选择表格
+function initFlowerSelection() {
+  const container = document.getElementById("flowerSelection");
+  let html = `
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th class="checkbox-cell">选择</th>
+            <th>名称</th>
+            <th>生境</th>
+            <th>角色</th>
+            <th>高度</th>
+            <th>花色</th>
+            <th>花期</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  FLOWER_DB.forEach(f => {
+    const colorsHtml = Array.isArray(f.color) 
+      ? f.color.map(c => `<span class="color-dot" style="background-color: ${mapColorToCss(c)}"></span>${c}`).join(", ") 
+      : `<span class="color-dot" style="background-color: ${mapColorToCss(f.color)}"></span>${f.color}`;
+    
+    html += `
+      <tr>
+        <td class="checkbox-cell"><input type="checkbox" data-id="${f.id}" onchange="toggleFlowerSelection(this)"></td>
+        <td>${f.name}</td>
+        <td>${Array.isArray(f.habitat) ? f.habitat.join(", ") : f.habitat}</td>
+        <td>${f.role}</td>
+        <td>${f.height}</td>
+        <td>${colorsHtml}</td>
+        <td>${f.bloom}</td>
+      </tr>
+    `;
+  });
+  
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function toggleFlowerSelection(checkbox) {
+  const id = checkbox.dataset.id;
+  if (checkbox.checked) selectedFlowerIds.add(id);
+  else selectedFlowerIds.delete(id);
+}
+
+// 生成花境清单
+function generateMyDesign() {
+  if (selectedFlowerIds.size === 0) {
+    alert("请至少选择一个植物");
+    return;
+  }
+  
+  const list = FLOWER_DB.filter(f => selectedFlowerIds.has(f.id));
+  const out = document.getElementById("designOutput");
+  out.classList.remove("hidden");
+
+  // 花卉清单表格
+  let html = `
+    <h3 class="section-title">花卉清单</h3>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>生境</th>
+            <th>角色</th>
+            <th>高度</th>
+            <th>花色</th>
+            <th>花期</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  list.forEach(f => {
+    const colorsHtml = Array.isArray(f.color) 
+      ? f.color.map(c => `<span class="color-dot" style="background-color: ${mapColorToCss(c)}"></span>${c}`).join(", ") 
+      : `<span class="color-dot" style="background-color: ${mapColorToCss(f.color)}"></span>${f.color}`;
+    
+    html += `
+      <tr>
+        <td>${f.name}</td>
+        <td>${Array.isArray(f.habitat) ? f.habitat.join(", ") : f.habitat}</td>
+        <td>${f.role}</td>
+        <td>${f.height}</td>
+        <td>${colorsHtml}</td>
+        <td>${f.bloom}</td>
+      </tr>
+    `;
+  });
+  
+  html += `</tbody></table></div>`;
+
+function parseMonths(bloomStr) {
+  if (!bloomStr) return [];
+  const segments = bloomStr.split(/[,，]/);
+  let months = [];
+  segments.forEach(seg => {
+    const parts = seg.split("-");
+    if (parts.length === 1) {
+      const m = parseInt(parts[0]);
+      if (!isNaN(m)) months.push(m);
+    } else if (parts.length === 2) {
+      let start = parseInt(parts[0]), end = parseInt(parts[1]);
+      if (!isNaN(start) && !isNaN(end)) {
+        for (let i = start; i <= end; i++) months.push(i);
+      }
+    }
+  });
+  return [...new Set(months)].sort((a, b) => a - b);
+}
+
+  // 角色分析
+  const roleMap = {};
+  ROLE_OPTIONS.forEach(r => { if (r) roleMap[r] = []; });
+  list.forEach(f => { if (f.role && !roleMap[f.role].some(item => item.id === f.id)) roleMap[f.role].push(f); });
+  
+  let roleHtml = '<div class="role-analysis">';
+  ROLE_OPTIONS.forEach(r => {
+    if (!r) return;
+    const arr = roleMap[r] || [];
+    roleHtml += `
+      <div class="analysis-card">
+        <h4>${r.split('-')[1]} <span class="count">${arr.length}</span></h4>
+        ${arr.length > 0 ? '<ul class="analysis-list">' + arr.map(it => `<li>${it.name}</li>`).join('') + '</ul>' : '<div class="muted">（无）</div>'}
+      </div>
+    `;
+  });
+  roleHtml += '</div>';
+
+  // 颜色统计
+  const colorMap = {};
+  list.forEach(f => {
+    const colors = Array.isArray(f.color) ? f.color : [f.color];
+    colors.forEach(c => {
+      if (!colorMap[c]) colorMap[c] = [];
+      colorMap[c].push(f.name);
+    });
+  });
+  
+  let colorHtml = '<div class="color-analysis">';
+  for (const c in colorMap) {
+    colorHtml += `
+      <div class="analysis-card">
+        <h4><span class="color-dot" style="background-color: ${mapColorToCss(c)}"></span> ${c} <span class="count">${colorMap[c].length}</span></h4>
+        <ul class="analysis-list">${colorMap[c].map(n => `<li>${n}</li>`).join('')}</ul>
+      </div>
+    `;
+  }
+  colorHtml += '</div>';
+
+  out.innerHTML = html + '<h3 class="section-title">角色分析</h3>' + roleHtml + '<h3 class="section-title">颜色统计</h3>' + colorHtml;
+
+  // 花期花色表
+  generateBloomTable(list, "designBloom");
+  document.getElementById("designBloom").classList.remove("hidden");
+}
+
+// 花期解析
+function parseMonths(bloomStr) {
+  if (!bloomStr) return [];
+  const segments = bloomStr.split(/[,，]/);
+  let months = [];
+  segments.forEach(seg => {
+    const parts = seg.split("-");
+    if (parts.length === 1) {
+      const m = parseInt(parts[0]);
+      if (!isNaN(m)) months.push(m);
+    } else if (parts.length === 2) {
+      let start = parseInt(parts[0]), end = parseInt(parts[1]);
+      if (!isNaN(start) && !isNaN(end)) {
+        for (let i = start; i <= end; i++) months.push(i);
+      }
+    }
+  });
+  return [...new Set(months)].sort((a, b) => a - b);
+}
+
+// 花色映射
+function mapColorToCss(colorName) {
+  const map = {
+    紫: "#7a0099", 黄: "#ffbb00", 白: "#ecf0f1", 蓝: "#0066ff", 
+    粉: "#ff77ff", 橙: "#ff8800", 蓝紫: "#5555ff", 红: "#ff0000", 
+    绿: "#99dd00", 紫红: "#880000", 淡紫: "#ccbbff",  褐: "#886600"
+  };
+  return map[colorName] || "#bdc3c7";
+}
+
+/* ====== 初始化、生成设计、花期表的逻辑保持不变（你原来那一大段照搬即可） ====== */
+/* ……这里省略（和你给的一样），只改导出PDF函数 …… */
+// 花期表生成
+function generateBloomTable(list, containerId) {
+  list.sort((a, b) => parseMonths(a.bloom)[0] - parseMonths(b.bloom)[0]);
+  let html = `
+    <h3 class="section-title">花期花色展示图（1月 - 12月）</h3>
+    <div class="table-container">
+      <table class="bloom-table">
+        <thead>
+          <tr>
+            <th class="bloom-name">植物</th>
+  `;
+  
+  for (let m = 1; m <= 12; m++) {
+    html += `<th>${m}月</th>`;
+  }
+  
+  html += `</tr></thead><tbody>`;
+  
+  list.forEach(f => {
+    const months = parseMonths(f.bloom);
+    html += `<tr><td class="bloom-name">${f.name}</td>`;
+    
+    for (let m = 1; m <= 12; m++) {
+      const inBloom = months.includes(m);
+      let bg = '';
+      if (inBloom) {
+        const c = Array.isArray(f.color) ? f.color[0] : f.color;
+        bg = mapColorToCss(c);
+      }
+      html += `<td style="background-color:${bg}; color: ${inBloom ? 'white' : 'inherit'}">${inBloom ? "●" : ""}</td>`;
+    }
+    
+    html += '</tr>';
+  });
+  
+  html += '</tbody></table></div>';
+  document.getElementById(containerId).innerHTML = html;
+}
+
+/* 改造后的 PDF 导出函数 */
+function exportDesignPDF() {
+  const element = document.getElementById("pdfContent");
+  if (!element || element.innerText.trim() === "") {
+    alert("请先生成设计清单后再导出 PDF！");
+    return;
+  }
+  const opt = {
+    margin:       10,
+    filename:     '我的设计花境.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak:    { mode: ['css', 'legacy'] }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+
+function resetMyDesign() {
+  selectedFlowerIds.clear();
+  initFlowerSelection();
+  document.getElementById("designOutput").innerHTML = "";
+  document.getElementById("designOutput").classList.add("hidden");
+  document.getElementById("designBloom").classList.add("hidden");
+}
+
+function init() {
+  initFlowerSelection();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>规范条文检索系统｜Twolobster</title>
+
+    <style>
+        /* ===== 全局风格（对齐 Twolobster） ===== */
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 20px 160px;
+            background: #ffffff;
+            color: #222;
+        }
+
+        /* ===== 搜索控制区 ===== */
+        #searchBox {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #f7f7f7;
+            border-radius: 14px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+            z-index: 100;
+        }
+
+        input[type="text"],
+        select {
+            width: 220px;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 18px;
+            background: #222;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background: #000;
+        }
+
+        /* ===== 结果区 ===== */
+        #results {
+            max-width: 960px;
+            margin: 0 auto;
+            min-height: calc(100vh - 260px);
+            padding: 0;
+        }
+
+        .result-item {
+            margin-bottom: 24px;
+            padding: 22px 24px;
+            background: #ffffff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+        }
+
+        .result-item > div:first-child {
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .source {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #777;
+        }
+
+        /* ===== 分页 ===== */
+        .pagination {
+            margin: 30px 0 10px;
+            text-align: center;
+        }
+
+        .pagination button {
+            margin: 0 6px;
+        }
+
+        /* ===== 图片缩略与放大 ===== */
+        .thumbnail {
+            max-width: 320px;
+            margin: 14px 0;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .thumbnail:hover {
+            transform: scale(1.03);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .enlarge-img {
+            max-width: 80%;
+            max-height: 80%;
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+        }
+
+        /* ===== 版权信息 ===== */
+        #version {
+            position: fixed;
+            bottom: 12px;
+            right: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* ===== 高亮关键词（保持逻辑） ===== */
+        span[style*="background-color"] {
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 768px) {
+            #searchBox {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="results"></div>
+
+    <div id="searchBox">
+        <input type="text" id="keyword" placeholder="输入关键词进行检索">
+        <select id="sourceFilter">
+            <option value="all">全部来源</option>
+        </select>
+        <button onclick="searchDocuments()">检索</button>
+        <button onclick="resetSearch()">重置</button>
+    </div>
+
+    <div id="version">
+        版权所有：我是李工也是涛哥 ｜ 数据更新：2025年5月 ｜ v2.0
+    </div>
+
+    <div class="overlay" onclick="closeEnlarge()">
+        <img class="enlarge-img" src="" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- ===== 原 JS 逻辑：完全未改动 ===== -->
+    <script>
+        const documents = [
+            {
+                content: "地下工程（地下室设备房离心泵）：有人员活动的民用建筑地下室，对渗漏敏感的建筑地下工程，对渗漏敏感的市政地下工程：①民用建筑地下室；②设备房（离心泵）；③建筑、市政地下工程（明挖法）。不应有渗水、结构背水面无湿渍。",
+                source: "防水等级一级/地下工程"
+            },
+            {
+                content: "地下工程（地下室设备房离心泵）防水做法：不应小于3道。必须有1道防水混凝土；防水卷材或防水涂料不应少于1道；外设防水层可选防水卷材，防水涂料，水泥基防水材料。",
+                source: "防水等级一级/地下工程"
+            },
+            {
+                content: "地下工程（地下室设备房离心泵）一般规定1：迎水面主体结构采用防水混凝土，强度等级不应低于C25，厚度不应小于250mm，满足抗渗等级要求，明挖法现浇混凝土结构最低抗渗等级P8，寒冷地区抗冻设防段不应低于P10。结构顶板以上不小于500mm范围的回填层压实系数不应小于0.94",
+                source: "防水等级一级/地下工程"
+            },
+            {
+                content: "地下工程（地下室设备房离心泵）一般规定2：受中等及以上腐蚀性介质作用，防水混凝土强度不应低于C35，抗渗等级不低于P8，迎水面主体结构采用耐腐蚀性防水混凝土，外设防水卷材满足耐腐蚀要求",
+                source: "防水等级一级/地下工程"
+            },
+            {
+                content: "地下工程（地下室设备房离心泵）一般规定3：集水坑和排水沟应做防水处理，排水沟的纵向坡度不应小于0.2%",
+                source: "防水等级一级/地下工程"
+            },
+            {
+                content: "地下工程（地下室设备房离心泵）一般规定4：附建式全地下或半地下工程的防水设防范围应高出室外地坪，其超出的高度不应小于300mm。民用建筑地下室顶板设计应符合下规定:1应将覆土中积水排至周边土体或建筑排水系统；2与地上建筑相邻的部位应设置泛水，且高出覆土或场地不应小于500mm。",
+                source: "防水等级一级/地下工程"
+            },
+            {
+                content: "屋面工程：年降水量≥400：①民用建筑屋面；②对渗漏敏感的工业建筑屋面。不应有渗水、结构背水面无湿渍。",
+                source: "防水等级一级/屋面工程"
+            },
+            {
+                content: "屋面工程防水做法：平屋面防水不应小于3道。卷材防水层不应少于1道；防水层可选防水卷材、防水涂料。金属屋面防水不应小于2道。必须有金属板1道；必须有防水卷材1道，厚度不小于1.5mm。",
+                source: "防水等级一级/屋面工程"
+            },
+            {
+                content: "屋面工程一般规定1：当在屋面金属板基层上采用聚氯乙烯防水卷材(PVC)、热塑性聚烯烃防水卷材(TPO)、三元乙丙防水卷材(EPDM)等外露型防水卷材单层使用时，防水卷材的厚度一级防水不应小于1.8mm",
+                source: "防水等级一级/屋面工程"
+            },
+            {
+                content: "屋面工程一般规定2：种植屋面工程的排(蓄)水层应结合屋面排水系统设计，不应作为耐根穿刺防水层使用，并应设置将雨水排向屋面排水系统的有组织排水通道。",
+                source: "防水等级一级/屋面工程"
+            },
+            {
+                content: "屋面工程一般规定3：平屋面排水坡度≥2%，种植屋面≥2%，金属屋面压型金属板、金属夹芯板≥5%，单层防水卷材金属屋面≥2%；当屋面采用结构找坡时，坡度≥3%；混凝土屋面檐沟、天沟的纵向坡度≥1%。",
+                source: "防水等级一级/屋面工程"
+            },
+            {
+                content: "种植屋面和地下建（构）筑物种植顶板工程：应至少设置一道耐根穿刺防水层，其上应设置保护层：①种植屋面；②地下建（构）筑物种植顶板。不应有渗水、结构背水面无湿渍。",
+                source: "防水等级一级/种植屋面和地下建（构）筑物种植顶板工程"
+            },
+            {
+                content: "种植屋面和地下建（构）筑物种植顶板工程防水做法：平屋面防水不应小于3道。卷材防水层不应少于1道；防水层可选防水卷材、防水涂料。金属屋面防水不应小于2道。必须有金属板1道；必须有防水卷材1道，厚度不小于1.5mm。",
+                source: "防水等级一级/种植屋面和地下建（构）筑物种植顶板工程"
+            },
+            {
+                content: "种植屋面和地下建（构）筑物种植顶板工程一般规定1：当在屋面金属板基层上采用聚氯乙烯防水卷材(PVC)、热塑性聚烯烃防水卷材(TPO)、三元乙丙防水卷材(EPDM)等外露型防水卷材单层使用时，防水卷材的厚度一级防水不应小于1.8mm",
+                source: "防水等级一级/种植屋面和地下建（构）筑物种植顶板工程"
+            },
+            {
+                content: "种植屋面和地下建（构）筑物种植顶板工程一般规定2：种植屋面工程的排(蓄)水层应结合屋面排水系统设计，不应作为耐根穿刺防水层使用，并应设置将雨水排向屋面排水系统的有组织排水通道。",
+                source: "防水等级一级/种植屋面和地下建（构）筑物种植顶板工程"
+            },
+            {
+                content: "种植屋面和地下建（构）筑物种植顶板工程一般规定3：平屋面排水坡度≥2%，种植屋面≥2%，金属屋面压型金属板、金属夹芯板≥5%，单层防水卷材金属屋面≥2%；当屋面采用结构找坡时，坡度≥3%；混凝土屋面檐沟、天沟的纵向坡度≥1%。",
+                source: "防水等级一级/种植屋面和地下建（构）筑物种植顶板工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池）：干湿交替环境：①游泳池；②嬉水池；③市政给水池；④建筑室内水池。不应有渗水、结构背水面无湿渍。",
+                source: "防水等级一级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池）防水做法：采用结构防水混凝土加外设防水层的构造方式。非侵蚀性介质环境，防水混凝土强度等级不应低于C25，抗渗等级≥P8，顶板最小厚度250mm，底板和侧墙最小厚度300mm，最小钢筋保护层厚度35mm。内壁必须设置1道防水层（防水卷材、防水涂料或水泥基防水材料）。",
+                source: "防水等级一级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池）一般规定1：对水质有卫生要求的蓄水类工程，应增设外壁防水层，应设置1道防水卷材、防水涂料或水泥基防水材料防水层。",
+                source: "防水等级一级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池）一般规定2：不应采用遇水侵蚀材料制成的砌块或空心砌块砌筑。最冷月平均气温低于-3℃的地区，外露蓄水类工程不应采用砌体结构。",
+                source: "防水等级一级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池）：长期浸水、长期湿润环境，非干湿交替的环境：①游泳池；②嬉水池；③市政给水池；④建筑室内水池。不应有渗水、结构背水面无湿渍。",
+                source: "防水等级二级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（景观水池）：干湿交替环境，对渗漏水有要求：景观水池。不应有滴漏、线漏，结构背水面可有零星分布的湿渍。",
+                source: "防水等级二级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池景观水池）防水做法：非侵蚀性介质环境，防水混凝土强度等级不应低于C25，抗渗等级≥P6，顶板最小厚度200mm，底板和侧墙最小厚度250mm，最小钢筋保护层厚度30mm。内壁必须设置1道防水层（防水卷材、防水涂料或水泥基防水材料）。",
+                source: "防水等级二级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池景观水池）一般规定1：对水质有卫生要求的蓄水类工程，应增设外壁防水层，应设置1道防水卷材、防水涂料或水泥基防水材料防水层。",
+                source: "防水等级二级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（泳池嬉水池景观水池）一般规定2：不应采用遇水侵蚀材料制成的砌块或空心砌块砌筑。最冷月平均气温低于-3℃的地区，外露蓄水类工程不应采用砌体结构。",
+                source: "防水等级二级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（景观水池）：长期浸水、长期湿润环境，非干湿交替的环境，对渗漏水有要求：景观水池。不应有滴漏、线漏，结构背水面可有零星分布的湿渍。",
+                source: "防水等级三级/蓄水工程"
+            },
+            {
+                content: "蓄水工程：不考虑干湿交替和浸水情况，对渗漏水无严格要求。不应有线流、漏泥砂，结构背水面可有少量的湿渍、流挂或滴漏。",
+                source: "防水等级三级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（景观水池）防水做法：非侵蚀性介质环境，防水混凝土强度等级不应低于C25，抗渗等级≥P6，顶板最小厚度200mm，底板和侧墙最小厚度250mm，最小钢筋保护层厚度30mm。。",
+                source: "防水等级三级/蓄水工程"
+            },
+            {
+                content: "蓄水工程（景观水体）：需设置防渗层：景观水体。",
+                source: "防水等级无/蓄水工程"
+            },
+            {
+                content: "蓄水工程（景观水体）防水做法：应采用黏土、柔性防水材料或天然钠基膨润土防水毯，不应少于1道。",
+                source: "防水等级无/蓄水工程"
+            },
+            {
+                content: "蓄水工程（景观水体）一般规定1：需同时防范有害物质的防渗衬层，当采用黏土作为1道防渗衬层时，应符合下列规定：饱和渗透系数不应大于1.0x10-7cm/s；当单独采用黏土作为防渗衬层时，黏土厚度不应小于2m；当采用黏土与人工合成材料的复合防渗衬层时，黏土厚度不应小于 0.75m。",
+                source: "防水等级无/蓄水工程"
+            },
+            {
+                content: "防水混凝土：强度等级不应低于C25。",
+                source: "防水材料/防水混凝土"
+            },
+            {
+                content: "聚合物改性沥青类防水卷材：弹性体SBS改性沥青防水卷材，最小厚度3mm。",
+                source: "防水材料/防水卷材"
+            },
+            {
+                content: "合成高分子类防水卷材：橡胶类：①三元乙丙（EPDM)橡胶，最小厚度1.5mm。",
+                source: "防水材料/防水卷材"
+            },
+            {
+                content: "合成高分子类防水卷材：塑料（树脂）类：①聚乙烯（PE）；②聚氯乙烯（PVC）。最小厚度1.2mm。",
+                source: "防水材料/防水卷材"
+            },
+            {
+                content: "水泥基防水涂料：水泥基渗透结晶型防水材料，最小厚度1.0mm。",
+                source: "防水材料/水泥基防水涂料"
+            },
+            {
+                content: "水泥基防水涂料：聚合物水泥防水砂浆，①地下工程使用时，厚度不应小于6.0mm；②掺外加剂、防水剂的砂浆防水层厚度不应小于18.0mm。",
+                source: "防水材料/水泥基防水涂料"
+            },
+            {
+                content: "密封材料：非结构粘结用建筑密封胶：①硅酮；②改性硅酮；③聚氨酯；④聚硫。",
+                source: "防水材料/密封材料"
+            },
+            {
+                content: "密封材料：橡胶：①橡胶止水带；②橡胶密封圈；③遇水膨胀橡胶制品。",
+                source: "防水材料/密封材料"
+            },
+            {
+                content: "其他材料：防水毯：天然钠基膨润土防水毯，单位面积干重不应小于5.0kg/m2。",
+                source: "防水材料/其他材料"
+            },
+            {
+                content:" 其他材料：屋面压型金属板：压型铝合金面层板，公称厚度不应小于0.9mm；压型钢板面层板，公称厚度不应小于0.6mm；压型不锈钢面层板，公称厚度不应小于0.5mm。",
+                source: "防水材料/其他材料"
+            },
+            {
+                content: "不应作为一道防水层：①混凝土屋面板；②塑料排水板；③不具备防水功能的装饰瓦和不搭接瓦；④注浆加固。",
+                source: "防水材料/不应作为一道防水层"
+            }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        let currentResults = [];
+
+        function showEnlarge(imgSrc) {
+            const overlay = document.querySelector('.overlay');
+            const enlargeImg = document.querySelector('.enlarge-img');
+            enlargeImg.src = imgSrc;
+            overlay.style.display = 'flex';
+        }
+
+        function closeEnlarge() {
+            document.querySelector('.overlay').style.display = 'none';
+        }
+
+        function displayResults() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginated = currentResults.slice(start, end);
+
+            let html = '';
+            paginated.forEach(doc => {
+                html += `
+                    <div class="result-item">
+                        <div>${highlightKeywords(doc.content)}</div>
+                        ${doc.image ? 
+                            `<img class="thumbnail" 
+                                  src="${doc.image}" 
+                                  onclick="showEnlarge('${doc.image}')">` : ''}
+                        <div class="source">《${doc.source}》</div>
+                    </div>
+                `;
+            });
+
+            html += `<div class="pagination">`;
+            if (currentPage > 1) html += `<button onclick="changePage(-1)">上一页</button>`;
+            if (end < currentResults.length) html += `<button onclick="changePage(1)">下一页</button>`;
+            html += `</div>`;
+
+            document.getElementById('results').innerHTML = html;
+        }
+
+        function initSourceFilter() {
+            const sources = [...new Set(documents.map(doc => doc.source))];
+            const filter = document.getElementById('sourceFilter');
+            sources.forEach(source => {
+                const option = document.createElement('option');
+                option.value = source;
+                option.textContent = source;
+                filter.appendChild(option);
+            });
+        }
+
+        function searchDocuments() {
+            const keyword = document.getElementById('keyword').value.toLowerCase();
+            const selectedSource = document.getElementById('sourceFilter').value;
+
+            currentResults = documents.filter(doc => {
+                const matchKeyword = doc.content.toLowerCase().includes(keyword) ||
+                    doc.source.toLowerCase().includes(keyword);
+                const matchSource = selectedSource === 'all' || doc.source === selectedSource;
+                return matchKeyword && matchSource;
+            });
+
+            currentPage = 1;
+            displayResults();
+        }
+
+        function highlightKeywords(text) {
+            const keyword = document.getElementById('keyword').value;
+            if (!keyword) return text;
+            const regex = new RegExp(`(${keyword})`, 'gi');
+            return text.replace(regex, '<span style="background-color:#ffeb3b">$1</span>');
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            displayResults();
+        }
+
+        function resetSearch() {
+            document.getElementById('keyword').value = '';
+            document.getElementById('sourceFilter').value = 'all';
+            currentPage = 1;
+            currentResults = [...documents];
+            displayResults();
+        }
+
+        initSourceFilter();
+        currentResults = [...documents];
+        displayResults();
+    </script>
+
+</body>
+</html>
