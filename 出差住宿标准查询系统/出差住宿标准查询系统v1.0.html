@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>园林院出差住宿标准查询系统</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+*{box-sizing:border-box;font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif}
+body{margin:0;background:#fff;color:#222;padding:40px 20px}
+.container{max-width:1200px;margin:0 auto;display:grid;gap:32px}
+
+/* 卡片 */
+.card{background:#fff;border:1px solid #eee;border-radius:14px;transition:.25s}
+.card:hover{box-shadow:0 12px 30px rgba(0,0,0,.06);transform:translateY(-4px)}
+
+/* 头部 */
+.card-header{padding:28px 24px;border-bottom:1px solid #eee;text-align:center}
+.card-header h1{margin:0;font-size:26px;font-weight:600}
+
+/* 内容 */
+.card-body{padding:28px 24px}
+
+/* 搜索区 */
+.search-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+label{font-size:14px;color:#666;margin-bottom:6px;display:block}
+select,input{width:100%;padding:12px 14px;border-radius:8px;border:1px solid #ddd}
+select:focus,input:focus{outline:none;border-color:#222}
+
+/* 搜索输入 */
+.search-input-wrapper{position:relative}
+.search-input-wrapper input{padding-right:40px}
+.search-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#666}
+
+/* 按钮 */
+.btn-group{display:flex;gap:16px;margin-top:24px}
+.btn{padding:12px 16px;border-radius:8px;border:none;cursor:pointer;font-size:14px}
+.btn-primary{background:#222;color:#fff}
+.btn-secondary{background:#f2f2f2}
+
+/* 提示 */
+.info-text{margin-top:20px;padding:14px 16px;background:#f7f7f7;border-left:4px solid #222;font-size:13px}
+
+/* 结果区 */
+.result-header{padding:24px;border-bottom:1px solid #eee;text-align:center}
+.result-content{padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+
+/* 数据卡片 */
+.data-card{border:1px solid #eee;border-radius:12px;padding:20px;transition:.25s}
+.data-card:hover{box-shadow:0 10px 24px rgba(0,0,0,.06);transform:translateY(-4px)}
+.area{font-weight:600;margin-bottom:10px}
+.price{font-weight:600}
+.peak{margin-top:12px;padding:10px;background:#fafafa;border-left:3px solid #999;font-size:13px}
+
+/* 空状态 */
+.empty-state,.no-results{text-align:center;color:#888;padding:60px 20px;grid-column:1/-1}
+.empty-state i,.no-results i{font-size:40px;margin-bottom:12px}
+
+/* 页脚 */
+.copyright,.disclaimer{text-align:center;font-size:13px;color:#666}
+.disclaimer{background:#f7f7f7;padding:14px;border-radius:8px}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="card">
+<div class="card-header"><h1>园林院出差住宿标准查询系统</h1></div>
+<div class="card-body">
+
+<div class="search-box">
+<div>
+<label><i class="fas fa-map-marker-alt"></i> 选择省市</label>
+<select id="provinceSelect">
+<option value="">请选择省市</option>
+<option value="1">安徽省</option><option value="2">北京市</option><option value="3">重庆市</option>
+<option value="4">福建省</option><option value="5">甘肃省</option><option value="6">广东省</option>
+<option value="7">广西壮族自治区</option><option value="8">贵州省</option><option value="9">海南省</option>
+<option value="10">河北省</option><option value="11">河南省</option><option value="12">黑龙江省</option>
+<option value="13">湖北省</option><option value="14">湖南省</option><option value="15">吉林省</option>
+<option value="16">江苏省</option><option value="17">江西省</option><option value="18">辽宁省</option>
+<option value="19">内蒙古自治区</option><option value="20">宁夏回族自治区</option><option value="21">青海省</option>
+<option value="22">山东省</option><option value="23">山西省</option><option value="24">陕西省</option>
+<option value="25">上海市</option><option value="26">四川省</option><option value="27">天津市</option>
+<option value="28">西藏自治区</option><option value="29">新疆维吾尔自治区</option><option value="30">云南省</option>
+<option value="31">浙江省</option>
+</select>
+</div>
+
+<div>
+<label><i class="fas fa-search"></i> 搜索省 / 市 / 地区</label>
+<div class="search-input-wrapper">
+<input id="provinceSearch" placeholder="如 北京 / 杭州 / 三亚">
+<button class="search-btn" onclick="showData()"><i class="fas fa-search"></i></button>
+</div>
+</div>
+</div>
+
+<div class="btn-group">
+<button class="btn btn-primary" onclick="showData()">查询</button>
+<button class="btn btn-secondary" onclick="resetForm()">重置</button>
+</div>
+
+<div class="info-text">
+<i class="fas fa-info-circle"></i>
+住宿标准为最高限额标准，实际报销时需提供合规发票，超标部分由个人自理，旺季价格调整期间，按调整后标准执行，不得选择五星级酒店住宿。
+</div>
+
+</div>
+</div>
+
+<div class="card">
+<div class="result-header"><h2><i class="fas fa-list"></i> 住宿标准详情</h2></div>
+<div class="result-content" id="result">
+<div class="empty-state"><i class="fas fa-bed"></i></div>
+</div>
+</div>
+
+<div class="copyright">版权所有：我是李工也是涛哥 ｜ 数据更新：2025年5月 ｜ v1.0</div>
+
+</div>
+
+<script>
+/* === 数据集（完整 31 省） === */
+        const dataset = {
+            "1": {
+                name: "安徽省",
+                data: [
+                    { area: "全省", standard: "525元", peak: null }
+                ]
+            },
+            "2": {
+                name: "北京市",
+                data: [
+                    { area: "全市", standard: "750元", peak: null }
+                ]
+            },
+            "3": {
+                name: "重庆市",
+                data: [
+                    { area: "9个中心城区/北部新区", standard: "555元" },
+                    { area: "其他地区", standard: "450元" }
+                ]
+            },
+            "4": {
+                name: "福建省",
+                data: [
+                    { area: "福州市/泉州市/平潭综合实验区", standard: "570元" },
+                    { area: "厦门市", standard: "600元", peak: null },
+                    { area: "其他地区", standard: "525元" }
+                ]
+            },
+            "5": {
+                name: "甘肃省",
+                data: [
+                    { area: "兰州市", standard: "525元" },
+                    { area: "其他地区", standard: "465元" }
+                ]
+            },
+            "6": {
+                name: "广东省",
+                data: [
+                    { area: "广州市/珠海市/佛山市/东莞市/中山市/江门市", standard: "675元" },
+                    { area: "深圳市", standard: "675元", peak: null },
+                    { area: "其他地区", standard: "630元" }
+                ]
+            },
+            "7": {
+                name: "广西壮族自治区",
+                data: [
+                    { area: "南宁市", standard: "525元" },
+                    { area: "桂林市/北海市", standard: "495元", peak: "1-2月/7-9月（645元）" },
+                    { area: "其他地区", standard: "495元" }
+                ]
+            },
+            "8": {
+                name: "贵州省",
+                data: [
+                    { area: "贵阳市", standard: "555元" },
+                    { area: "其他地区", standard: "450元" }
+                ]
+            },
+            "9": {
+                name: "海南省",
+                data: [
+                    { area: "海口市/文昌市/澄迈县", standard: "525元", peak: "11-2月（675元）" },
+                    { area: "琼海市/万宁市/陵水县/保亭县", standard: "525元", peak: "11-3月（675元）" },
+                    { area: "三沙市/儋州市/五指山市/东方市/定安县/屯昌县/临高县/白沙县/昌江县/乐东县/琼中县", standard: "525元" },
+                    { area: "三亚市", standard: "600元", peak: "10-4月（720元）" }
+                ]
+            },
+            "10": {
+                name: "河北省",
+                data: [
+                    { area: "石家庄市/廊坊市/保定市", standard: "525元" },
+                    { area: "张家口市", standard: "525元", peak: "7-9月/11-3月（787.5元）" },
+                    { area: "秦皇岛市", standard: "525元", peak: "7-8月（750元）" },
+                    { area: "承德市", standard: "525元", peak: "7-9月（870元）" },
+                    { area: "其他地区", standard: "465元" }
+                ]
+            },
+            "11": {
+                name: "河南省",
+                data: [
+                    { area: "郑州市", standard: "570元" },
+                    { area: "洛阳市", standard: "495元", peak: "4-5月上旬（750元）" },
+                    { area: "其他地区", standard: "495元" }
+                ]
+            },
+            "12": {
+                name: "黑龙江省",
+                data: [
+                    { area: "哈尔滨市", standard: "525元", peak: "7-9月（630元）" },
+                    { area: "牡丹江/伊春/大兴安岭/黑河/佳木斯", standard: "450元", peak: "6-8月（540元）" },
+                    { area: "其他地区", standard: "450元" }
+                ]
+            },
+            "13": {
+                name: "湖北省",
+                data: [
+                    { area: "武汉市", standard: "525元", peak: null },
+                    { area: "其他地区", standard: "480元" }
+                ]
+            },
+            "14": {
+                name: "湖南省",
+                data: [
+                    { area: "长沙市", standard: "525元", peak: null },
+                    { area: "其他地区", standard: "495元" }
+                ]
+            },
+            "15": {
+                name: "吉林省",
+                data: [
+                    { area: "吉林市/延边州/长白山管理区", standard: "525元", peak: "7-9月（630元）" },
+                    { area: "长春市", standard: "525元" },
+                    { area: "其他地区", standard: "450元" }
+                ]
+            },
+            "16": {
+                name: "江苏省",
+                data: [
+                    { area: "南京市/苏州市/无锡市/常州市/镇江市", standard: "570元" },
+                    { area: "其他地区", standard: "540元" }
+                ]
+            },
+            "17": {
+                name: "江西省",
+                data: [
+                    { area: "全省", standard: "525元", peak: null }
+                ]
+            },
+            "18": {
+                name: "辽宁省",
+                data: [
+                    { area: "沈阳市", standard: "525元" },
+                    { area: "大连市", standard: "525元", peak: "7-9月（630元）" },
+                    { area: "其他地区", standard: "495元" }
+                ]
+            },
+            "19": {
+                name: "内蒙古自治区",
+                data: [
+                    { area: "呼和浩特市", standard: "525元" },
+                    { area: "海拉尔市/满洲里市/阿尔山市", standard: "480元", peak: "7-9月（720元）" },
+                    { area: "二连浩特市", standard: "480元", peak: "7-9月（600元）" },
+                    { area: "额济纳旗", standard: "480元", peak: "9-10月（720元）" },
+                    { area: "其他地区", standard: "480元" }
+                ]
+            },
+            "20": {
+                name: "宁夏回族自治区",
+                data: [
+                    { area: "银川市", standard: "525元" },
+                    { area: "其他地区", standard: "495元" }
+                ]
+            },
+            "21": {
+                name: "青海省",
+                data: [
+                    { area: "西宁市", standard: "525元", peak: "6-9月（795元）" },
+                    { area: "玉树州", standard: "450元", peak: "5-9月（675元）" },
+                    { area: "果洛州", standard: "450元", peak: null  },
+                    { area: "海北州/黄南州/海东市/海南州", standard: "375元", peak: "5-9月（562.5元）" },
+                    { area: "海西州", standard: "300元", peak: "5-9月（450元）" }
+                ]
+            },
+            "22": {
+                name: "山东省",
+                data: [
+                    { area: "济南市/淄博市/枣庄市/东营市/潍坊市/济宁市/泰安市", standard: "570元" },
+                    { area: "烟台市/威海市/日照市", standard: "570元", peak: "7-9月（675元）" },
+                    { area: "青岛市", standard: "570元", peak: "7-9月（675元）" },
+                    { area: "其他地区", standard: "540元" }
+                ]
+            },
+            "23": {
+                name: "山西省",
+                data: [
+                    { area: "太原市/大同市/晋城市", standard: "525元" },
+                    { area: "临汾市", standard: "495元" },
+                    { area: "阳泉市/长治市/晋中市", standard: "465元" },
+                    { area: "其他地区", standard: "360元" }
+                ]
+            },
+            "24": {
+                name: "陕西省",
+                data: [
+                    { area: "西安市", standard: "525元" },
+                    { area: "榆林市/延安市", standard: "450元" },
+                    { area: "杨凌区/咸阳市/宝鸡市/渭南市/韩城市", standard: "390元" },
+                    { area: "其他地区", standard: "345元" }
+                ]
+            },
+            "25": {
+                name: "上海市",
+                data: [
+                    { area: "全市", standard: "750元", peak: null }
+                ]
+            },
+            "26": {
+                name: "四川省",
+                data: [
+                    { area: "成都市", standard: "555元" },
+                    { area: "阿坝州/甘孜州", standard: "495元" },
+                    { area: "绵阳市/乐山市/雅安市", standard: "480元" },
+                    { area: "宜宾市", standard: "450元" },
+                    { area: "凉山州", standard: "495元" },
+                    { area: "德阳市/遂宁市/巴中市", standard: "465元" },
+                    { area: "其他地区", standard: "450元" }
+                ]
+            },
+            "27": {
+                name: "天津市",
+                data: [
+                    { area: "6个中心城区/滨海新区/东丽区/西青区/津南区/北辰区/武清区/宝坻区/静海区/蓟县", standard: "570元" },
+                    { area: "宁河区", standard: "480元" }
+                ]
+            },
+            "28": {
+                name: "西藏自治区",
+                data: [
+                    { area: "拉萨市", standard: "525元", peak: "6-9月（795元）" },
+                    { area: "其他地区", standard: "450元", peak: "6-9月（525元）" }
+                ]
+            },
+            "29": {
+                name: "新疆维吾尔自治区",
+                data: [
+                    { area: "乌鲁木齐市", standard: "525元" },
+                    { area: "石河子市/克拉玛依市/昌吉州/伊犁州/阿勒泰地区/博州/吐鲁番市/哈密地区/巴州/和田地区", standard: "510元" },
+                    { area: "克州", standard: "480元" },
+                    { area: "喀什地区", standard: "450元" },
+                    { area: "阿克苏地区", standard: "450元" },
+                    { area: "塔城地区", standard: "450元" }
+                ]
+            },
+            "30": {
+                name: "云南省",
+                data: [
+                    { area: "昆明市/大理州/丽江市/迪庆州/西双版纳州", standard: "570元" },
+                    { area: "其他地区", standard: "495元" }
+                ]
+            },
+            "31": {
+                name: "浙江省",
+                data: [
+                    { area: "杭州市", standard: "600元" },
+                    { area: "宁波市", standard: "525元", peak: null },
+                    { area: "其他地区", standard: "510元" }
+                ]
+            }
+        };
+
+/* === 核心逻辑 === */
+function showData(){
+const key=provinceSearch.value.trim();
+const id=provinceSelect.value;
+if(key){search(key);return;}
+if(id){render(id);return;}
+result.innerHTML='<div class="empty-state"><i class="fas fa-bed"></i></div>';
+}
+
+function render(id){
+const p=dataset[id];let h='';
+p.data.forEach(d=>{
+h+=`<div class="data-card"><div class="area">${d.area}</div>
+<div>住宿标准：<span class="price">${d.standard}</span></div>
+${d.peak?`<div class="peak">旺季：${d.peak}</div>`:''}</div>`;
+});
+result.innerHTML=h;
+}
+
+function search(k){
+let h='',f=false;
+for(const i in dataset){
+const p=dataset[i];
+if(p.name.includes(k)||p.data.some(d=>d.area.includes(k))){
+f=true;provinceSelect.value=i;
+p.data.forEach(d=>{
+if(p.name.includes(k)||d.area.includes(k))
+h+=`<div class="data-card"><div class="area">${p.name} · ${d.area}</div>
+<div>住宿标准：<span class="price">${d.standard}</span></div>
+${d.peak?`<div class="peak">旺季：${d.peak}</div>`:''}</div>`;
+});
+break;
+}}
+result.innerHTML=f?h:`<div class="no-results"><i class="fas fa-search"></i><p>未找到结果</p></div>`;
+}
+
+function resetForm(){
+provinceSelect.value='';provinceSearch.value='';
+result.innerHTML='<div class="empty-state"><i class="fas fa-bed"></i></div>';
+}
+
+provinceSearch.addEventListener('keyup',e=>{if(e.key==='Enter')showData()});
+provinceSelect.addEventListener('change',()=>{provinceSearch.value='';showData()});
+</script>
+
+</body>
+</html>
