@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>乔木荷载计算工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #ffffff;
+            color: #222;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            padding: 28px;
+        }
+
+        .card h1 {
+            margin: 0 0 8px;
+            font-size: 22px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .card .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #222;
+        }
+
+        .btn {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: #222;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #000;
+        }
+
+        .result {
+            margin-top: 28px;
+            padding: 18px 20px;
+            background: #f7f7f7;
+            border-left: 4px solid #222;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .result strong {
+            font-weight: 600;
+        }
+
+        .note {
+            margin-top: 28px;
+            padding: 16px 18px;
+            background: #fafafa;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .note ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .note li {
+            margin-bottom: 6px;
+        }
+
+         .footer {
+             margin-top: 40px;
+             text-align: center;
+             font-size: 13px;
+             color: #666;
+         }
+
+.note strong {
+    display: block;
+    margin-bottom: 8px;
+}
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>乔木荷载计算工具</h1>
+        <div class="subtitle">用于园林设计中乔木荷载快速估算</div>
+
+        <div class="form-group">
+            <label for="radius">乔木胸径（cm）</label>
+            <input type="number" id="radius" placeholder="请输入胸径">
+        </div>
+
+        <div class="form-group">
+            <label for="height">乔木高度（m）</label>
+            <input type="number" id="height" placeholder="请输入高度">
+        </div>
+
+        <button class="btn" onclick="calculateLoad()">计算乔木荷载</button>
+
+        <div id="result" class="result" style="display:none;"></div>
+
+        <div class="note">
+            <strong>计算说明：</strong>
+            <ul>
+                <li>（1）干冠比取值为 1.5</li>
+                <li>（2）乔木密度取值为 10 kN/m³</li>
+                <li>（3）1 吨 = 10 kN</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculateLoad() {
+    const D = parseFloat(document.getElementById("radius").value); // 胸径 cm
+    const h = parseFloat(document.getElementById("height").value);
+    const resultDiv = document.getElementById("result");
+
+    if (isNaN(D) || isNaN(h) || D <= 0 || h <= 0) {
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = "请输入有效的乔木胸径和高度。";
+        return;
+    }
+
+    // 胸径 cm → 半径 m
+    const r_m = (D / 2) / 100;
+
+    // 荷载计算（单位：kN）
+    const G = Math.PI * r_m * r_m * h * 1.67 * 10;
+
+    resultDiv.style.display = "block";
+    resultDiv.innerHTML = `
+        经过计算，该乔木胸径 <strong>${D} cm</strong>，
+        高度 <strong>${h} m</strong>，
+        荷载为 <strong>${G.toFixed(2)} kN</strong>。
+    `;
+}
+</script>
+
+<div class="footer">
+    © Twolobster ｜ 我是李工也是涛哥
+</div>
+</body>
+</html>
