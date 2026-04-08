@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>施工服务设计风险管理工具</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.1/docx.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<style>
+/* ================== 全局统一（Twolobster UI） ================== */
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+}
+
+body{
+    background:#f6f7f9;
+    color:#333;
+    line-height:1.6;
+}
+
+.container{
+    max-width:1200px;
+    margin:0 auto;
+    padding:24px;
+}
+
+/* ================== Header ================== */
+header{
+    background:#ffffff;
+    padding:36px 24px;
+    text-align:center;
+    border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    margin-bottom:28px;
+}
+
+header h1{
+    font-size:26px;
+    font-weight:700;
+    margin-bottom:6px;
+}
+
+header p{
+    font-size:14px;
+    color:#666;
+}
+
+/* ================== Tabs ================== */
+.tabs{
+    display:flex;
+    background:#fff;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 6px 18px rgba(0,0,0,.06);
+    margin-bottom:24px;
+}
+
+.tab{
+    flex:1;
+    text-align:center;
+    padding:16px 0;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    color:#2b8fed;
+    background:#eff6ff;
+    transition:.25s;
+}
+
+.tab.active{
+    background:#2b8fed;
+    color:#fff;
+}
+
+.tab:hover:not(.active){
+    background:#dbeafe;
+}
+
+/* ================== Content ================== */
+.content{
+    background:#fff;
+    border-radius:14px;
+    padding:32px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    margin-bottom:30px;
+}
+
+/* ================== Titles ================== */
+.section-title{
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:22px;
+    padding-left:12px;
+    border-left:4px solid #2b8fed;
+}
+
+/* ================== Page Title（风险清单专用） ================== */
+.page-title{
+    font-size:22px;
+    font-weight:700;
+    margin-bottom:12px;
+    text-align:left;
+}
+
+.page-title-divider{
+    height:1px;
+    background:#e5e7eb;
+    margin-bottom:24px;
+}
+
+/* ================== Forms ================== */
+.form-section{
+    background:#f9fafb;
+    border-radius:12px;
+    padding:22px;
+    margin-bottom:28px;
+    border-left:4px solid #2b8fed;
+}
+
+/* ================== 风险记录页：基本信息卡片 ================== */
+.record-header{
+    background:#f9fafb;
+    border-radius:14px;
+    padding:26px 28px;
+    border:1px solid #e5e7eb;
+    margin-top:8px;
+    padding-bottom:20px;
+    border-bottom:1px solid #eee;
+    margin-bottom:28px;
+}
+
+.record-header .record-title{
+    margin-bottom:18px;
+}
+
+.record-header .form-group{
+    margin-top:18px;
+}
+
+.form-row{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.form-col{
+    flex:1;
+    min-width:220px;
+}
+
+.form-group{
+    margin-bottom:22px;
+}
+
+.double-select{
+    display:flex;
+    gap:16px;
+    margin-top:6px;
+}
+
+.double-select select{
+    flex:1;
+}
+
+label{
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:10px;
+    display:block;
+    color:#444;
+}
+
+input,select,textarea{
+    width:100%;
+    padding:12px 14px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    font-size:14px;
+}
+
+textarea{
+    min-height:160px;
+    resize:vertical;
+    line-height:1.7;
+}
+
+input:focus,select:focus,textarea:focus{
+    outline:none;
+    border-color:#2b8fed;
+    box-shadow:0 0 0 3px rgba(37,99,235,.15);
+}
+
+/* ================== Risk List ================== */
+.risk-list{
+    border:1px solid #eee;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.risk-item{
+    display:flex;
+    align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid #eee;
+    transition:.2s;
+}
+
+.risk-item:hover{
+    background:#f9fafb;
+}
+
+.risk-marker{
+    width:22px;
+    height:22px;
+    border-radius:6px;
+    border:2px solid #2b8fed;
+    margin-right:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+}
+
+.risk-marker.selected{
+    background:#ef4444;
+    border-color:#ef4444;
+}
+
+.risk-marker i{
+    color:#fff;
+    font-size:12px;
+    display:none;
+}
+
+.risk-marker.selected i{
+    display:block;
+}
+
+.risk-content{
+    font-size:15px;
+    font-weight:500;
+    color:#2b8fed;
+    cursor:pointer;
+}
+
+.marked{
+    background:#fee2e2;
+}
+
+.marked .risk-content{
+    color:#ef4444;
+    font-weight:600;
+}
+
+/* ================== Buttons ================== */
+.buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    justify-content:center;
+    margin-top:28px;
+}
+
+.back-button{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:600;
+    background: #fff;
+    color: #2b8fed;
+    cursor:pointer;
+    margin-bottom:24px;
+    padding:8px 12px;
+    border-radius:8px;
+    border: 1px solid #2b8fed;
+    transition:.2s;
+}
+
+.back-button:hover{
+            background: #eef5ff;
+            border-color: #1f6bbd;
+            color: #1f6bbd;
+        }
+
+.btn{
+    padding:12px 26px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:.25s;
+    border:none;
+}
+
+.btn-primary{
+    background:#2b8fed;
+    color:#fff;
+}
+
+.btn-secondary{
+            background: #fff;
+            color: #2b8fed;
+            border: 1px solid #2b8fed;
+        }
+
+.btn-secondary:hover {
+            background: #eef5ff;
+            border-color: #1f6bbd;
+            color: #1f6bbd;
+        }
+
+.btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 18px rgba(0,0,0,.12);
+}
+
+/* ================== Footer ================== */
+.footer-info{
+    text-align:center;
+    font-size:13px;
+    color:#666;
+    border-top:1px solid #eee;
+    padding-top:16px;
+    margin-top:30px;
+}
+
+/* ================== Hidden ================== */
+.hidden{display:none;}
+</style>
+</head>
+
+<body>
+<div class="container">
+    <header>
+        <h1>施工服务设计风险管理工具</h1>
+        <p>全面管理施工设计风险，提高项目质量与安全性</p>
+    </header>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="risk-list">风险提示清单</div>
+        <div class="tab" data-tab="risk-record">风险记录</div>
+    </div>
+
+    <!-- 风险提示清单页面 -->
+    <div id="risk-list-page" class="content">
+        <h2 class="page-title">施工服务设计风险提示清单</h2>
+        <div class="page-title-divider"></div>
+
+        <div class="form-section">
+            <h3>基本信息</h3>
+            <div class="form-row">
+                <div class="form-col">
+                    <label for="project-name">项目名称</label>
+                    <input type="text" id="project-name" placeholder="请输入项目名称">
+                </div>
+                <div class="form-col">
+                    <label for="project-leader">项目负责人</label>
+                    <input type="text" id="project-leader" placeholder="请输入负责人姓名">
+                </div>
+                <div class="form-col">
+                    <label for="form-creator">制表人</label>
+                    <input type="text" id="form-creator" placeholder="请输入制表人姓名">
+                </div>
+                <div class="form-col">
+                    <label for="record-date">记录日期</label>
+                    <input type="date" id="record-date">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>风险提示清单</h3>
+            <div class="risk-list">
+                <!-- 风险项固定列表 -->
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">超出合同约定设计内容</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">超出批复设计红线</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">超批复资金设计变更</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">变更比例达到或超过10%</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">变更与法规规范冲突</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">变更增加驿站建筑指标</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">未按结构设计图纸施工</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">未按水池驳岸池底设计图纸施工</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">未按水电设计图纸施工</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">重大设计条件变更（地勘、水文、荷载、管线、轨道交通、古树）</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">发生重大变更（凡涉及设计范围、设计服务内容、项目主要设计内容等方面的重大方案调整，工程投资额增减高于 30 万或高于项目投资5%的重大投资变化，重要节点景观变化，重大安全风险控制的变更为重大性变更。）</div>
+                </div>
+                <div class="risk-item">
+                    <div class="risk-marker"><i class="fas fa-check"></i></div>
+                    <div class="risk-content">超出签字权限</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" id="generate-word"><i class="fas fa-file-word"></i> 生成Word文档</button>
+            <button class="btn btn-primary" id="generate-excel"><i class="fas fa-file-excel"></i> 生成Excel表格</button>
+            <button class="btn btn-primary" id="generate-jpg"><i class="fas fa-file-image"></i> 生成JPG图片</button>
+            <!-- 新增保存/加载按钮 -->
+            <button class="btn btn-primary" id="save-state-btn"><i class="fas fa-save"></i> 保存方案</button>
+            <button class="btn btn-primary" id="load-state-btn"><i class="fas fa-upload"></i> 加载方案</button>
+            <input type="file" id="loadStateFileInput" accept=".json" style="display: none;">
+            <button class="btn btn-secondary" id="reset-form"><i class="fas fa-redo"></i> 重置表单</button>
+        </div>
+
+        <div class="footer-info">
+            <div>© Twolobster ｜ 我是李工也是涛哥 | 数据更新：<span id="update-time">2023-11-05 14:30:25</span>  |  v3.0</div>
+        </div>
+    </div>
+
+    <!-- 风险记录页面 -->
+    <div id="risk-record-page" class="content hidden">
+        <div class="back-button" id="back-to-list">
+            <i class="fas fa-arrow-left"></i> 返回风险清单
+        </div>
+
+        <div class="record-header">
+            <h2 class="record-title">施工服务设计风险记录</h2>
+            <div class="form-row">
+                <div class="form-col">
+                    <label for="record-project-name">项目名称</label>
+                    <input type="text" id="record-project-name">
+                </div>
+                <div class="form-col">
+                    <label for="record-project-leader">项目负责人</label>
+                    <input type="text" id="record-project-leader">
+                </div>
+                <div class="form-col">
+                    <label for="record-form-creator">制表人</label>
+                    <input type="text" id="record-form-creator">
+                </div>
+                <div class="form-col">
+                    <label for="record-record-date">记录日期</label>
+                    <input type="date" id="record-record-date">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="risk-content">风险内容</label>
+                <input type="text" id="risk-content" readonly>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>风险原因与调整依据</h3>
+            <div class="form-group">
+                <label>风险产生原因</label>
+                <div class="double-select">
+                    <select id="cause-unit">
+                        <option value="">请选择责任单位</option>
+                        <option value="建设单位">建设单位</option>
+                        <option value="施工单位">施工单位</option>
+                        <option value="设计单位">设计单位</option>
+                    </select>
+                    <select id="cause-reason">
+                        <option value="">请选择原因类型</option>
+                        <option value="提升效果">提升效果</option>
+                        <option value="控制造价">控制造价</option>
+                        <option value="材料工艺">材料工艺</option>
+                        <option value="工期安排">工期安排</option>
+                        <option value="条件变化">条件变化</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="adjust-basis">调整依据</label>
+                <select id="adjust-basis">
+                    <option value="">请选择调整依据</option>
+                    <option value="会议纪要">会议纪要</option>
+                    <option value="领导讲话">领导讲话</option>
+                    <option value="口头传达">口头传达</option>
+                    <option value="公函任务书">公函任务书</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>事件记录</h3>
+            <div class="form-group">
+                <textarea id="event-record" placeholder="请详细记录事件发生过程..."></textarea>
+                <div class="char-count">已输入 <span id="event-count">0</span>/400 字</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>设计意见</h3>
+            <div class="form-group">
+                <textarea id="design-suggestion" placeholder="请填写设计处理意见..."></textarea>
+                <div class="char-count">已输入 <span id="suggestion-count">0</span>/400 字</div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" id="record-generate-word"><i class="fas fa-file-word"></i> 生成Word文档</button>
+            <button class="btn btn-primary" id="record-generate-excel"><i class="fas fa-file-excel"></i> 生成Excel表格</button>
+            <button class="btn btn-primary" id="record-generate-jpg"><i class="fas fa-file-image"></i> 生成JPG图片</button>
+            <!-- 新增保存/加载按钮（共用同一个隐藏input） -->
+            <button class="btn btn-primary" id="record-save-state-btn"><i class="fas fa-save"></i> 保存方案</button>
+            <button class="btn btn-primary" id="record-load-state-btn"><i class="fas fa-upload"></i> 加载方案</button>
+        </div>
+
+        <div class="footer-info">
+            <div>© Twolobster ｜ 我是李工也是涛哥 | 数据更新：<span id="record-update-time">2023-11-05 14:30:25</span>  |  v3.0</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 页面切换功能
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const tabName = tab.getAttribute('data-tab');
+            document.getElementById('risk-list-page').classList.toggle('hidden', tabName !== 'risk-list');
+            document.getElementById('risk-record-page').classList.toggle('hidden', tabName !== 'risk-record');
+        });
+    });
+
+    // 返回风险清单
+    document.getElementById('back-to-list').addEventListener('click', () => {
+        document.querySelector('.tab[data-tab="risk-list"]').click();
+    });
+
+    // 风险标记功能
+    document.querySelectorAll('.risk-marker').forEach(marker => {
+        marker.addEventListener('click', function() {
+            const item = this.closest('.risk-item');
+            item.classList.toggle('marked');
+            this.classList.toggle('selected');
+        });
+    });
+
+    // 打开风险记录
+    document.querySelectorAll('.risk-content').forEach(content => {
+        content.addEventListener('click', function() {
+            const riskText = this.textContent;
+            const item = this.closest('.risk-item');
+
+            document.getElementById('risk-content').value = riskText;
+
+            // 传递基本信息（从清单页到记录页）
+            document.getElementById('record-project-name').value = document.getElementById('project-name').value;
+            document.getElementById('record-project-leader').value = document.getElementById('project-leader').value;
+            document.getElementById('record-form-creator').value = document.getElementById('form-creator').value;
+            document.getElementById('record-record-date').value = document.getElementById('record-date').value;
+
+            // 标记当前风险项
+            document.querySelectorAll('.risk-item').forEach(item => {
+                item.classList.remove('current-risk');
+            });
+            item.classList.add('current-risk');
+
+            // 切换到风险记录页
+            document.querySelector('.tab[data-tab="risk-record"]').click();
+        });
+    });
+
+    // 重置表单
+    document.getElementById('reset-form').addEventListener('click', function() {
+        if(confirm('确定要重置所有内容吗？')) {
+            document.getElementById('project-name').value = '';
+            document.getElementById('project-leader').value = '';
+            document.getElementById('form-creator').value = '';
+            document.getElementById('record-date').value = '';
+            document.querySelectorAll('.risk-item').forEach(item => {
+                item.classList.remove('marked');
+                item.querySelector('.risk-marker').classList.remove('selected');
+            });
+        }
+    });
+
+    // 文本输入计数
+    document.getElementById('event-record').addEventListener('input', function() {
+        document.getElementById('event-count').textContent = this.value.length;
+    });
+    document.getElementById('design-suggestion').addEventListener('input', function() {
+        document.getElementById('suggestion-count').textContent = this.value.length;
+    });
+
+    // 更新时间（仅显示年月日）
+    function updateTime() {
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+        document.getElementById('update-time').textContent = dateStr;
+        document.getElementById('record-update-time').textContent = dateStr;
+    }
+    updateTime();
+
+    // 初始化日期为今天
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    document.getElementById('record-date').value = formattedDate;
+    document.getElementById('record-record-date').value = formattedDate;
+
+    // ===================== 新增保存/加载功能 =====================
+    // 保存当前所有状态
+    function saveStateToFile() {
+        // 收集清单页数据
+        const listPage = {
+            projectName: document.getElementById('project-name').value,
+            projectLeader: document.getElementById('project-leader').value,
+            formCreator: document.getElementById('form-creator').value,
+            recordDate: document.getElementById('record-date').value,
+            markedRisks: []
+        };
+        // 收集标记的风险项（按文本内容）
+        document.querySelectorAll('#risk-list-page .risk-item').forEach(item => {
+            if (item.classList.contains('marked')) {
+                listPage.markedRisks.push(item.querySelector('.risk-content').textContent);
+            }
+        });
+
+        // 收集记录页数据
+        const recordPage = {
+            projectName: document.getElementById('record-project-name').value,
+            projectLeader: document.getElementById('record-project-leader').value,
+            formCreator: document.getElementById('record-form-creator').value,
+            recordDate: document.getElementById('record-record-date').value,
+            riskContent: document.getElementById('risk-content').value,
+            causeUnit: document.getElementById('cause-unit').value,
+            causeReason: document.getElementById('cause-reason').value,
+            adjustBasis: document.getElementById('adjust-basis').value,
+            eventRecord: document.getElementById('event-record').value,
+            designSuggestion: document.getElementById('design-suggestion').value
+        };
+
+        const state = {
+            version: "3.0",
+            listPage: listPage,
+            recordPage: recordPage
+        };
+
+        const dataStr = JSON.stringify(state, null, 2);
+        const blob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `风险管理方案_${new Date().toISOString().slice(0,19)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // 触发文件选择
+    function triggerLoadFile() {
+        document.getElementById('loadStateFileInput').click();
+    }
+
+    // 加载状态
+    function loadStateFromFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const saved = JSON.parse(e.target.result);
+                if (!saved.version || !saved.listPage || !saved.recordPage) {
+                    alert("文件格式不正确，无法加载");
+                    return;
+                }
+
+                // 恢复清单页基本信息
+                document.getElementById('project-name').value = saved.listPage.projectName || '';
+                document.getElementById('project-leader').value = saved.listPage.projectLeader || '';
+                document.getElementById('form-creator').value = saved.listPage.formCreator || '';
+                document.getElementById('record-date').value = saved.listPage.recordDate || '';
+
+                // 恢复风险标记
+                const riskItems = document.querySelectorAll('#risk-list-page .risk-item');
+                riskItems.forEach(item => {
+                    const content = item.querySelector('.risk-content').textContent;
+                    const shouldMark = saved.listPage.markedRisks.includes(content);
+                    if (shouldMark && !item.classList.contains('marked')) {
+                        item.classList.add('marked');
+                        item.querySelector('.risk-marker').classList.add('selected');
+                    } else if (!shouldMark && item.classList.contains('marked')) {
+                        item.classList.remove('marked');
+                        item.querySelector('.risk-marker').classList.remove('selected');
+                    }
+                });
+
+                // 恢复记录页所有字段
+                document.getElementById('record-project-name').value = saved.recordPage.projectName || '';
+                document.getElementById('record-project-leader').value = saved.recordPage.projectLeader || '';
+                document.getElementById('record-form-creator').value = saved.recordPage.formCreator || '';
+                document.getElementById('record-record-date').value = saved.recordPage.recordDate || '';
+                document.getElementById('risk-content').value = saved.recordPage.riskContent || '';
+                document.getElementById('cause-unit').value = saved.recordPage.causeUnit || '';
+                document.getElementById('cause-reason').value = saved.recordPage.causeReason || '';
+                document.getElementById('adjust-basis').value = saved.recordPage.adjustBasis || '';
+                document.getElementById('event-record').value = saved.recordPage.eventRecord || '';
+                document.getElementById('design-suggestion').value = saved.recordPage.designSuggestion || '';
+
+                // 更新字数统计
+                document.getElementById('event-count').textContent = (saved.recordPage.eventRecord || '').length;
+                document.getElementById('suggestion-count').textContent = (saved.recordPage.designSuggestion || '').length;
+
+                alert("方案加载成功！");
+            } catch (err) {
+                console.error(err);
+                alert("加载失败，文件可能损坏");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // 绑定保存/加载按钮（两个页面共用）
+    document.getElementById('save-state-btn').addEventListener('click', saveStateToFile);
+    document.getElementById('load-state-btn').addEventListener('click', triggerLoadFile);
+    document.getElementById('record-save-state-btn').addEventListener('click', saveStateToFile);
+    document.getElementById('record-load-state-btn').addEventListener('click', triggerLoadFile);
+
+    // 文件选择监听
+    const fileInput = document.getElementById('loadStateFileInput');
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            loadStateFromFile(e.target.files[0]);
+            fileInput.value = '';
+        }
+    });
+
+    // ===================== 原有生成功能保持不变 =====================
+    // 生成Word文档（风险清单页面）
+    document.getElementById('generate-word').addEventListener('click', generateWordForList);
+    function generateWordForList() {
+        try {
+            const projectName = document.getElementById('project-name').value || '未命名项目';
+            const basicInfo = getBasicInfo();
+            const riskItems = getMarkedRiskItems();
+
+            const docContent = createRiskListDocContent(basicInfo, riskItems);
+            const blob = new Blob([docContent], {type: 'application/msword'});
+            saveAs(blob, `风险提示清单_${projectName}.doc`);
+
+            alert('Word文档生成成功，即将开始下载');
+        } catch (e) {
+            console.error('生成Word文档时出错:', e);
+            alert('生成Word文档时出错: ' + e.message);
+        }
+    }
+
+    // 生成Excel表格（风险清单页面）
+    document.getElementById('generate-excel').addEventListener('click', generateExcelForList);
+    function generateExcelForList() {
+        try {
+            const projectName = document.getElementById('project-name').value || '未命名项目';
+            const basicInfo = getBasicInfo();
+            const riskItems = getRiskItems();
+
+            const workbook = createRiskListWorkbook(basicInfo, riskItems);
+            XLSX.writeFile(workbook, `风险提示清单_${projectName}.xlsx`);
+
+            alert('Excel文件生成成功，即将开始下载');
+        } catch (e) {
+            console.error('生成Excel文件时出错:', e);
+            alert('生成Excel文件时出错: ' + e.message);
+        }
+    }
+
+    // 生成JPG图片（风险清单页面）
+    document.getElementById('generate-jpg').addEventListener('click', generateJpgForList);
+    function generateJpgForList() {
+        try {
+            const projectName = document.getElementById('project-name').value || '未命名项目';
+            const element = document.getElementById('risk-list-page');
+
+            html2canvas(element, {
+                scale: 2,
+                useCORS: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = `风险提示清单_${projectName}.jpg`;
+                link.click();
+                alert('JPG图片生成成功，即将开始下载');
+            }).catch(e => {
+                console.error('生成图片时出错:', e);
+                alert('生成图片时出错: ' + e.message);
+            });
+        } catch (e) {
+            console.error('生成JPG图片时出错:', e);
+            alert('生成JPG图片时出错: ' + e.message);
+        }
+    }
+
+    // 生成Word文档（风险记录页面）
+    document.getElementById('record-generate-word').addEventListener('click', generateWordForRecord);
+    function generateWordForRecord() {
+        try {
+            const projectName = document.getElementById('record-project-name').value || '未命名项目';
+            const riskContent = document.getElementById('risk-content').value || '未指定风险';
+            const recordData = getRiskRecordData();
+            const docContent = createRiskRecordDocContent(projectName, riskContent, recordData);
+            const blob = new Blob([docContent], {type: 'application/msword'});
+            saveAs(blob, `风险记录_${riskContent}.doc`);
+
+            alert('风险记录Word文档生成成功，即将开始下载');
+        } catch (e) {
+            console.error('生成风险记录Word文档时出错:', e);
+            alert('生成风险记录Word文档时出错: ' + e.message);
+        }
+    }
+
+    // 生成Excel表格（风险记录页面）
+    document.getElementById('record-generate-excel').addEventListener('click', generateExcelForRecord);
+    function generateExcelForRecord() {
+        try {
+            const projectName = document.getElementById('record-project-name').value || '未命名项目';
+            const riskContent = document.getElementById('risk-content').value || '未指定风险';
+            const recordData = getRiskRecordData();
+
+            const workbook = createRiskRecordWorkbook(projectName, riskContent, recordData);
+            XLSX.writeFile(workbook, `风险记录_${riskContent}.xlsx`);
+
+            alert('风险记录Excel文件生成成功，即将开始下载');
+        } catch (e) {
+            console.error('生成风险记录Excel时出错:', e);
+            alert('生成风险记录Excel时出错: ' + e.message);
+        }
+    }
+
+    // 生成JPG图片（风险记录页面）
+    document.getElementById('record-generate-jpg').addEventListener('click', generateJpgForRecord);
+    function generateJpgForRecord() {
+        try {
+            const riskContent = document.getElementById('risk-content').value || '未指定风险';
+            const element = document.getElementById('risk-record-page');
+
+            html2canvas(element, {
+                scale: 2,
+                useCORS: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const link = document.createElement('a');
+                link.href = imgData;
+                link.download = `风险记录_${riskContent}.jpg`;
+                link.click();
+                alert('风险记录JPG图片生成成功，即将开始下载');
+            }).catch(e => {
+                console.error('生成风险记录图片时出错:', e);
+                alert('生成风险记录图片时出错: ' + e.message);
+            });
+        } catch (e) {
+            console.error('生成风险记录JPG图片时出错:', e);
+            alert('生成风险记录JPG图片时出错: ' + e.message);
+        }
+    }
+
+    // 辅助函数
+    function getBasicInfo() {
+        return {
+            projectName: document.getElementById('project-name').value || '',
+            projectLeader: document.getElementById('project-leader').value || '',
+            formCreator: document.getElementById('form-creator').value || '',
+            recordDate: document.getElementById('record-date').value || ''
+        };
+    }
+
+    function getRiskItems() {
+        const items = [];
+        document.querySelectorAll('#risk-list-page .risk-item').forEach(item => {
+            items.push({
+                content: item.querySelector('.risk-content').textContent,
+                marked: item.classList.contains('marked')
+            });
+        });
+        return items;
+    }
+
+    function getMarkedRiskItems() {
+        const markedItems = [];
+        document.querySelectorAll('#risk-list-page .risk-item').forEach(item => {
+            if (item.classList.contains('marked')) {
+                markedItems.push({
+                    content: item.querySelector('.risk-content').textContent
+                });
+            }
+        });
+        return markedItems;
+    }
+
+    function getRiskRecordData() {
+        return {
+            projectName: document.getElementById('record-project-name').value || '',
+            projectLeader: document.getElementById('record-project-leader').value || '',
+            formCreator: document.getElementById('record-form-creator').value || '',
+            recordDate: document.getElementById('record-record-date').value || '',
+            riskContent: document.getElementById('risk-content').value || '',
+            causeUnit: document.getElementById('cause-unit').value || '',
+            causeReason: document.getElementById('cause-reason').value || '',
+            adjustBasis: document.getElementById('adjust-basis').value || '',
+            eventRecord: document.getElementById('event-record').value || '',
+            designSuggestion: document.getElementById('design-suggestion').value || ''
+        };
+    }
+
+    function createRiskListDocContent(basicInfo, riskItems) {
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>施工服务设计风险提示清单</title><style>body{font-family:SimSun;font-size:12pt;}h1{text-align:center;font-size:22pt;}table{border-collapse:collapse;width:100%;margin:20px 0;}th,td{border:1px solid #000;padding:8px;text-align:center;}.info-table td.title{background:#f5f5f5;font-weight:bold;}.risk-table th{background:#2e7d32;color:#fff;}.footer{text-align:right;margin-top:40px;}</style></head><body><h1>施工服务设计风险提示清单</h1>`;
+        html += `<h2>项目基本信息</h2><table class="info-table"><tr><td class="title">项目名称</td><td>${basicInfo.projectName}</td><td class="title">项目负责人</td><td>${basicInfo.projectLeader}</td></tr><tr><td class="title">制表人</td><td>${basicInfo.formCreator}</td><td class="title">记录日期</td><td>${basicInfo.recordDate}</td></tr></table>`;
+        html += `<h2>风险提示清单</h2><table class="risk-table"><thead><tr><th>序号</th><th>风险内容</th><th>是否标记</th></tr></thead><tbody>`;
+        const allItems = getRiskItems();
+        allItems.forEach((item, idx) => {
+            html += `<tr><td>${idx+1}</td><td>${item.content}</td><td>${item.marked ? '已标记' : '未标记'}</td></tr>`;
+        });
+        html += `</tbody></table><div class="footer"><p>生成时间: ${new Date().toLocaleString()}</p><p>施工服务设计风险管理工具 v3.0</p></div></body></html>`;
+        return html;
+    }
+
+    function createRiskListWorkbook(basicInfo, riskItems) {
+        const workbook = XLSX.utils.book_new();
+        const basicData = [['施工服务设计风险提示清单'], [], ['项目基本信息'], ['项目名称', basicInfo.projectName], ['项目负责人', basicInfo.projectLeader], ['制表人', basicInfo.formCreator], ['记录日期', basicInfo.recordDate]];
+        const basicSheet = XLSX.utils.aoa_to_sheet(basicData);
+        XLSX.utils.book_append_sheet(workbook, basicSheet, "项目信息");
+        const riskData = [['序号', '风险内容', '是否标记']];
+        riskItems.forEach((item, idx) => riskData.push([idx+1, item.content, item.marked ? '是' : '否']));
+        const riskSheet = XLSX.utils.aoa_to_sheet(riskData);
+        XLSX.utils.book_append_sheet(workbook, riskSheet, "风险清单");
+        return workbook;
+    }
+
+    function createRiskRecordDocContent(projectName, riskContent, recordData) {
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>施工服务设计风险记录</title><style>body{font-family:SimSun;font-size:12pt;line-height:1.8;}h1{text-align:center;font-size:22pt;}.risk-content{text-align:center;color:#f44336;font-size:16pt;margin:20px 0;padding:10px;background:#ffebee;}.info-section h3{border-bottom:2px solid #2e7d32;}.signature{text-align:right;margin-top:40px;}</style></head><body><h1>施工服务设计风险记录</h1><div style="text-align:center;">项目名称：${projectName}<br>记录日期：${recordData.recordDate}</div><div class="risk-content">风险内容：${riskContent}</div>`;
+        html += `<div class="info-section"><h3>风险产生原因</h3><p>责任单位：${recordData.causeUnit}</p><p>原因类型：${recordData.causeReason}</p></div>`;
+        html += `<div class="info-section"><h3>调整依据</h3><p>${recordData.adjustBasis}</p></div>`;
+        html += `<div class="info-section"><h3>事件记录</h3><p>${recordData.eventRecord.replace(/\n/g,'<br>')}</p></div>`;
+        html += `<div class="info-section"><h3>设计处理意见</h3><p>${recordData.designSuggestion.replace(/\n/g,'<br>')}</p></div>`;
+        html += `<div class="signature"><div>制表人：${recordData.formCreator}</div><div>项目负责人：${recordData.projectLeader}</div><div>日期：${new Date().toLocaleDateString()}</div></div>`;
+        html += `<div style="text-align:center;margin-top:60px;font-size:10pt;">生成时间: ${new Date().toLocaleString()}<br>施工服务设计风险管理工具 v3.0</div></body></html>`;
+        return html;
+    }
+
+    function createRiskRecordWorkbook(projectName, riskContent, recordData) {
+        const workbook = XLSX.utils.book_new();
+        const mainData = [
+            ['施工服务设计风险记录'], [],
+            ['项目名称:', projectName, '记录日期:', recordData.recordDate],
+            ['风险内容:', riskContent], [],
+            ['风险产生原因'], ['责任单位', recordData.causeUnit], ['原因类型', recordData.causeReason], [],
+            ['调整依据'], ['依据类型', recordData.adjustBasis], [],
+            ['事件记录'], [recordData.eventRecord], [],
+            ['设计处理意见'], [recordData.designSuggestion], [],
+            ['制表人', recordData.formCreator], ['项目负责人', recordData.projectLeader]
+        ];
+        const mainSheet = XLSX.utils.aoa_to_sheet(mainData);
+        XLSX.utils.book_append_sheet(workbook, mainSheet, "风险记录");
+        return workbook;
+    }
+</script>
+</body>
+</html>

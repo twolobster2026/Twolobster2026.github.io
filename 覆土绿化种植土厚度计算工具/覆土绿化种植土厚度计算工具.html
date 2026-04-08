@@ -1,0 +1,281 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>种植土厚度计算工具 · 覆土绿化</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #ffffff;
+            color: #222;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            padding: 28px;
+        }
+
+        .card h1 {
+            margin: 0 0 8px;
+            font-size: 22px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .card .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        /* 带单位输入框的布局 */
+        .input-unit-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+        }
+        .input-unit-wrapper input {
+            width: 100%;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            font-size: 14px;
+            outline: none;
+            background: transparent;
+        }
+        .input-unit-wrapper .unit-label {
+            padding: 0 16px;
+            font-size: 14px;
+            color: #777;
+            background: #f4f4f4;
+            border-left: 1px solid #ddd;
+            border-radius: 0 8px 8px 0;
+            height: 100%;
+            line-height: 46px;  /* 与输入框高度匹配 */
+            white-space: nowrap;
+        }
+
+        .form-group input:focus {
+            border-color: #222;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background:#2b8fed;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #5aa9f0;
+        }
+
+        .btn.reset {background:#fff;color:#2b8fed;border: 1px solid #2b8fed;}
+
+        .btn.reset:hover  {
+    background: #eef5ff;
+    border-color: #1f6bbd;
+    color: #1f6bbd;  /* 文字颜色略深，与边框呼应，也可保持原色 */
+}
+
+        .result {
+            margin-top: 28px;
+            padding: 18px 20px;
+            background: #eef5ff;
+            border-left: 4px solid #2b8fed;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .result strong {
+            font-weight: 600;
+        }
+
+        .note {
+            margin-top: 28px;
+            padding: 16px 18px;
+            background: #fafafa;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .note ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .note li {
+            margin-bottom: 6px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .note strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* 提示小字 */
+        .hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>种植土厚度计算工具</h1>
+        <div class="subtitle">用于覆土绿化工程种植土厚度估算</div>
+
+        <!-- 允许额外荷载 (kN/m²) -->
+        <div class="form-group">
+            <label for="loadInput">结构允许的额外荷载 <span style="font-weight:400;">(扣除其他构造层后)</span></label>
+            <div class="input-unit-wrapper">
+                <input type="number" id="loadInput" placeholder="请输入荷载数值" step="0.1" min="0" value="0">
+                <span class="unit-label">kN/m²</span>
+            </div>
+            <div class="hint">※ 由结构专业提供，单位：千牛/平方米</div>
+        </div>
+
+        <!-- 种植土饱和容重 (kN/m³)  默认20，可手动修改 -->
+        <div class="form-group">
+            <label for="densityInput">种植土饱和容重</label>
+            <div class="input-unit-wrapper">
+                <input type="number" id="densityInput" placeholder="请输入饱和容重" step="0.1" min="0" value="20">
+                <span class="unit-label">kN/m³</span>
+            </div>
+            <div class="hint">※ 默认 20 kN/m³ (可手动修改)</div>
+        </div>
+
+        <!-- 按钮组: 计算 + 重置 -->
+        <div class="button-group">
+            <button class="btn" onclick="calculateThickness()">计算厚度</button>
+            <button class="btn reset" onclick="resetForm()">重置</button>
+        </div>
+
+        <!-- 结果显示区 -->
+        <div id="result" class="result" style="display:none;"></div>
+
+        <!-- 计算说明 -->
+        <div class="note">
+            <strong>计算说明：</strong>
+            <ul>
+                <li>（1）厚度计算公式：厚度 (m) = 允许荷载 (kN/m²) / 饱和容重 (kN/m³)</li>
+                <li>（2）默认饱和容重取 20 kN/m³，对应约 2.0 g/cm³ (即2.0吨/立方米)</li>
+                <li>（3）最终厚度单位：米（m）</li>
+                <li>（4）提示：计算前请确认允许荷载已扣除排水板、防水层等其他构造荷载</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        © Twolobster ｜ 我是李工也是涛哥
+    </div>
+</div>
+
+<script>
+    // 计算厚度
+    function calculateThickness() {
+        const loadInput = document.getElementById("loadInput");
+        const densityInput = document.getElementById("densityInput");
+        const resultDiv = document.getElementById("result");
+
+        const load = parseFloat(loadInput.value);
+        const density = parseFloat(densityInput.value);
+
+        // 输入有效性验证
+        if (isNaN(load) || isNaN(density) || load < 0 || density <= 0) {
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = "❌ 请输入有效的正数。<br>荷载不应为负数，容重必须大于0。";
+            return;
+        }
+
+        // 厚度 = 荷载 / 容重 (单位: m)
+        const thickness = load / density;
+
+        // 保留三位小数，一般种植土厚度精度到厘米级（0.01m）即可，但保留三位更细致
+        const thicknessFormatted = thickness.toFixed(3);
+
+        resultDiv.style.display = "block";
+        resultDiv.innerHTML = `
+            计算完成<br><br>
+            <strong>输入参数：</strong><br>
+            · 允许额外荷载：${load.toFixed(2)} kN/m²<br>
+            · 饱和容重：${density.toFixed(2)} kN/m³<br><br>
+            <strong>种植土厚度 = ${thicknessFormatted} 米</strong><br>
+            （即 ${(thickness*1000).toFixed(0)} 毫米 / ${(thickness*100).toFixed(1)} 厘米）
+        `;
+    }
+
+    // 重置所有输入框为默认值：荷载0，容重20，同时隐藏结果
+    function resetForm() {
+        document.getElementById("loadInput").value = "0";
+        document.getElementById("densityInput").value = "20";
+        // 隐藏结果区域
+        const resultDiv = document.getElementById("result");
+        resultDiv.style.display = "none";
+        // 可选清空内容，防止闪现旧数据
+        resultDiv.innerHTML = "";
+    }
+
+    // 可选：页面加载完成时，隐藏结果区域 (但保留默认值)
+    window.onload = function() {
+        // 确保结果初始隐藏
+        document.getElementById("result").style.display = "none";
+        // 如果input为空，可设置placeholder占位，但默认已有value=0/20
+    };
+</script>
+
+<!-- 注：完全参照附件风格，单位明确，版权信息一致 -->
+</body>
+</html>

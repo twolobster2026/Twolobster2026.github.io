@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Twolobster · 园林方案投资估算工具</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        [v-cloak] { display: none; }
+        .manual-mode { background-color: #fff3e0; }
+        .editable-input { width: 100%; padding: 0.25rem; border: 1px solid transparent; border-radius: 0.25rem; }
+        .editable-input:hover { border-color: #cbd5e0; background: white; }
+        .editable-input:focus { outline: none; border-color: #3b82f6; background: white; }
+        .unit-select { width: 100%; padding: 0.25rem; border: 1px solid #ddd; border-radius: 0.25rem; background: white; }
+        #exportTableContainer {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            background: white;
+            padding: 15px;
+            width: 1100px;
+            box-sizing: border-box;
+        }
+        #exportTableContainer table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 10px;
+            table-layout: fixed;
+        }
+        #exportTableContainer th, #exportTableContainer td {
+            border: 1px solid #333;
+            padding: 4px 4px;
+            text-align: left;
+            word-break: break-word;
+        }
+        #exportTableContainer th {
+            background-color: #2d3748;
+            color: white;
+            font-weight: bold;
+        }
+        #exportTableContainer th:nth-child(1) { width: 5%; }
+        #exportTableContainer th:nth-child(2) { width: 25%; }
+        #exportTableContainer th:nth-child(3) { width: 8%; }
+        #exportTableContainer th:nth-child(4) { width: 8%; }
+        #exportTableContainer th:nth-child(5) { width: 10%; }
+        #exportTableContainer th:nth-child(6) { width: 10%; }
+        #exportTableContainer th:nth-child(7) { width: 34%; }
+
+        /* 层级背景色 */
+        .level-0 {
+            background-color: #e6f0fa !important; /* 浅蓝 */
+        }
+        .level-1 {
+            background-color: #e6f7e6 !important; /* 浅绿 */
+        }
+        .level-2 {
+            background-color: #fff4e0 !important; /* 浅黄 */
+        }
+
+        /* 预设行覆盖为灰色斜体，并保留原始背景 */
+        tr.bg-gray-50.text-gray-400.italic {
+            background-color: #f9fafb !important;
+            color: #9ca3af !important;
+            font-style: italic !important;
+        }
+
+        /* hover效果统一 */
+        tr:hover {
+            filter: brightness(0.98);
+        }
+
+        .expand-icon {
+            cursor: pointer;
+            user-select: none;
+            margin-right: 4px;
+            display: inline-block;
+            width: 16px;
+            text-align: center;
+            color: #4a5568;
+        }
+
+        /* 操作按钮区域不换行 */
+        .action-cell {
+            white-space: nowrap;
+        }
+
+        /* 部分行保留原有深色背景，不参与层级着色 */
+        .bg-gray-200 {
+            background-color: #e5e7eb !important;
+        }
+
+        /* 按钮样式（与园林项目关键条件核查表一致） */
+        .btn-Excel, .btn-PDF, .btn-save, .btn-Load {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .btn-Excel, .btn-save {
+            background: #2b8fed;
+            color: #fff;
+        }
+
+        .btn-PDF, .btn-Load {
+            background: #fff;
+            color: #2b8fed;
+            border: 1px solid #2b8fed;
+        }
+
+        .btn-Excel:hover, .btn-save:hover {
+            background: #5aa9f0;
+        }
+
+        .btn-PDF:hover, .btn-Load:hover {
+            background: #eef5ff;
+            border-color: #1f6bbd;
+            color: #1f6bbd;
+        }
+
+input:focus,
+select:focus {
+    outline: none; /* 关键：去掉黑框 */
+
+    border-color: #2b8fed !important;
+
+    --tw-ring-color: #2b8fed !important;
+
+    box-shadow: 0 0 0 2px rgba(43,143,237,0.3);
+}
+    </style>
+</head>
+<body class="bg-gray-50 p-4 md:p-8">
+    <div id="app" v-cloak class="max-w-7xl mx-auto bg-white p-6 shadow-lg rounded-xl border border-gray-200">
+        <div class="flex justify-between items-center mb-6 border-b pb-4 flex-wrap gap-2">
+            <h1 class="text-2xl font-bold text-gray-800">Twolobster 园林方案投资估算工具</h1>
+            <div class="space-x-2 flex flex-wrap gap-2">
+                <button @click="exportExcel" class="btn-Excel">导出 Excel</button>
+                <button @click="exportPDF" class="btn-PDF">导出 PDF</button>
+                <button @click="saveStateToFile" class="btn-save">保存方案</button>
+                <button @click="triggerLoadFile" class="btn-Load">加载方案</button>
+                <input type="file" id="loadStateFileInput" accept=".json" style="display: none;">
+            </div>
+        </div>
+
+        <!-- 基础信息卡片 -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 bg-blue-50 p-6 rounded-xl">
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">项目类型</label>
+                <select v-model="projectType" @change="handleTypeChange" class="w-full border-gray-300 border p-2 rounded-lg focus:ring-2 focus:ring-[#2b8fed]">
+                    <option v-for="(val, key) in typeStandards" :key="key" :value="key">{{ key }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">面积 (㎡)</label>
+                <input type="number" v-model.number="area" @input="handleAreaChange" class="w-full border-gray-300 border p-2 rounded-lg focus:ring-2 focus:ring-[#2b8fed]">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-blue-600 mb-1">工程费单价 (元/㎡)</label>
+                <input type="number" v-model.number="compositeUnitPrice" @input="handleUnitPriceInput" class="w-full border-gray-300 border p-2 rounded-lg font-bold text-blue-600 focus:ring-2 focus:ring-[#2b8fed]">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-red-600 mb-1">总投资估算 (万元)</label>
+                <input type="number" v-model.number="totalInvestmentWan" @input="handleTotalInput" class="w-full border-gray-300 border p-2 rounded-lg font-bold text-red-600 focus:ring-2 focus:ring-[#2b8fed]">
+            </div>
+        </section>
+
+        <!-- 估算表格 -->
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse border text-sm">
+                <thead>
+                    <tr class="bg-gray-800 text-white">
+                        <th class="border border-gray-700 p-2 w-16">序号</th>
+                        <th class="border border-gray-700 p-2 text-left">项目名称</th>
+                        <th class="border border-gray-700 p-2 w-24">数量</th>
+                        <th class="border border-gray-700 p-2 w-20">单位</th>
+                        <th class="border border-gray-700 p-2 w-28">单价 (元)</th>
+                        <th class="border border-gray-700 p-2 w-32">合计 (万元)</th>
+                        <th class="border border-gray-700 p-2">相关说明</th>
+                        <th class="border border-gray-700 p-2 w-20">比例</th>
+                        <th class="border border-gray-700 p-2 w-28">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template v-for="(section, sIdx) in tableData" :key="sIdx">
+                        <!-- 部分行 -->
+                        <tr class="bg-gray-200 font-bold">
+                            <td class="border p-2 text-center">{{ section.id }}</td>
+                            <td class="border p-2 text-blue-800">
+                                <span class="expand-icon" @click.stop="section.expanded = !section.expanded">
+                                    {{ section.expanded ? '▼' : '▶' }}
+                                </span>
+                                {{ section.name }}
+                            </td>
+                            <td class="border p-2"></td>
+                            <td class="border p-2 text-center"></td>
+                            <td class="border p-2"></td>
+                            <td class="border p-2 text-right text-lg">{{ (section.total / 10000).toFixed(2) }}</td>
+                            <td class="border p-2"></td>
+                            <td class="border p-2 text-center">{{ getRatio(section.total) }}%</td>
+                            <td class="border p-2"></td>
+                        </tr>
+
+                        <!-- 该部分下的子项（全部遍历，通过 shouldShow 控制显示） -->
+                        <template v-if="section.expanded">
+                            <template v-for="item in section.items" :key="item.uid">
+                                <tr v-if="shouldShow(item, section)" 
+                                    :class="[
+                                        item.isPreset ? 'bg-gray-50 text-gray-400 italic' : '',
+                                        item.manualMode ? 'manual-mode' : '',
+                                        `level-${item.level}`,
+                                        'hover:bg-blue-50 transition-colors'
+                                    ]">
+                                    <!-- 序号列：预设显示 *，否则显示动态 id -->
+                                    <td class="border p-2 text-center font-mono">
+                                        <span v-if="item.isPreset">*</span>
+                                        <span v-else>{{ item.id }}</span>
+                                    </td>
+                                    <td class="border p-2" :style="{ paddingLeft: (item.level * 1.8 + 0.5) + 'rem' }">
+                                        <!-- 展开图标：只有非预设且可能有子项时才显示 -->
+                                        <span v-if="!item.isPreset && hasChildren(item, section)" class="expand-icon" @click.stop="item.expanded = !item.expanded">
+                                            {{ item.expanded ? '▼' : '▶' }}
+                                        </span>
+                                        <span v-else-if="!item.isPreset && item.level < 2" class="expand-icon" style="opacity:0;">▶</span>
+                                        
+                                        <input v-if="!item.isPreset && !item.readOnly" v-model="item.name" class="w-full bg-transparent outline-none focus:border-b border-blue-400 editable-input">
+                                        <span v-else>{{ item.name }}</span>
+                                    </td>
+
+                                    <!-- 数量列 -->
+                                    <td class="border p-2">
+                                        <template v-if="item.id === '三.1'">
+                                            <!-- 预备费：数量列留空 -->
+                                        </template>
+                                        <template v-else-if="item.level === 1 && item.hasDetails">
+                                            <span class="text-gray-600">{{ formatNumber(item.displayCount) }}</span>
+                                        </template>
+                                        <template v-else-if="!item.isPreset && !item.isSummary && item.level !== 1">
+                                            <input type="number" v-model.number="item.count" @input="calcRow(item)" class="w-full text-right bg-transparent outline-none editable-input">
+                                        </template>
+                                        <template v-else-if="item.level === 1 && !item.hasDetails && !item.isPreset">
+                                            <input type="number" v-model.number="item.count" @input="calcRow(item)" class="w-full text-right bg-transparent outline-none editable-input">
+                                        </template>
+                                    </td>
+
+                                    <!-- 单位列 -->
+                                    <td class="border p-2 text-center">
+                                        <template v-if="item.id === '三.1'">
+                                            <!-- 预备费：单位列留空 -->
+                                        </template>
+                                        <template v-else-if="item.level === 2 && !item.isPreset">
+                                            <select v-model="item.unit" @change="calcRow(item)" class="unit-select">
+                                                <option v-for="u in unitOptions" :key="u" :value="u">{{ u }}</option>
+                                            </select>
+                                        </template>
+                                        <template v-else>
+                                            {{ item.unit }}
+                                        </template>
+                                    </td>
+
+                                    <!-- 单价列 -->
+                                    <td class="border p-2">
+                                        <template v-if="item.id === '三.1'">
+                                            <!-- 预备费：单价列留空 -->
+                                        </template>
+                                        <template v-else-if="item.level === 1 && item.hasDetails">
+                                            <span class="text-gray-600">{{ formatNumber(item.displayPrice) }}</span>
+                                        </template>
+                                        <template v-else-if="!item.isPreset && !item.isSummary && item.level !== 1">
+                                            <input type="number" v-model.number="item.price" @input="calcRow(item)" class="w-full text-right bg-transparent outline-none editable-input">
+                                        </template>
+                                        <template v-else-if="item.level === 1 && !item.hasDetails && !item.isPreset">
+                                            <input type="number" v-model.number="item.price" @input="calcRow(item)" class="w-full text-right bg-transparent outline-none editable-input">
+                                        </template>
+                                        <span v-else-if="item.isSummary && item.price !== null">{{ item.price }}</span>
+                                    </td>
+
+                                    <!-- 合计列 -->
+                                    <td class="border p-2 text-right font-medium">
+                                        <template v-if="item.isPreset">-</template>
+                                        <template v-else-if="item.id === '三.1'">
+                                            <input type="number" v-model.number="item.total" @input="updatePrepManual(item)" class="w-full text-right bg-transparent outline-none editable-input">
+                                        </template>
+                                        <template v-else>
+                                            {{ (item.total / 10000).toFixed(2) }}
+                                        </template>
+                                    </td>
+
+                                    <!-- 相关说明 -->
+                                    <td class="border p-2">
+                                        <input v-if="!item.isPreset" v-model="item.note" placeholder="请填写相关说明" class="w-full bg-transparent outline-none text-xs editable-input">
+                                    </td>
+
+                                    <!-- 比例 -->
+                                    <td class="border p-2 text-center text-xs text-gray-500">
+                                        {{ item.isPreset ? '-' : getRatio(item.total) + '%' }}
+                                    </td>
+
+                                    <!-- 操作列 -->
+                                    <td class="border p-2 text-center flex flex-wrap gap-1 justify-center action-cell">
+                                        <!-- 预设行：添加按钮 -->
+                                        <button v-if="item.isPreset" @click="activateItem(item)" class="text-blue-500 font-bold hover:text-blue-700 text-xs px-2 py-1 border border-blue-200 rounded">添加</button>
+                                        
+                                        <!-- 非预设、非只读、非摘要的行：显示操作按钮 -->
+                                        <template v-else-if="!item.readOnly && !item.isSummary">
+                                            <!-- 子项（level 1）显示新增明细按钮 -->
+                                            <button v-if="item.level === 1" @click="addDetailItem(section, item)" class="text-green-500 text-xs px-2 py-1 border border-green-200 rounded hover:bg-green-50">+明细</button>
+                                            <!-- 所有可编辑行都显示删除按钮 -->
+                                            <button @click="removeItem(section, item)" class="text-red-400 hover:text-red-600 text-xs px-2 py-1 border border-red-200 rounded">删除</button>
+                                        </template>
+                                        
+                                        <!-- 父项摘要行（如庭院工程）显示新增子项按钮 -->
+                                        <button v-if="item.isSummary && item.id !== '三.1'" @click="addCustomSubItem(section, item)" class="text-green-500 text-xs px-2 py-1 border border-green-200 rounded hover:bg-green-50">+新增子项</button>
+                                    </td>
+                                </tr>
+                            </template>
+
+                            <!-- 部分一底部新增自定义分项按钮 -->
+                            <tr v-if="section.id === '一'">
+                                <td colspan="9" class="p-2 pl-8 bg-gray-100">
+                                    <button @click="addCustomItem(section)" class="text-green-600 text-xs border border-green-200 px-3 py-1 rounded-full hover:bg-green-50">
+                                        <i class="fas fa-plus mr-1"></i>新增自定义分项
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 版权信息 -->
+        <div class="text-center text-gray-500 text-sm mt-8 border-t pt-4">
+            © Twolobster ｜ 我是李工也是涛哥｜ 数据更新：2026年3月 ｜ v3.0
+        </div>
+    </div>
+
+    <!-- 隐藏容器，用于生成 PDF 表格 -->
+    <div id="exportTableContainer"></div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const area = ref(10000);
+                const projectType = ref('城市公园');
+                const totalInvestmentWan = ref(0);
+                const compositeUnitPrice = ref(262);
+                const isCompositeManual = ref(false);
+
+                // 单位选项
+                const unitOptions = ['延米', '平米', '立米', '个', '座', '项'];
+
+                const typeStandards = {
+                    '城市公园': { 
+                        base: 262,
+                        p1: 137, p2: 27, 
+                        tf: 14, zl: 45, wy: 5500, xp: 19, qt: 9, 
+                        gg: 11, js: 3, ys: 300, 
+                        gn: 19, jm: 6, rd: 4 
+                    },
+                    '城市森林公园': { 
+                        base: 200,
+                        p1: 110, p2: 23, 
+                        tf: 16, zl: 35, wy: 5500, xp: 15, qt: 7, 
+                        gg: 12, js: 3.5, ys: 300, 
+                        gn: 18, jm: 6, rd: 4 
+                    },
+                    '郊野公园': { 
+                        base: 175,
+                        p1: 86, p2: 13, 
+                        tf: 6, zl: 24, wy: 5500, xp: 6, qt: 4, 
+                        gg: 6, js: 2, ys: 300, 
+                        gn: 9, jm: 4, rd: 4 
+                    },
+                    '绿道': { 
+                        base: 103,
+                        p1: 64, p2: 9, 
+                        tf: 0, zl: 23, wy: 5500, xp: 22, qt: 4, 
+                        gg: 4, js: 2, ys: 300, 
+                        gn: 2, jm: 4, rd: 4 
+                    },
+                    '湿地公园': { 
+                        base: 138,
+                        p1: 67, p2: 11, 
+                        tf: 6, zl: 16, wy: 5500, xp: 8, qt: 4, 
+                        gg: 7, js: 2, ys: 300, 
+                        gn: 11, jm: 4, rd: 4 
+                    }
+                };
+
+                // 表格数据结构
+                const tableData = reactive([
+                    { id: '一', name: '工程费', total: 0, items: [], expanded: true },
+                    { id: '二', name: '工程建设其他费', total: 0, items: [], expanded: true },
+                    { id: '三', name: '预备费', total: 0, items: [], expanded: true },
+                    { id: '四', name: '合计', total: 0, items: [], expanded: true }
+                ]);
+
+                // 生成唯一 ID
+                function generateUid() {
+                    return 'item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                }
+
+                // 重新为指定部分的所有非预设项生成连续序号，预设项 id 设为 '*'
+                function reindexSection(section) {
+                    const items = section.items;
+                    let mainCounter = 0;
+                    let subCounter = 0;
+                    let detailCounter = 0;
+                    let currentMainId = null;
+                    let currentSubId = null;
+
+                    for (let i = 0; i < items.length; i++) {
+                        const item = items[i];
+                        if (item.isPreset) {
+                            item.id = '*';
+                            continue;
+                        }
+                        if (item.level === 0) {
+                            mainCounter++;
+                            subCounter = 0;
+                            detailCounter = 0;
+                            currentMainId = mainCounter.toString();
+                            item.id = currentMainId;
+                        } else if (item.level === 1) {
+                            subCounter++;
+                            detailCounter = 0;
+                            currentSubId = currentMainId + '.' + subCounter;
+                            item.id = currentSubId;
+                        } else if (item.level === 2) {
+                            detailCounter++;
+                            item.id = currentSubId + '.' + detailCounter;
+                        }
+                    }
+                }
+
+                // 判断一个项是否应该显示（递归检查父级展开状态）
+                const shouldShow = (item, section) => {
+                    if (item.level === 0) return true; // 分项本身（已通过部分展开控制）
+                    const items = section.items;
+                    const idx = items.indexOf(item);
+                    if (idx === -1) return false;
+                    // 向上查找最近的 level 小于当前项 的项作为父项
+                    for (let i = idx - 1; i >= 0; i--) {
+                        if (items[i].level < item.level) {
+                            // 父项必须展开，并且递归检查父项的父项
+                            return items[i].expanded && shouldShow(items[i], section);
+                        }
+                    }
+                    // 没有找到父项（理论上只有 level 0 会走到这里，但我们已经处理了 level 0）
+                    return true;
+                };
+
+                // 判断一个项是否有子项（用于显示折叠图标）
+                const hasChildren = (item, section) => {
+                    if (item.level >= 2) return false; // 明细不可能有子项
+                    const idx = section.items.indexOf(item);
+                    if (idx === -1 || idx === section.items.length - 1) return false;
+                    // 向后查找第一个 level 大于当前项 且 非预设 的项（即直接子项）
+                    for (let i = idx + 1; i < section.items.length; i++) {
+                        if (section.items[i].level === item.level + 1 && !section.items[i].isPreset) {
+                            return true;
+                        }
+                        if (section.items[i].level <= item.level) break; // 遇到同级或更高级则停止
+                    }
+                    return false;
+                };
+
+                // 重置表格根据类型
+                const handleTypeChange = () => {
+                    const s = typeStandards[projectType.value];
+                    const a = area.value;
+
+                    compositeUnitPrice.value = s.base;
+                    isCompositeManual.value = false;
+
+                    // ----- 工程费部分（一）-----
+                    const part1Items = [];
+
+                    // 1. 绿化种植工程（叶子）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 0, name: '绿化种植工程', isSummary: true, readOnly: true, total: 0, note: '', expanded: true 
+                    });
+
+                    // 绿化种植（叶子）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '绿化种植', count: a, unit: '平米', price: s.p1, total: a * s.p1, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+
+                    //整理绿化用地
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '整理绿化用地', count: a, unit: '平米', price:12, total: a * 12, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+                    
+                    //土壤改良
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '土壤改良', count: 0, unit: '立米', price:35, total: 0, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+
+                    //绿化换土
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '绿化换土', count: 0, unit: '立米', price:30, total: 0, 
+                        isPreset: false, hasDetails: false, note: '计算公式备注：乔木株数*0.7+亚乔木株数*0.5+单株灌木株数*0.5+灌木色带面积数*0.3+地被花卉面积数*0.3', expanded: true 
+                    });
+
+                    //场内移植常绿乔木
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '场内移植常绿乔木', count: 0, unit: '株', price:950, total: 0, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+
+                    //场内移植落叶乔木
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '场内移植落叶乔木', count: 0, unit: '株', price:900, total: 0, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+
+                    //银杏复壮
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '银杏复壮', count: 0, unit: '株', price:800, total: 0, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+
+                    // 2. 庭院工程（父项，只读摘要行）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 0, name: '庭院工程', isSummary: true, readOnly: true, total: 0, note: '', expanded: true 
+                    });
+
+                    // 土方工程
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '土方工程', count: a, unit: '立米', price: s.tf, total: a * s.tf, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+
+                    // 预设明细（土方工程）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '挖方 (预设)', count: 0, unit: '立米', price: 15, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '填方 (预设)', count: 0, unit: '立米', price: 10, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+                    // 园路及广场铺装
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '园路及广场铺装', count: a, unit: '平米', price: s.zl, total: a * s.zl, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+                    
+                    // 预设明细（园路）- 逐个添加，单价暂用100占位，您可在此修改
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '透水混凝土铺装（人行） (预设)', count: 0, unit: '平米', price: 200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '透水混凝土铺装（车行） (预设)', count: 0, unit: '平米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '混凝土铺装 (预设)', count: 0, unit: '平米', price: 150, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '透水砖铺装 (预设)', count: 0, unit: '平米', price: 200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '生态陶瓷透水砖 (预设)', count: 0, unit: '平米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '沥青混凝土铺装 (预设)', count: 0, unit: '平米', price: 260, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '彩色沥青混凝土铺装 (预设)', count: 0, unit: '平米', price: 340, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '露骨料透水混凝土铺装（人行） (预设)', count: 0, unit: '平米', price:200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '彩色强固透水混凝土路面 (预设)', count: 0, unit: '平米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '水磨石铺装 (预设)', count: 0, unit: '平米', price: 240, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '仿石砖 (预设)', count: 0, unit: '平米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '砾石铺装 (预设)', count: 0, unit: '平米', price: 180, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '花岗岩铺装 (预设)', count: 0, unit: '平米', price: 500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '石板碎拼铺装 (预设)', count: 0, unit: '平米', price: 240, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '13厚硅PU彩色塑胶（球场） (预设)', count: 0, unit: '平米', price: 350, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '100厚花岗岩滚边小料石铺装 (预设)', count: 0, unit: '平米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '运动型高密度免充草（20000支/平米） (预设)', count: 0, unit: '平米', price: 800, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '现浇弗维木面层 (预设)', count: 0, unit: '平米', price: 100, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '高承载地坪砖(预设)', count: 0, unit: '平米', price: 200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '高强度混凝土汀步 (预设)', count: 0, unit: '平米', price: 800, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '清水混凝土台阶 (预设)', count: 0, unit: '平米', price: 800, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '整石台阶 (预设)', count: 0, unit: '平米', price: 500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '毛石台阶 (预设)', count: 0, unit: '平米', price: 600, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '混凝土平道牙 (预设)', count: 0, unit: '平米', price: 85, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '再生骨料平道牙 (预设)', count: 0, unit: '延米', price: 120, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '175x8mm钢板分割条 (预设)', count: 0, unit: '延米', price: 150, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: 'EPDM成品路缘加不锈钢条 (预设)', count: 0, unit: '延米', price: 100, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '线性排水沟 (预设)', count: 0, unit: '延米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+                    // 管理及服务用房
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '管理及服务用房', count: 0, unit: '平米', price: s.wy, total: 0, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+                    
+                    // 预设明细（管理及服务用房）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '管理服务建筑 (预设)', count: 0, unit: '平米', price: 5500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '游憩建筑 (预设)', count: 0, unit: '平米', price: 5500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '卫生间 (预设)', count: 0, unit: '平米', price: 5500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+                    // 小品及服务设施
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '小品及服务设施', count: a, unit: '个', price: s.xp, total: a * s.xp, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+                    
+                    // 预设明细（小品及服务设施）- 逐个添加
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '座椅 (预设)', count: 0, unit: '个', price: 1500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '清水混凝土坐凳 (预设)', count: 0, unit: '平米', price: 1000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '户外高耐竹坐凳 (预设)', count: 0, unit: '平米', price: 1000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '垃圾桶 (预设)', count: 0, unit: '个', price: 800, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '钢格栅树池篦子 (预设)', count: 0, unit: '个', price: 6500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '树池篦子 (预设)', count: 0, unit: '个', price: 850, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '隐形井盖 (预设)', count: 0, unit: '个', price: 1200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '花箱 (预设)', count: 0, unit: '个', price: 2000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '标识导游牌 (预设)', count: 0, unit: '个', price: 10000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '一级标识牌 (预设)', count: 0, unit: '个', price: 6500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '二级标识牌 (预设)', count: 0, unit: '个', price: 3000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '三级解说标识牌 (预设)', count: 0, unit: '个', price: 2800, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '定位指示标识牌 (预设)', count: 0, unit: '个', price: 3300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '警示牌/温馨提示标识 (预设)', count: 0, unit: '个', price: 1200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '地面标识 (预设)', count: 0, unit: '平米', price: 40, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '绿地入口标识牌（游览须知牌） (预设)', count: 0, unit: '平米', price: 4000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '多向指引标识牌 (预设)', count: 0, unit: '平米', price: 2000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '景点介绍标识 (预设)', count: 0, unit: '平米', price: 2000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '植物标识(植物介绍、植物保护、树铭牌) (预设)', count: 0, unit: '平米', price: 50, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '综合导览屏（65寸通用款） (预设)', count: 0, unit: '平米', price: 4000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '挡车桩 (预设)', count: 0, unit: '个', price: 800, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '自行车存放处 (预设)', count: 0, unit: '个', price: 1000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '回形门 (预设)', count: 0, unit: '个', price: 450, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '健身器材 (预设)', count: 0, unit: '项', price: 20000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '球场围网 (预设)', count: 0, unit: '延米', price: 1200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '立体绿化钢丝网 (预设)', count: 0, unit: '平米', price: 50, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '竹编墙 (预设)', count: 0, unit: '平米', price: 500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '整体水磨石滑梯 (预设)', count: 0, unit: '平米', price: 200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '不锈钢滑梯 (预设)', count: 0, unit: '个', price: 20000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '秋千 (预设)', count: 0, unit: '个', price: 2000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '沙坑 (预设)', count: 0, unit: '平米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '儿童活动设施 (预设)', count: 0, unit: '项', price: 400000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '驿站 (预设)', count: 0, unit: '个', price: 400000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '栏杆 (预设)', count: 0, unit: '延米', price: 800, total: 0, 
+                        isPreset: true, note: '1200mm高60mm宽' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '铁艺栏杆 (预设)', count: 0, unit: '延米', price: 380, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '无障碍设施栏杆 (预设)', count: 0, unit: '延米', price: 400, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '散置山石 (预设)', count: 0, unit: '立米', price: 1200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '挡墙/景墙 (预设)', count: 0, unit: '延米', price: 1200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '钢/混凝土种植池(预设)', count: 0, unit: '延米', price: 1500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '围墙、围栏 (预设)', count: 0, unit: '个', price: 1000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '户外高耐竹平台 (预设)', count: 0, unit: '平米', price: 800, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '户外高耐竹栈道 (预设)', count: 0, unit: '平米', price: 1200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '清水混凝土阶梯看台 (预设)', count: 0, unit: '平米', price: 350, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '廊架 (预设)', count: 0, unit: '个', price: 100000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '景观亭、廊 (预设)', count: 0, unit: '个', price: 500000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '避雨蓬 (预设)', count: 0, unit: '平米', price: 4500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '入口大门 (预设)', count: 0, unit: '组', price: 500000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '码头 (预设)', count: 0, unit: '个', price: 300000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '园桥 (预设)', count: 0, unit: '个', price: 150000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '厕所改造 (预设)', count: 0, unit: '平米', price: 2200, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '智慧科普 (预设)', count: 0, unit: '个', price: 200000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+                    // 水体工程
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '水体工程', count: 0, unit: '平米', price: 2000, total: 0, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+
+                    // 预设明细（水体工程）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '沙滩 (预设)', count: 0, unit: '平米', price: 300, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '旱喷泉 (预设)', count: 0, unit: '平米', price: 1500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '驳岸挡墙 (预设)', count: 0, unit: '延米', price: 2500, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '池底 (预设)', count: 0, unit: '平米', price: 120, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '水体防渗 (预设)', count: 0, unit: '平米', price: 150, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '水景 (预设)', count: 0, unit: '个', price: 100000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+                    // 其他
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '其他', count: a, unit: '平米', price: s.qt, total: a * s.qt, 
+                        isPreset: false, hasDetails: false, note: '', expanded: true 
+                    });
+                    
+                    // 预设明细（其他）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '前期拆除铺装 (预设)', count: 0, unit: '平米', price: 25, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '前期拆除钢筋混凝土驳岸 (预设)', count: 0, unit: '延米', price: 30, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '前期拆除基础墙 (预设)', count: 0, unit: '平米', price: 150, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+                    // 给排水工程（父项）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 0, name: '给排水工程', isSummary: true, readOnly: true, total: 0, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '灌溉', count: a, unit: '平米', price: s.gn, total: a * s.gn, 
+                        isPreset: false, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '景观给水', count: 0, unit: '项', price: 100000, total: 0, 
+                        isPreset: false, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '雨水管', count: 0, unit: '延米', price: 300, total: 0, 
+                        isPreset: false, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '雨水控制利用系统', count: a, unit: '平米', price: s.ys, total: a * s.ys, 
+                        isPreset: false, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '雨水花园 (预设)', count: 0, unit: '平米', price: 110, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '植草沟（1000宽） (预设)', count: 0, unit: '平米', price: 20, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '排水沟、截水沟 (预设)', count: 0, unit: '延米', price: 850, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '过路沟 (预设)', count: 0, unit: '延米', price: 8, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+                    // 电气工程（父项）
+                    part1Items.push({ 
+                        uid: generateUid(), level: 0, name: '电气工程', isSummary: true, readOnly: true, total: 0, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '功能照明', count: a, unit: '平米', price: s.gn, total: a * s.gn, 
+                        isPreset: false, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '景观照明', count: a, unit: '平米', price: s.jm, total: a * s.jm, 
+                        isPreset: false, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 1, name: '弱电', count: a, unit: '平米', price: s.rd, total: a * s.rd, 
+                        isPreset: false, note: '', expanded: true 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '背景音乐', count: 0, unit: '项', price: 300000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '安防监控', count: 0, unit: '项', price: 150000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+                    part1Items.push({ 
+                        uid: generateUid(), level: 2, name: '无线网络', count: 0, unit: '项', price: 250000, total: 0, 
+                        isPreset: true, note: '' 
+                    });
+
+
+                    tableData[0].items = part1Items;
+                    reindexSection(tableData[0]);
+
+                    // 部分二
+                    tableData[1].items = [
+                        { 
+                            uid: generateUid(), level: 0, name: '工程建设其他费', count: a, unit: '平米', price: s.p2, total: a * s.p2, 
+                            isPreset: false, note: '', expanded: true 
+                        }
+                    ];
+                    reindexSection(tableData[1]);
+
+                    // 部分三
+                    tableData[2].items = [
+                        { 
+                            uid: generateUid(), level: 0, name: '预备费', count: 1, unit: '项', price: 0, total: 0, 
+                            isPreset: false, manualMode: false, note: '(一+二)x3%', expanded: true, id: '三.1' 
+                        }
+                    ];
+                    reindexSection(tableData[2]);
+
+                    tableData[3].items = [];
+
+                    calcAll();
+                };
+
+                // 格式化数字显示（保留两位小数）
+                const formatNumber = (val) => {
+                    if (val === null || val === undefined) return '';
+                    return Number(val).toFixed(2);
+                };
+
+                // 重新计算所有合计，实现子项规则
+                const calcAll = () => {
+                    // 第一步：处理子项（level 1）的合计 - 由明细汇总
+                    tableData[0].items.forEach(item => {
+                        if (item.level === 1 && !item.isPreset) {
+                            const details = tableData[0].items.filter(i => i.id && i.id.startsWith(item.id + '.') && !i.isPreset);
+                            const hasDetails = details.length > 0;
+                            item.hasDetails = hasDetails;
+
+                            if (hasDetails) {
+                                const totalSum = details.reduce((sum, d) => sum + (d.total || 0), 0);
+                                const firstUnit = details[0]?.unit;
+                                const unitsAllSame = details.every(d => d.unit === firstUnit);
+
+                                if (item.name === '土方工程' || item.name === '园路及广场铺装' || item.name === '管理及服务用房') {
+                                    item.total = totalSum;
+                                    if (unitsAllSame && firstUnit) {
+                                        const qtySum = details.reduce((sum, d) => sum + (d.count || 0), 0);
+                                        item.displayCount = qtySum;
+                                        item.displayPrice = totalSum / qtySum;
+                                        item.count = qtySum;
+                                        item.price = totalSum / qtySum;
+                                    } else {
+                                        item.displayCount = null;
+                                        item.displayPrice = null;
+                                        item.count = null;
+                                        item.price = null;
+                                    }
+                                } else if (item.name === '小品及服务设施' || item.name === '其他') {
+                                    item.total = totalSum;
+                                    item.displayCount = null;
+                                    item.displayPrice = null;
+                                    item.count = null;
+                                    item.price = null;
+                                } else {
+                                    // 新增子项
+                                    item.total = totalSum;
+                                    if (unitsAllSame && firstUnit) {
+                                        const qtySum = details.reduce((sum, d) => sum + (d.count || 0), 0);
+                                        item.displayCount = qtySum;
+                                        item.displayPrice = totalSum / qtySum;
+                                        item.count = qtySum;
+                                        item.price = totalSum / qtySum;
+                                    } else {
+                                        item.displayCount = null;
+                                        item.displayPrice = null;
+                                        item.count = null;
+                                        item.price = null;
+                                    }
+                                }
+                            } else {
+                                item.total = (item.count || 0) * (item.price || 0);
+                                item.displayCount = null;
+                                item.displayPrice = null;
+                            }
+                        }
+                    });
+
+                    // 第二步：更新父项（摘要行）的合计 - 由子项汇总
+                    tableData[0].items.forEach(item => {
+                        if (item.isSummary && item.level === 0) {
+                            const children = tableData[0].items.filter(i => i.id && i.id.startsWith(item.id + '.') && !i.isPreset && i.level === 1);
+                            item.total = children.reduce((sum, i) => sum + (i.total || 0), 0);
+                        }
+                    });
+
+                    // 第三步：计算部分一总合计 - 只计算父项和独立分项
+                    let part1Total = 0;
+                    tableData[0].items.forEach(item => {
+                        if (item.isSummary && item.level === 0) {
+                            // 父项（摘要行）的合计
+                            part1Total += item.total || 0;
+                        } else if (!item.isPreset && item.level === 0 && !item.isSummary) {
+                            // 独立的分项（如绿化种植工程）
+                            part1Total += item.total || 0;
+                        }
+                        // 注意：不直接加子项和明细，因为它们已包含在父项中
+                    });
+                    tableData[0].total = part1Total;
+
+                    // 部分二
+                    tableData[1].total = tableData[1].items.reduce((sum, i) => sum + (i.isPreset ? 0 : i.total), 0);
+
+                    // 部分三
+                    const prepItem = tableData[2].items[0];
+                    if (!prepItem.manualMode) {
+                        prepItem.total = (tableData[0].total + tableData[1].total) * 0.03;
+                        prepItem.price = prepItem.total;
+                    }
+                    tableData[2].total = prepItem.total;
+
+                    // 部分四
+                    tableData[3].total = tableData[0].total + tableData[1].total + tableData[2].total;
+
+                    totalInvestmentWan.value = parseFloat((tableData[3].total / 10000).toFixed(2));
+
+                    if (!isCompositeManual.value && area.value > 0) {
+                        compositeUnitPrice.value = parseFloat((tableData[0].total / area.value).toFixed(2));
+                    }
+                };
+
+                // 面积变化
+                const handleAreaChange = () => {
+                    isCompositeManual.value = false;
+                    const a = area.value;
+                    tableData.forEach(sec => {
+                        sec.items.forEach(item => {
+                            if (item.unit === '平米' && !item.isPreset && !item.isSummary && item.level !== 1) {
+                                item.count = a;
+                                item.total = item.count * item.price;
+                            }
+                        });
+                    });
+                    calcAll();
+                };
+
+                // 工程费单价手动输入
+                const handleUnitPriceInput = () => {
+                    isCompositeManual.value = true;
+                    const std = typeStandards[projectType.value];
+                    const scale = compositeUnitPrice.value / std.base;
+                    tableData[0].items.forEach(item => {
+                        if (!item.isPreset && !item.isSummary && item.level !== 1) {
+                            const origPrice = getOriginalPrice(item.name, std);
+                            if (origPrice) {
+                                item.price = parseFloat((origPrice * scale).toFixed(2));
+                                item.total = item.count * item.price;
+                            }
+                        }
+                    });
+                    tableData[1].items.forEach(item => {
+                        if (!item.isPreset) {
+                            item.price = parseFloat((std.p2 * scale).toFixed(2));
+                            item.total = item.count * item.price;
+                        }
+                    });
+                    calcAll();
+                };
+
+                const getOriginalPrice = (name, std) => {
+                    const map = {
+                        '绿化种植工程': 'p1',
+                        '土方工程': 'tf',
+                        '园路及广场铺装': 'zl',
+                        '管理及服务用房': 'wy',
+                        '小品及服务设施': 'xp',
+                        '其他': 'qt',
+                        '灌溉': 'gg',
+                        '景观给水': 'js',
+                        '雨水控制利用系统': 'ys',
+                        '功能照明': 'gn',
+                        '景观照明': 'jm',
+                        '弱电': 'rd'
+                    };
+                    const key = map[name];
+                    return key ? std[key] : null;
+                };
+
+                // 总投资手动输入
+                const handleTotalInput = () => {
+                    isCompositeManual.value = false;
+                    const targetTotal = totalInvestmentWan.value * 10000;
+                    if (tableData[3].total > 0) {
+                        const scale = targetTotal / tableData[3].total;
+                        tableData[0].items.forEach(item => {
+                            if (!item.isPreset && !item.isSummary && item.level !== 1) {
+                                item.price = parseFloat((item.price * scale).toFixed(2));
+                                item.total = item.count * item.price;
+                            }
+                        });
+                        tableData[1].items.forEach(item => {
+                            if (!item.isPreset) {
+                                item.price = parseFloat((item.price * scale).toFixed(2));
+                                item.total = item.count * item.price;
+                            }
+                        });
+                        calcAll();
+                    }
+                };
+
+                // 预备费手动修改
+                const updatePrepManual = (item) => {
+                    isCompositeManual.value = false;
+                    item.manualMode = true;
+                    calcAll();
+                };
+
+                // 激活预设
+                const activateItem = (item) => {
+                    isCompositeManual.value = false;
+                    item.isPreset = false;
+                    item.name = item.name.replace(' (预设)', '');
+                    item.count = area.value;
+                    item.total = item.count * item.price;
+                    // 重新编号所在部分
+                    const section = tableData.find(s => s.items.includes(item));
+                    reindexSection(section);
+                    calcAll();
+                };
+
+                // 计算单行（用于明细项）
+                const calcRow = (item) => {
+                    isCompositeManual.value = false;
+                    item.total = item.count * item.price;
+                    calcAll();
+                };
+
+                // 删除项
+                const removeItem = (section, item) => {
+                    isCompositeManual.value = false;
+                    const index = section.items.indexOf(item);
+                    if (index > -1) {
+                        section.items.splice(index, 1);
+                        reindexSection(section);
+                        calcAll();
+                    }
+                };
+
+                // 新增自定义子项（针对父项摘要行）
+                const addCustomSubItem = (section, parentItem) => {
+                    isCompositeManual.value = false;
+                    const parentIndex = section.items.indexOf(parentItem);
+                    let insertIndex = parentIndex + 1;
+                    while (insertIndex < section.items.length && section.items[insertIndex].level > parentItem.level) {
+                        insertIndex++;
+                    }
+                    const newItem = {
+                        uid: generateUid(),
+                        level: parentItem.level + 1,
+                        name: '新子项',
+                        count: area.value,
+                        unit: '平米',
+                        price: 0,
+                        total: 0,
+                        isPreset: false,
+                        hasDetails: false,
+                        note: '',
+                        expanded: true
+                    };
+                    section.items.splice(insertIndex, 0, newItem);
+                    reindexSection(section);
+                    calcAll();
+                };
+
+                // 新增自定义明细项（针对子项 level 1）
+                const addDetailItem = (section, parentItem) => {
+                    isCompositeManual.value = false;
+                    const parentIndex = section.items.indexOf(parentItem);
+                    let insertIndex = parentIndex + 1;
+                    while (insertIndex < section.items.length && section.items[insertIndex].level > parentItem.level) {
+                        insertIndex++;
+                    }
+                    const newItem = {
+                        uid: generateUid(),
+                        level: parentItem.level + 1,
+                        name: '新明细',
+                        count: area.value,
+                        unit: '平米',
+                        price: 0,
+                        total: 0,
+                        isPreset: false,
+                        note: '',
+                        expanded: true
+                    };
+                    section.items.splice(insertIndex, 0, newItem);
+                    reindexSection(section);
+                    calcAll();
+                };
+
+                // 新增自定义分项（部分一下直接添加叶子分项）
+                const addCustomItem = (section) => {
+                    isCompositeManual.value = false;
+                    const newItem = {
+                        uid: generateUid(),
+                        level: 0,
+                        name: '新分项',
+                        count: '1',
+                        unit: '项',
+                        price: '0',
+                        total: 0,
+                        isPreset: false,
+                        isSummary: false,
+                        note: '',
+                        expanded: true
+                    };
+                    section.items.push(newItem);
+                    reindexSection(section);
+                    calcAll();
+                };
+
+                const getRatio = (val) => {
+                    return tableData[3].total > 0 ? ((val / tableData[3].total) * 100).toFixed(1) : 0;
+                };
+
+// 保存当前数据
+                const saveStateToFile = () => {
+                    const state = {
+                        version: "3.0",
+                        area: area.value,
+                        projectType: projectType.value,
+                        compositeUnitPrice: compositeUnitPrice.value,
+                        isCompositeManual: isCompositeManual.value,
+                        tableData: JSON.parse(JSON.stringify(tableData)),
+                        totalInvestmentWan: totalInvestmentWan.value
+                    };
+                    const dataStr = JSON.stringify(state, null, 2);
+                    const blob = new Blob([dataStr], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `园林方案_${new Date().toISOString().slice(0,19)}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+
+                // 触发文件选择
+                const triggerLoadFile = () => {
+                    document.getElementById('loadStateFileInput').click();
+                };
+
+                // 加载状态
+                const loadStateFromFile = (file) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const saved = JSON.parse(e.target.result);
+                            if (!saved.tableData || !Array.isArray(saved.tableData) || saved.tableData.length !== 4) {
+                                alert("文件格式不正确，无法加载");
+                                return;
+                            }
+                            area.value = saved.area ?? 10000;
+                            projectType.value = saved.projectType ?? '城市公园';
+                            compositeUnitPrice.value = saved.compositeUnitPrice ?? 262;
+                            isCompositeManual.value = saved.isCompositeManual ?? false;
+
+                            const newTableData = JSON.parse(JSON.stringify(saved.tableData));
+                            newTableData.forEach(section => {
+                                if (section.expanded === undefined) section.expanded = true;
+                                section.items.forEach(item => {
+                                    if (!item.uid && !item.isPreset) {
+                                        item.uid = generateUid();
+                                    }
+                                    if (item.expanded === undefined) item.expanded = true;
+                                    if (item.hasDetails === undefined) item.hasDetails = false;
+                                    if (item.manualMode === undefined) item.manualMode = false;
+                                    if (item.isSummary === undefined) item.isSummary = false;
+                                    if (item.readOnly === undefined) item.readOnly = false;
+                                    if (item.displayCount === undefined) item.displayCount = null;
+                                    if (item.displayPrice === undefined) item.displayPrice = null;
+                                });
+                                reindexSection(section);
+                            });
+
+                            tableData.splice(0, tableData.length, ...newTableData);
+                            calcAll();
+                            alert("方案加载成功！");
+                        } catch (err) {
+                            console.error(err);
+                            alert("加载失败，文件可能损坏");
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+
+// excel导出
+const exportExcel = () => {
+    const headers = ['序号', '项目名称', '数量', '单位', '单价(元)', '合计(万元)', '相关说明'];
+    const sheetData = [headers];
+    let rowIdx = 1; // 当前行索引（0 是表头）
+
+    // 记录各部分行号
+    let part1Row = null, part2Row = null, part3Row = null, part4Row = null;
+    // 记录工程费部分的所有 level0 项的行号（包括分项和独立项）
+    const level0Rows = [];
+    // 记录标准分项（绿化种植工程、庭院工程、给排水工程、电气工程）的行号
+    const standardSummaryRows = [];
+    // 记录子项（level1）的行号，key 为 item.id
+    const subItemRows = new Map();
+    // 记录明细（level2）的行号，key 为 item.id
+    const detailRows = new Map();
+
+    // 标准分项的名称列表
+    const standardSummaryNames = ['绿化种植工程', '庭院工程', '给排水工程', '电气工程'];
+
+    // 辅助函数：添加一行，返回该行在 sheetData 中的索引
+    function addRow(cells) {
+        sheetData.push(cells);
+        return sheetData.length - 1;
+    }
+
+    // =========================
+    // 一、工程费
+    // =========================
+    part1Row = addRow(['一', '工程费', '', '', '', '', '']);
+
+    // 第一遍：添加所有行，记录行号，对于非标准分项的 level0 项直接写入静态合计值
+    tableData[0].items.forEach(item => {
+        if (!item.id || item.id === '*') return;
+        const rowData = [
+            item.id,
+            item.name,
+            item.hasDetails ? (item.displayCount !== null ? item.displayCount : '') : (item.count !== null ? item.count : ''),
+            item.unit,
+            item.hasDetails ? (item.displayPrice !== null ? item.displayPrice : '') : (item.price !== null ? item.price : ''),
+            '', // 合计列暂空
+            item.note || ''
+        ];
+        const row = addRow(rowData);
+        if (item.level === 0) {
+            level0Rows.push(row);
+            // 判断是否为标准分项
+            if (standardSummaryNames.includes(item.name)) {
+                standardSummaryRows.push(row);
+                // 标准分项，稍后根据是否有子项设置公式或静态值，先留空
+                rowData[5] = '';
+            } else {
+                // 非标准分项（新增自定义分项），直接使用网页中的合计值（万元）
+                const totalWan = item.total / 10000;
+                // 直接设置为数值，而不是公式
+                sheetData[row][5] = totalWan;
+            }
+        } else if (item.level === 1) {
+            subItemRows.set(item.id, row);
+        } else if (item.level === 2) {
+            detailRows.set(item.id, row);
+        }
+    });
+
+    // 第二遍：设置明细合计公式（level2）
+    for (let item of tableData[0].items) {
+        if (item.level === 2 && !item.isPreset) {
+            const row = detailRows.get(item.id);
+            if (row !== undefined) {
+                sheetData[row][5] = { f: `C${row+1}*E${row+1}/10000` };
+            }
+        }
+    }
+
+    // 第三遍：设置子项合计公式（level1）
+    for (let item of tableData[0].items) {
+        if (item.level === 1 && !item.isPreset) {
+            const row = subItemRows.get(item.id);
+            if (row !== undefined) {
+                // 查找该子项下的明细
+                const details = tableData[0].items.filter(i => i.id && i.id.startsWith(item.id + '.') && !i.isPreset);
+                if (details.length > 0) {
+                    const detailRowNums = details.map(d => detailRows.get(d.id)).filter(r => r !== undefined);
+                    if (detailRowNums.length) {
+                        const ranges = detailRowNums.map(r => `F${r+1}`).join(',');
+                        sheetData[row][5] = { f: `SUM(${ranges})` };
+                    } else {
+                        sheetData[row][5] = { f: `C${row+1}*E${row+1}/10000` };
+                    }
+                } else {
+                    sheetData[row][5] = { f: `C${row+1}*E${row+1}/10000` };
+                }
+            }
+        }
+    }
+
+    // 第四遍：设置标准分项合计公式（汇总子项合计）
+    for (let item of tableData[0].items) {
+        if (item.level === 0 && item.isSummary && standardSummaryNames.includes(item.name)) {
+            const row = standardSummaryRows.find(r => sheetData[r] && sheetData[r][0] === item.id);
+            if (row !== undefined) {
+                // 查找该分项下的子项（level1）
+                const children = tableData[0].items.filter(i => i.level === 1 && i.id.startsWith(item.id + '.') && !i.isPreset);
+                const childRows = children.map(c => subItemRows.get(c.id)).filter(r => r !== undefined);
+                if (childRows.length) {
+                    const ranges = childRows.map(r => `F${r+1}`).join(',');
+                    sheetData[row][5] = { f: `SUM(${ranges})` };
+                } else {
+                    // 没有子项，用数量*单价（网页中该分项合计可能为0，但保留公式以符合预期）
+                    sheetData[row][5] = { f: `C${row+1}*E${row+1}/10000` };
+                }
+            }
+        }
+    }
+
+    // 注意：对于标准分项，如果上面已经设置了公式，就不再覆盖。对于非标准分项，已经在第一遍写入了静态数值。
+
+    // 设置工程费部分总合计（一）—— 汇总所有 level0 项的合计（包括静态值和公式）
+    if (part1Row !== null && level0Rows.length) {
+        const ranges = level0Rows.map(r => `F${r+1}`).join(',');
+        sheetData[part1Row][5] = { f: `SUM(${ranges})` };
+    }
+
+    // =========================
+    // 二、工程建设其他费
+    // =========================
+    part2Row = addRow(['二', '工程建设其他费', '', '', '', '', '']);
+    const otherRows = [];
+    tableData[1].items.forEach(item => {
+        if (!item.id || item.id === '*') return;
+        const rowData = [
+            item.id,
+            item.name,
+            item.count ?? '',
+            item.unit ?? '',
+            item.price ?? '',
+            '', // 稍后设置公式
+            item.note || ''
+        ];
+        const row = addRow(rowData);
+        otherRows.push(row);
+        // 其他费子项公式：数量*单价/10000
+        sheetData[row][5] = { f: `C${row+1}*E${row+1}/10000` };
+    });
+    if (part2Row !== null && otherRows.length) {
+        const ranges = otherRows.map(r => `F${r+1}`).join(',');
+        sheetData[part2Row][5] = { f: `SUM(${ranges})` };
+    }
+
+    // =========================
+    // 三、预备费
+    // =========================
+    part3Row = addRow(['三', '预备费', '', '', '', '', '']);
+    let prepRow = null;
+    tableData[2].items.forEach(item => {
+        if (!item.id || item.id === '*') return;
+        const rowData = [
+            item.id,
+            item.name,
+            '',
+            '',
+            '',
+            '', // 稍后设置公式
+            item.note || ''
+        ];
+        const row = addRow(rowData);
+        prepRow = row;
+        // 预备费子项公式：(一+二)*3%
+        if (part1Row !== null && part2Row !== null) {
+            sheetData[row][5] = { f: `(F${part1Row+1}+F${part2Row+1})*0.03` };
+        }
+    });
+    if (part3Row !== null && prepRow !== null) {
+        sheetData[part3Row][5] = { f: `F${prepRow+1}` };
+    }
+
+    // =========================
+    // 四、合计
+    // =========================
+    part4Row = addRow(['四', '合计', '', '', '', '', '']);
+    if (part1Row !== null && part2Row !== null && part3Row !== null) {
+        sheetData[part4Row][5] = { f: `F${part1Row+1}+F${part2Row+1}+F${part3Row+1}` };
+    }
+
+    // 构建工作表并写入公式
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    for (let R = 0; R < sheetData.length; R++) {
+        for (let C = 0; C < sheetData[R].length; C++) {
+            const cell = sheetData[R][C];
+            if (cell && typeof cell === 'object' && cell.f) {
+                const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                ws[cellRef] = { t: 'n', f: cell.f };
+            }
+        }
+    }
+
+    ws['!cols'] = [
+        { wch: 8 },   // 序号
+        { wch: 30 },  // 项目名称
+        { wch: 12 },  // 数量
+        { wch: 8 },   // 单位
+        { wch: 12 },  // 单价
+        { wch: 12 },  // 合计
+        { wch: 40 }   // 说明
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "投资估算");
+    XLSX.writeFile(wb, `园林投资估算_${new Date().toLocaleDateString()}.xlsx`);
+};
+
+                // 导出PDF
+                const exportPDF = async () => {
+                    const container = document.getElementById('exportTableContainer');
+                    // 清空容器
+                    container.innerHTML = '';
+
+                    // 构建表格
+                    const table = document.createElement('table');
+                    // 表头
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    ['序号', '项目名称', '数量', '单位', '单价(元)', '合计(万元)', '相关说明'].forEach(text => {
+                        const th = document.createElement('th');
+                        th.textContent = text;
+                        th.style.backgroundColor = '#2d3748';
+                        th.style.color = 'white';
+                        th.style.padding = '4px 4px';
+                        th.style.border = '1px solid #333';
+                        th.style.fontWeight = 'bold';
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+
+                    const tbody = document.createElement('tbody');
+
+                    tableData.forEach(sec => {
+                        // 部分行
+                        const secRow = document.createElement('tr');
+                        secRow.style.backgroundColor = '#edf2f7';
+                        secRow.style.fontWeight = 'bold';
+
+                        // 序号
+                        const secIdCell = document.createElement('td');
+                        secIdCell.textContent = sec.id;
+                        secIdCell.style.border = '1px solid #333';
+                        secIdCell.style.padding = '4px 4px';
+                        secRow.appendChild(secIdCell);
+
+                        // 项目名称
+                        const secNameCell = document.createElement('td');
+                        secNameCell.textContent = sec.name;
+                        secNameCell.style.border = '1px solid #333';
+                        secNameCell.style.padding = '4px 4px';
+                        secRow.appendChild(secNameCell);
+
+                        // 数量（空）
+                        const qtyCell = document.createElement('td');
+                        qtyCell.style.border = '1px solid #333';
+                        qtyCell.style.padding = '4px 4px';
+                        secRow.appendChild(qtyCell);
+
+                        // 单位（空）
+                        const unitCell = document.createElement('td');
+                        unitCell.style.border = '1px solid #333';
+                        unitCell.style.padding = '4px 4px';
+                        secRow.appendChild(unitCell);
+
+                        // 单价（空）
+                        const priceCell = document.createElement('td');
+                        priceCell.style.border = '1px solid #333';
+                        priceCell.style.padding = '4px 4px';
+                        secRow.appendChild(priceCell);
+
+                        // 合计（万元）- 填入部分合计值
+                        const totalCell = document.createElement('td');
+                        totalCell.textContent = (sec.total / 10000).toFixed(2);
+                        totalCell.style.border = '1px solid #333';
+                        totalCell.style.padding = '4px 4px';
+                        secRow.appendChild(totalCell);
+
+                        // 说明（空）
+                        const noteCell = document.createElement('td');
+                        noteCell.style.border = '1px solid #333';
+                        noteCell.style.padding = '4px 4px';
+                        secRow.appendChild(noteCell);
+
+                        tbody.appendChild(secRow);
+
+                        // 子项行
+                        sec.items.forEach(i => {
+                            if (!i.isPreset) {
+                                const row = document.createElement('tr');
+                                
+                                let qty = i.count;
+                                let price = i.price;
+                                if (i.hasDetails && i.displayCount !== undefined) {
+                                    qty = i.displayCount;
+                                    price = i.displayPrice;
+                                }
+
+                                const cells = [
+                                    i.id,
+                                    i.name,
+                                    qty !== null && qty !== undefined ? qty.toString() : '',
+                                    i.unit,
+                                    price?.toFixed(2) || '',
+                                    (i.total / 10000).toFixed(2),
+                                    i.note || ''
+                                ];
+
+                                cells.forEach(text => {
+                                    const td = document.createElement('td');
+                                    td.textContent = text;
+                                    td.style.border = '1px solid #333';
+                                    td.style.padding = '4px 4px';
+                                    row.appendChild(td);
+                                });
+                                tbody.appendChild(row);
+                            }
+                        });
+                    });
+
+                    table.appendChild(tbody);
+                    container.appendChild(table);
+
+                    try {
+                        // 使用 html2canvas 截图
+                        const canvas = await html2canvas(container, {
+                            scale: 2,
+                            backgroundColor: '#ffffff',
+                            logging: false,
+                            allowTaint: false,
+                            useCORS: true,
+                            windowWidth: 1100,
+                        });
+
+                        const imgData = canvas.toDataURL('image/png');
+                        const { jsPDF } = window.jspdf;
+                        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt' });
+                        const pageWidth = doc.internal.pageSize.getWidth();
+                        const pageHeight = doc.internal.pageSize.getHeight();
+                        const imgWidth = pageWidth - 20;
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        
+                        if (imgHeight > pageHeight - 40) {
+                            const scale = (pageHeight - 40) / imgHeight;
+                            doc.addImage(imgData, 'PNG', 10, 30, imgWidth * scale, imgHeight * scale);
+                        } else {
+                            doc.addImage(imgData, 'PNG', 10, 30, imgWidth, imgHeight);
+                        }
+                        doc.save('园林投资估算.pdf');
+                    } catch (error) {
+                        console.error('PDF生成失败', error);
+                        alert('PDF生成失败，请重试或检查控制台');
+                    } finally {
+                        // 清空容器
+                        container.innerHTML = '';
+                    }
+                };
+
+               onMounted(() => {
+                    handleTypeChange();
+                    const fileInput = document.getElementById('loadStateFileInput');
+                    if (fileInput) {
+                        fileInput.addEventListener('change', (e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                                loadStateFromFile(e.target.files[0]);
+                                fileInput.value = '';
+                            }
+                        });
+                    }
+                });
+
+                return {
+                    area,
+                    projectType,
+                    totalInvestmentWan,
+                    compositeUnitPrice,
+                    typeStandards,
+                    tableData,
+                    unitOptions,
+                    handleTypeChange,
+                    handleAreaChange,
+                    handleUnitPriceInput,
+                    handleTotalInput,
+                    updatePrepManual,
+                    activateItem,
+                    calcRow,
+                    removeItem,
+                    addCustomSubItem,
+                    addDetailItem,
+                    addCustomItem,
+                    getRatio,
+                    formatNumber,
+                    shouldShow,
+                    hasChildren,
+                    exportExcel,
+                    exportPDF,
+                    saveStateToFile,
+                    triggerLoadFile
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

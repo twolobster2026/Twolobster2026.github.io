@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设计标准图库 | Twolobster</title>
+
+<style>
+/* ================== 全局统一风格 ================== */
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+}
+
+body{
+    background:#f6f7f9;
+    color:#333;
+    padding:32px 16px;
+}
+
+/* ================== 主容器 ================== */
+.container{
+    max-width:1200px;
+    margin:0 auto;
+    background:#fff;
+    border-radius:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    overflow:hidden;
+}
+
+/* ================== 头部 ================== */
+header{
+    padding:36px 32px 28px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+
+header h1{
+    font-size:26px;
+    font-weight:700;
+    margin-bottom:8px;
+}
+
+header p{
+    color:#666;
+    font-size:14px;
+}
+
+/* ================== 模块区 ================== */
+.main{
+    padding:40px 32px 48px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:28px;
+}
+
+.module{
+    background:#fff;
+    border-radius:14px;
+    padding:18px 18px 22px;
+    text-align:left;
+    text-decoration:none;
+    color:inherit;
+    border:1px solid #eee;
+    transition:.25s;
+    display:flex;
+    flex-direction:column;
+}
+
+.module img{
+    width:100%;
+    height:170px;
+    object-fit:cover;
+    border-radius:10px;
+    margin-bottom:16px;
+    background:#f1f5f9;
+}
+
+.module h2{
+    font-size:18px;
+    font-weight:600;
+    margin-bottom:6px;
+}
+
+.module p{
+    font-size:14px;
+    color:#666;
+    line-height:1.6;
+    flex:1;
+}
+
+.module:hover{
+    transform:translateY(-4px);
+    box-shadow:0 12px 26px rgba(0,0,0,.12);
+    border-color:#dbeafe;
+}
+
+/* ================== 底部版权 ================== */
+.version-info{
+    text-align:center;
+    padding:18px;
+    font-size:13px;
+    color:#666;
+    border-top:1px solid #eee;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+    <h1>设计标准图库</h1>
+    <p>辅助园林设计的标准化构造做法参考系统</p>
+</header>
+
+<div class="main">
+
+    <a class="module" href="paving-standardsv1.0.html?type=铺装做法&internal=1">
+        <img src="images/paving.png" alt="铺装做法">
+        <h2>铺装</h2>
+        <p>园路、广场、台阶等铺装结构及节点标准图集</p>
+    </a>
+
+    <a class="module" href="paving-standards?type=座凳做法&internal=1">
+        <img src="images/bench.png" alt="座凳做法">
+        <h2>座凳</h2>
+        <p>石材、木质及组合座凳构造与基础做法</p>
+    </a>
+
+    <a class="module" href="paving-standards.html?type=水池做法&internal=1">
+        <img src="images/water.png" alt="水池做法">
+        <h2>水池</h2>
+        <p>景观水池、防水构造及驳岸池底做法</p>
+    </a>
+
+    <a class="module" href="paving-standards.html?type=小品构筑物做法&internal=1">
+        <img src="images/pavilion.png" alt="小品构筑物">
+        <h2>小品构筑物</h2>
+        <p>景墙、廊架、花池等常见构筑物构造</p>
+    </a>
+
+    <a class="module" href="paving-standards.html?type=桥与码头做法&internal=1">
+        <img src="images/bridge.png" alt="桥与码头">
+        <h2>桥与码头</h2>
+        <p>景观桥梁、亲水平台节点做法</p>
+    </a>
+
+    <a class="module" href="paving-standards.html?type=建筑做法&internal=1">
+        <img src="images/building.png" alt="建筑做法">
+        <h2>建筑</h2>
+        <p>园林配套建筑及附属设施构造标准</p>
+    </a>
+
+</div>
+
+<div class="version-info">
+© Twolobster ｜ 我是李工也是涛哥 v1.0
+</div>
+
+</div>
+
+</body>
+</html>
