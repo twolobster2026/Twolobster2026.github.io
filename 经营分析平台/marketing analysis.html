@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>市场部 · 经营分析平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f1f5f9; padding: 32px 28px; color: #0f172a; }
+        .app-container { max-width: 1600px; margin: 0 auto; }
+        .card { background: white; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); padding: 24px 28px; margin-bottom: 32px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .btn { padding: 8px 18px; border-radius: 40px; font-weight: 500; font-size: 0.85rem; border: none; cursor: pointer; background: #e2e8f0; transition: 0.2s; }
+        .btn-primary { background: #2c6e9e; color: white; }
+        .btn-primary:hover { background: #1e4a6e; }
+        .btn-danger { background: #fee2e2; color: #b91c1c; }
+        .btn-danger:hover { background: #fecaca; }
+        .btn-sm { padding: 6px 14px; font-size: 0.75rem; }
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 28px; }
+        .stat-card { background: #f1f5f9; border-radius: 24px; padding: 20px; text-align: center; }
+        .departments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 24px; margin-top: 16px; }
+        .dept-card { background: #fefefe; border-radius: 24px; border: 1px solid #e2e8f0; padding: 20px; }
+        .dept-name { font-size: 1.2rem; font-weight: 700; display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+        .dept-name input { flex: 1; border: 1px solid #cbd5e1; border-radius: 40px; padding: 6px 14px; }
+        .dept-stats { background: #f8fafc; border-radius: 20px; padding: 12px; margin: 12px 0; font-size: 0.85rem; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 20px 0 16px; }
+        select, input { border: 1px solid #cbd5e1; border-radius: 24px; padding: 8px 14px; background: white; font-size: 0.9rem; outline: none; }
+        .badge { background: #e2e8f0; border-radius: 40px; padding: 4px 12px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
+        hr { margin: 20px 0; }
+        canvas { max-height: 260px; width: 100%; }
+        .compare-charts { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 20px; }
+        .compare-chart-container { flex: 1; min-width: 280px; }
+        .copyright { text-align: center; font-size: 12px; color: #6c757d; margin-top: 32px; padding: 20px 0; border-top: 1px solid #e2e8f0; }
+        button:active { transform: scale(0.97); }
+        .insight-text { background: #e6f7ec; padding: 12px 18px; border-radius: 20px; margin-top: 12px; font-size: 0.9rem; color: #0e5e2e; }
+        .dept-selector { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+        .clickable-link { color: #2563eb; cursor: pointer; text-decoration: underline; }
+        .clickable-link:hover { color: #1e40af; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="app-container">
+        <!-- 顶部操作栏 -->
+        <div class="flex-between" style="margin-bottom: 24px;">
+            <h1><i class="fas fa-chart-line"></i> 市场部 · 经营分析平台</h1>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn" @click="saveFullStateToLocal">💾 保存数据</button>
+                <button class="btn" @click="exportBackup">📥 导出备份</button>
+                <button class="btn" @click="triggerImportBackup">📂 导入备份</button>
+                <button class="btn btn-primary" @click="addDepartment">+ 新增部门</button>
+                <input type="file" ref="backupFileInput" style="display: none" accept="application/json" @change="handleBackupImport">
+            </div>
+        </div>
+
+        <!-- 部门管理区域 -->
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-building"></i> 各部门数据源</h3><span class="badge">支持导入设计工作室导出的 backup.json</span></div>
+            <div class="departments-grid">
+                <div v-for="(dept, idx) in departments" :key="dept.id" class="dept-card">
+                    <div class="dept-name"><i class="fas fa-folder-open"></i><input type="text" v-model="dept.name" placeholder="部门名称"><button class="btn btn-sm btn-danger" @click="removeDepartment(idx)"><i class="fas fa-trash"></i> 删除</button></div>
+                    <div class="flex-between" style="margin-bottom: 8px;"><div><span class="badge">年度合同目标(万)</span></div><input type="number" v-model.number="dept.contractTarget" style="width: 110px;"><div><span class="badge">年度回款目标(万)</span></div><input type="number" v-model.number="dept.paymentTarget" style="width: 110px;"></div>
+                    <div class="dept-stats"><div><strong>📊 导入概况</strong> <span v-if="dept.lastImportTime" style="font-size:12px;">最后导入: {{dept.lastImportTime}}</span></div><div>合同总额(全量): {{dept.totalContractAmount.toFixed(1)}} 万</div><div>回款总额(全量): {{dept.totalPaymentReceived.toFixed(1)}} 万</div><div>项目总数: {{dept.projects.length}} 个</div></div>
+                    <div class="flex-between"><button class="btn btn-primary btn-sm" @click="triggerImportForDept(dept.id)"><i class="fas fa-upload"></i> 导入数据(JSON)</button><span style="font-size:12px;">支持设计室导出文件</span></div>
+                    <input type="file" :id="'fileInput_'+dept.id" style="display: none" accept="application/json" @change="handleDeptFileUpload($event, dept.id)">
+                </div>
+                <div v-if="departments.length === 0" style="padding: 40px; text-align: center; color: #6c757d;"><i class="fas fa-plus-circle"></i> 点击「新增部门」开始汇总数据</div>
+            </div>
+        </div>
+
+        <!-- 整体经营驾驶舱 -->
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-chart-pie"></i> 整体经营驾驶舱</h3>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <label>年度合同目标(万): <input type="number" v-model.number="studioContractTarget" style="width: 120px;" @change="refreshAllCharts"></label>
+                    <label>年度回款目标(万): <input type="number" v-model.number="studioPaymentTarget" style="width: 120px;" @change="refreshAllCharts"></label>
+                    <label>员工人数(人): <input type="number" v-model.number="totalStaffCount" style="width: 100px;" @change="refreshAllCharts"></label>
+                </div>
+            </div>
+            <div class="grid-stats">
+                <div class="stat-card"><i class="fas fa-file-signature"></i> {{analysisYear}}年合同额: {{studioYearlyContractSum.toFixed(1)}}万<br>目标完成率: {{studioContractPercent}}%</div>
+                <div class="stat-card"><i class="fas fa-hand-holding-usd"></i> {{analysisYear}}年回款额: {{studioYearlyPaymentSum.toFixed(1)}}万<br>回款完成率: {{studioPaymentPercent}}%</div>
+                <div class="stat-card"><i class="fas fa-project-diagram"></i> {{analysisYear}}年项目数量: {{studioYearlyProjectCount}}<br>完成项目: {{studioYearlyCompletedCount}}</div>
+                <div class="stat-card"><i class="fas fa-chart-simple"></i> 全周期待回款总额: {{totalOutstandingPayment.toFixed(1)}}万</div>
+                <div class="stat-card"><i class="fas fa-chalkboard-user"></i> 人均合同额: {{avgContractPerPerson.toFixed(1)}}万<br>人均回款额: {{avgPaymentPerPerson.toFixed(1)}}万</div>
+                <div class="stat-card"><i class="fas fa-percent"></i> 全部项目合同转化率<br><strong>{{contractConversionRateAll}}%</strong><br>(累计回款 / 累计合同)</div>
+                <div class="stat-card"><i class="fas fa-calendar-alt"></i> {{analysisYear}}年项目合同转化率<br><strong>{{contractConversionRateForYear}}%</strong><br>(该年签约项目回款 / 该年合同额)</div>
+            </div>
+            <!-- 时间维度分析 -->
+            <div class="filter-bar"><span><strong>时间维度分析 (基于签约/回款时间)</strong></span><select v-model="timeDim"><option value="month">月度</option><option value="quarter">季度</option><option value="year">年度</option></select><select v-model="analysisYear"><option v-for="y in availableYears" :value="y">{{y}}年</option></select><select v-if="timeDim === 'month'" v-model="analysisMonth"><option v-for="m in 12" :value="m">{{m}}月</option></select><select v-if="timeDim === 'quarter'" v-model="analysisQuarter"><option :value="1">第一季度</option><option :value="2">第二季度</option><option :value="3">第三季度</option><option :value="4">第四季度</option></select><button class="btn btn-sm" @click="refreshTimeAnalysisChart">📊 分析</button></div>
+            <canvas id="studioTimeChart" height="200" style="max-height: 240px;"></canvas>
+            <div class="flex-between mt-2" style="margin-top:12px;"><span>时段合同额: {{timeStats.amount}}万 &nbsp; 回款额: {{timeStats.paid}}万 &nbsp; 回款占比: {{timeStats.paidPercent}}%</span></div>
+            
+            <!-- 月度趋势对比 -->
+            <hr><div class="flex-between"><h4>📈 月度趋势对比 (合同额 & 回款额)</h4><div><select v-model="trendRange"><option value="current">本年度</option><option value="2">近2年</option><option value="3">近3年</option><option value="5">近5年</option></select><button class="btn btn-sm" @click="refreshTrendCharts">生成趋势</button></div></div>
+            <div class="compare-charts"><div class="compare-chart-container"><canvas id="contractTrendChart"></canvas><div>月度合同额趋势(万元)</div></div><div class="compare-chart-container"><canvas id="paymentTrendChart"></canvas><div>月度回款额趋势(万元)</div></div></div>
+
+            <!-- 同比增长率 -->
+            <hr><h4>📈 同比增长率 (合同额 & 回款额)</h4>
+            <div class="filter-bar"><select v-model="yoyYear"><option v-for="y in availableYears.filter(y=>y<Math.max(...availableYears))" :value="y">{{y+1}}年同比增长（基于{{y}}）</option></select><button class="btn btn-sm" @click="refreshYoYChart">计算增长率</button></div>
+            <canvas id="yoyChart" height="200"></canvas>
+
+            <!-- 月度/季度环比分析模块 -->
+            <hr><h4>📉 月度/季度环比分析 (合同额 & 回款额)</h4>
+            <div class="filter-bar">
+                <span>分析维度：</span>
+                <select v-model="momType">
+                    <option value="month">月度环比</option>
+                    <option value="quarter">季度环比</option>
+                </select>
+                <span>分析年份：</span>
+                <select v-model="momYear">
+                    <option v-for="y in availableYears" :value="y">{{y}}年</option>
+                </select>
+                <button class="btn btn-sm" @click="refreshMoMChart">生成环比图</button>
+            </div>
+            <canvas id="momChart" height="200" style="max-height: 260px;"></canvas>
+            <div class="insight-text" v-html="momInsightText"></div>
+
+            <!-- 回款结构堆积柱状图 -->
+            <hr><h4>💰 回款结构分析 (季度堆积)</h4>
+            <button class="btn btn-sm" @click="refreshQuarterlyStackChart">刷新近三年季度回款</button>
+            <canvas id="quarterlyStackChart" height="200"></canvas>
+
+            <!-- 项目类型分析 (饼图 + 柱状对比) -->
+            <hr><h4>📊 项目类型分析 (按签约年份)</h4>
+            <div class="filter-bar"><select v-model="typeAnalysisYear"><option v-for="y in availableYears" :value="y">{{y}}年</option></select><button class="btn btn-sm" @click="refreshTypePieCharts">刷新分析</button></div>
+            <div class="compare-charts">
+                <div class="compare-chart-container"><canvas id="typeCountPie"></canvas><div>项目数量分布</div></div>
+                <div class="compare-chart-container"><canvas id="typeContractPie"></canvas><div>合同额分布 (万元)</div></div>
+                <div class="compare-chart-container"><canvas id="typePaymentPie"></canvas><div>回款额分布 (万元)</div></div>
+            </div>
+            <div class="insight-text" v-html="typeInsightText"></div>
+            
+            <!-- 按项目类型对比（近2年/近3年） -->
+            <div class="flex-between" style="margin-top: 20px;">
+                <h5>📊 按项目类型对比</h5>
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <select v-model="typeCompareRange" style="width: auto;">
+                        <option value="2">近2年对比</option>
+                        <option value="3">近3年对比</option>
+                    </select>
+                    <select v-model="typeCompareMetric" style="width: auto;">
+                        <option value="contract">合同额 (万元)</option>
+                        <option value="count">项目数量 (个)</option>
+                        <option value="payment">回款额 (万元)</option>
+                    </select>
+                    <button class="btn btn-sm" @click="refreshTypeCompareChart">生成对比</button>
+                </div>
+            </div>
+            <canvas id="typeCompareBarChart" height="200" style="max-height: 280px;"></canvas>
+
+            <!-- 工作室项目阶段分布饼图 -->
+            <hr><h4>📌 工作室项目阶段分布</h4>
+            <div class="filter-bar"><select v-model="stageYear"><option v-for="y in availableYears" :value="y">{{y}}年</option></select><select v-model="stageQuarter"><option value="0">全年</option><option value="1">第一季度</option><option value="2">第二季度</option><option value="3">第三季度</option><option value="4">第四季度</option></select><button class="btn btn-sm" @click="refreshStagePieChart">分析阶段</button></div>
+            <canvas id="stagePieChart" height="200"></canvas>
+
+            <!-- ✅ AI经营建议（整合了原AI分析+行动建议） -->
+            <hr><h4>🤖 AI经营建议</h4>
+            <div class="insight-text" v-html="aiAdviceText"></div>
+        </div>
+
+        <!-- 项目清单模态框 -->
+        <div v-if="showProjectModal" 
+             style="position:fixed;top:0;left:0;width:100%;height:100%;
+                    background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:999;">
+            <div style="background:white;width:600px;max-height:80%;overflow:auto;
+                        border-radius:20px;padding:20px;">
+                <h3 style="margin-bottom:12px;">📋 未回款项目清单</h3>
+                <div v-for="item in actionProjectList" 
+                     style="padding:10px;border-bottom:1px solid #eee;">
+                    <strong>{{item.name}}</strong><br>
+                    剩余回款：{{item.remaining.toFixed(1)}} 万<br>
+                    阶段：{{item.stage}}
+                </div>
+                <div style="text-align:right;margin-top:10px;">
+                    <button class="btn" @click="showProjectModal=false">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 部门间对比分析 + 部门深度分析 -->
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-chart-column"></i> 部门间数据对比</h3><div><label>对比年份: <select v-model="compareYear"><option v-for="y in availableYears" :value="y">{{y}}年</option></select></label><button class="btn btn-sm" @click="refreshDeptCompare">刷新对比</button></div></div>
+            <div class="compare-charts"><div class="compare-chart-container"><canvas id="deptCompletionChart"></canvas><div>合同/回款完成率 (%)</div></div><div class="compare-chart-container"><canvas id="deptRemainTaskChart"></canvas><div>合同/回款缺口 (万元)</div></div></div>
+            <div class="grid-stats" style="margin-top: 16px;"><div class="stat-card" v-for="dept in departments" :key="dept.id"><strong>{{dept.name}}</strong><br>年度合同额: {{getDeptYearlyContract(dept.id, compareYear).toFixed(1)}}万 / 目标: {{dept.contractTarget}}万<br>年度回款额: {{getDeptYearlyPayment(dept.id, compareYear).toFixed(1)}}万 / 目标: {{dept.paymentTarget}}万<br>待回款(全量): {{(dept.totalContractAmount - dept.totalPaymentReceived).toFixed(1)}}万<br>完成率: 合同{{getDeptContractCompletionRate(dept.id, compareYear).toFixed(1)}}% / 回款{{getDeptPaymentCompletionRate(dept.id, compareYear).toFixed(1)}}%<br><strong>合同转化率: {{getDeptConversionRate(dept.id, compareYear).toFixed(1)}}%</strong></div></div>
+            <hr><h4>📊 各部门月度合同额 & 回款额对比 ({{compareYear}}年)</h4>
+            <div class="compare-charts"><div class="compare-chart-container"><canvas id="deptMonthlyContractChart"></canvas><div>月度合同额对比 (万元)</div></div><div class="compare-chart-container"><canvas id="deptMonthlyPaymentChart"></canvas><div>月度回款额对比 (万元)</div></div></div>
+
+            <!-- 部门深度分析 -->
+            <hr><h4><i class="fas fa-building"></i> 部门深度分析</h4>
+            <div class="dept-selector"><label>选择部门: <select v-model="selectedDeptId"><option v-for="d in departments" :value="d.id">{{d.name}}</option></select></label><label>分析年份: <select v-model="deptAnalysisYear"><option v-for="y in availableYears" :value="y">{{y}}年</option></select></label><button class="btn btn-sm" @click="refreshDeptDetailAnalysis">刷新分析</button></div>
+            <div class="compare-charts">
+                <div class="compare-chart-container"><canvas id="deptTypeCountPie"></canvas><div>部门项目数量分布</div></div>
+                <div class="compare-chart-container"><canvas id="deptTypeContractPie"></canvas><div>部门合同额分布</div></div>
+                <div class="compare-chart-container"><canvas id="deptTypePaymentPie"></canvas><div>部门回款额分布</div></div>
+            </div>
+            <div class="insight-text" v-html="deptTypeInsightText"></div>
+            <div class="filter-bar" style="margin-top: 16px;"><label>部门阶段分析 (年份): <select v-model="deptStageYear"><option v-for="y in availableYears" :value="y">{{y}}年</option></select></label><label>季度: <select v-model="deptStageQuarter"><option value="0">全年</option><option value="1">Q1</option><option value="2">Q2</option><option value="3">Q3</option><option value="4">Q4</option></select></label><button class="btn btn-sm" @click="refreshDeptStagePie">分析部门阶段</button></div>
+            <canvas id="deptStagePieChart" height="200"></canvas>
+        </div>
+        <div class="copyright">© Twolobster | Marketing Business Analysis Platform</div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+    createApp({
+        setup() {
+            const departments = ref([]);
+            const studioContractTarget = ref(2000);
+            const studioPaymentTarget = ref(1500);
+            const totalStaffCount = ref(20);
+            const analysisYear = ref(new Date().getFullYear());
+            const timeDim = ref("month");
+            const analysisMonth = ref(new Date().getMonth() + 1);
+            const analysisQuarter = ref(Math.floor(new Date().getMonth() / 3) + 1);
+            const trendRange = ref("current");
+            const compareYear = ref(new Date().getFullYear());
+            const typeAnalysisYear = ref(new Date().getFullYear());
+            const typeCompareRange = ref("2");
+            const typeCompareMetric = ref("contract");
+            const stageYear = ref(new Date().getFullYear());
+            const stageQuarter = ref("0");
+            const yoyYear = ref(new Date().getFullYear() - 1);
+            const selectedDeptId = ref(null);
+            const deptAnalysisYear = ref(new Date().getFullYear());
+            const deptStageYear = ref(new Date().getFullYear());
+            const deptStageQuarter = ref("0");
+            const timeStats = ref({ amount: 0, paid: 0, paidPercent: 0 });
+            const actionProjectList = ref([]);
+            const showProjectModal = ref(false);
+            let charts = {};
+            
+            // 环比分析相关
+            const momType = ref("month");
+            const momYear = ref(new Date().getFullYear());
+            const momInsightText = ref("");
+            
+            // 整合后的AI建议文本
+            const aiAdviceText = ref("等待数据导入后自动分析...");
+            
+            // 类型分析洞察文本
+            const typeInsightText = ref("");
+            const deptTypeInsightText = ref("");
+            
+            const backupFileInput = ref(null);
+            
+            // 存储所有未回款项目（用于弹窗）
+            const allUnpaidProjects = ref([]);
+            
+            // ---------- 基础函数 ----------
+            function parseStudioBackup(fileContent) { const json = JSON.parse(fileContent); if (!json.projects) throw new Error("缺少 projects"); return json.projects; }
+            function computeDeptTotals(projects) { let totalContract = 0, totalPayment = 0; projects.forEach(proj => { totalContract += (proj.contractAmount || 0); if (proj.payments) proj.payments.forEach(pay => totalPayment += (pay.amount || 0)); }); return { totalContract, totalPayment }; }
+            function recomputeAllDeptTotals() { departments.value.forEach(dept => { if (dept.projects) { const { totalContract, totalPayment } = computeDeptTotals(dept.projects); dept.totalContractAmount = totalContract; dept.totalPaymentReceived = totalPayment; } }); }
+            async function importDeptData(deptId, file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => { try { const projects = parseStudioBackup(e.target.result); const { totalContract, totalPayment } = computeDeptTotals(projects); const dept = departments.value.find(d => d.id === deptId); if (dept) { dept.projects = projects; dept.totalContractAmount = totalContract; dept.totalPaymentReceived = totalPayment; dept.lastImportTime = new Date().toLocaleString(); if (!dept.contractTarget) dept.contractTarget = Math.round(totalContract * 0.8) || 500; if (!dept.paymentTarget) dept.paymentTarget = Math.round(totalPayment * 0.8) || 400; resolve(); } else reject("部门不存在"); } catch(err) { reject(err.message); } }; reader.onerror = () => reject("文件读取失败"); reader.readAsText(file); }); }
+            function addDepartment() { const newId = 'dept_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6); departments.value.push({ id: newId, name: `新部门 ${departments.value.length+1}`, contractTarget: 500, paymentTarget: 400, projects: [], totalContractAmount: 0, totalPaymentReceived: 0, lastImportTime: null }); saveFullStateToLocal(); nextTick(() => refreshAllCharts()); }
+            function removeDepartment(idx) { if (confirm("确认删除该部门？")) { departments.value.splice(idx, 1); saveFullStateToLocal(); refreshAllCharts(); } }
+            function triggerImportForDept(deptId) { document.getElementById('fileInput_'+deptId)?.click(); }
+            function handleDeptFileUpload(event, deptId) { const file = event.target.files[0]; if (!file) return; importDeptData(deptId, file).then(() => { alert("导入成功"); saveFullStateToLocal(); refreshAllCharts(); }).catch(err => alert("导入失败: "+err)); event.target.value = ''; }
+            
+            const allProjects = computed(() => { let list = []; departments.value.forEach(dept => { if (dept.projects) list.push(...dept.projects); }); return list; });
+            function getStudioContractByYear(year) { let sum=0; allProjects.value.forEach(p => { if(p.signDate && new Date(p.signDate).getFullYear()===year) sum += (p.contractAmount||0); }); return sum; }
+            function getStudioPaymentByYear(year) { let sum=0; allProjects.value.forEach(p => { if(p.payments) p.payments.forEach(pay => { if(pay.date && new Date(pay.date).getFullYear()===year) sum += (pay.amount||0); }); }); return sum; }
+            
+            function getTotalPaymentForProjectsSignedInYear(year) {
+                let sum = 0;
+                allProjects.value.forEach(p => {
+                    if (p.signDate && new Date(p.signDate).getFullYear() === year) {
+                        if (p.payments) {
+                            p.payments.forEach(pay => sum += (pay.amount || 0));
+                        }
+                    }
+                });
+                return sum;
+            }
+            
+            const studioYearlyContractSum = computed(() => getStudioContractByYear(analysisYear.value));
+            const studioYearlyPaymentSum = computed(() => getStudioPaymentByYear(analysisYear.value));
+            const studioContractPercent = computed(() => studioContractTarget.value ? ((studioYearlyContractSum.value/studioContractTarget.value)*100).toFixed(1) : 0);
+            const studioPaymentPercent = computed(() => studioPaymentTarget.value ? ((studioYearlyPaymentSum.value/studioPaymentTarget.value)*100).toFixed(1) : 0);
+            const studioYearlyProjectCount = computed(() => allProjects.value.filter(p => p.signDate && new Date(p.signDate).getFullYear() === analysisYear.value).length);
+            const studioYearlyCompletedCount = computed(() => allProjects.value.filter(p => p.stage === '完成' && p.signDate && new Date(p.signDate).getFullYear() === analysisYear.value).length);
+            const totalOutstandingPayment = computed(() => { let totalContract=0, totalPaid=0; allProjects.value.forEach(p => { totalContract += (p.contractAmount||0); if(p.payments) p.payments.forEach(pay => totalPaid += (pay.amount||0)); }); return totalContract - totalPaid; });
+            const totalContractAll = computed(() => { let s=0; allProjects.value.forEach(p=>s+=p.contractAmount||0); return s; });
+            const totalPaymentAll = computed(() => { let s=0; allProjects.value.forEach(p=>{ if(p.payments) p.payments.forEach(pay=>s+=pay.amount||0); }); return s; });
+            
+            const contractConversionRateAll = computed(() => totalContractAll.value ? ((totalPaymentAll.value/totalContractAll.value)*100).toFixed(1) : 0);
+            const contractConversionRateForYear = computed(() => {
+                const contractSigned = getStudioContractByYear(analysisYear.value);
+                if (contractSigned === 0) return 0;
+                const paymentForSignedProjects = getTotalPaymentForProjectsSignedInYear(analysisYear.value);
+                return ((paymentForSignedProjects / contractSigned) * 100).toFixed(1);
+            });
+            
+            const avgContractPerPerson = computed(() => totalStaffCount.value ? (studioYearlyContractSum.value / totalStaffCount.value) : 0);
+            const avgPaymentPerPerson = computed(() => totalStaffCount.value ? (studioYearlyPaymentSum.value / totalStaffCount.value) : 0);
+            const availableYears = computed(() => { let years = new Set(); allProjects.value.forEach(p => { if(p.signDate) years.add(new Date(p.signDate).getFullYear()); }); if(years.size===0) years.add(new Date().getFullYear()); return Array.from(years).sort((a,b)=>b-a); });
+            
+            function getDeptYearlyContract(deptId, year) { const dept = departments.value.find(d=>d.id===deptId); if(!dept) return 0; let sum=0; dept.projects.forEach(p=>{ if(p.signDate && new Date(p.signDate).getFullYear()===year) sum+= (p.contractAmount||0); }); return sum; }
+            function getDeptYearlyPayment(deptId, year) { const dept = departments.value.find(d=>d.id===deptId); if(!dept) return 0; let sum=0; dept.projects.forEach(p=>{ if(p.payments) p.payments.forEach(pay=>{ if(pay.date && new Date(pay.date).getFullYear()===year) sum+=(pay.amount||0); }); }); return sum; }
+            function getDeptContractCompletionRate(deptId, year) { const dept = departments.value.find(d=>d.id===deptId); if(!dept || dept.contractTarget===0) return 0; return (getDeptYearlyContract(deptId, year)/dept.contractTarget)*100; }
+            function getDeptPaymentCompletionRate(deptId, year) { const dept = departments.value.find(d=>d.id===deptId); if(!dept || dept.paymentTarget===0) return 0; return (getDeptYearlyPayment(deptId, year)/dept.paymentTarget)*100; }
+            function getDeptConversionRate(deptId, year) { const contract = getDeptYearlyContract(deptId, year); const payment = getDeptYearlyPayment(deptId, year); return contract ? (payment/contract)*100 : 0; }
+            
+            function destroyChart(name) { if (charts[name]) { charts[name].destroy(); delete charts[name]; } }
+            
+            // 项目类型统计
+            function getTypeStats(year) { const types = new Map(); allProjects.value.forEach(p => { if(p.signDate && new Date(p.signDate).getFullYear()===year && p.type) { const t = p.type; if(!types.has(t)) types.set(t, { count:0, contract:0, payment:0 }); let stat = types.get(t); stat.count++; stat.contract += p.contractAmount||0; if(p.payments) p.payments.forEach(pay=> stat.payment += pay.amount||0); } }); return types; }
+            
+            function refreshTypeCompareChart() {
+                const range = parseInt(typeCompareRange.value);
+                const currentYear = new Date().getFullYear();
+                let years = Array.from({length: range}, (_,i)=> currentYear - i).filter(y=>availableYears.value.includes(y));
+                if(years.length===0) years=[currentYear];
+                years.sort((a,b)=>a-b);
+                const allTypes = new Set();
+                years.forEach(y=>{ getTypeStats(y).forEach((_,t)=> allTypes.add(t)); });
+                const typeList = Array.from(allTypes);
+                if(typeList.length === 0) { destroyChart('typeCompareBar'); return; }
+                const metric = typeCompareMetric.value;
+                const getMetricValue = (statsMap, type) => { const stat = statsMap.get(type); if(!stat) return 0; if(metric === 'contract') return stat.contract; if(metric === 'payment') return stat.payment; return stat.count; };
+                const colorPalette = ['#2c6e9e', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a', '#14b8a6', '#f97316', '#6366f1', '#d946ef', '#84cc16', '#06b6d4'];
+                const datasets = typeList.map((type, idx) => {
+                    const data = years.map(y => getMetricValue(getTypeStats(y), type));
+                    const baseColor = colorPalette[idx % colorPalette.length];
+                    return { label: type, data: data, backgroundColor: baseColor + '80', borderColor: baseColor, borderWidth: 1.5, borderRadius: 4, barPercentage: 0.7 };
+                });
+                let yAxisTitle = metric === 'contract' ? '合同额 (万元)' : (metric === 'payment' ? '回款额 (万元)' : '项目数量 (个)');
+                destroyChart('typeCompareBar');
+                const ctx = document.getElementById('typeCompareBarChart')?.getContext('2d');
+                if(ctx) charts.typeCompareBar = new Chart(ctx, { type: 'bar', data: { labels: years.map(y=>`${y}年`), datasets: datasets }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top', labels: { font: { size: 11 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} ${metric === 'count' ? '个' : '万元'}` } } }, scales: { y: { title: { display: true, text: yAxisTitle, font: { weight: 'bold' } }, beginAtZero: true }, x: { title: { display: true, text: '年份', font: { weight: 'bold' } } } } } });
+            }
+            
+            function refreshTypePieCharts() {
+                const year = typeAnalysisYear.value;
+                const stats = getTypeStats(year);
+                const labels = Array.from(stats.keys());
+                const counts = labels.map(l => stats.get(l).count);
+                const contracts = labels.map(l => stats.get(l).contract);
+                const payments = labels.map(l => stats.get(l).payment);
+                const colorPalette = ['#2c6e9e', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a', '#14b8a6', '#f97316'];
+                const bgColors = labels.map((_, i) => colorPalette[i % colorPalette.length]);
+                destroyChart('typeCountPie');
+                destroyChart('typeContractPie');
+                destroyChart('typePaymentPie');
+                if (labels.length) {
+                    charts.typeCountPie = new Chart(document.getElementById('typeCountPie'), {
+                        type: 'pie', data: { labels, datasets: [{ data: counts, backgroundColor: bgColors }] }
+                    });
+                    charts.typeContractPie = new Chart(document.getElementById('typeContractPie'), {
+                        type: 'pie', data: { labels, datasets: [{ data: contracts, backgroundColor: bgColors }] }
+                    });
+                    charts.typePaymentPie = new Chart(document.getElementById('typePaymentPie'), {
+                        type: 'pie', data: { labels, datasets: [{ data: payments, backgroundColor: bgColors }] }
+                    });
+                    const maxCount = labels.reduce((a, b) => stats.get(b).count > stats.get(a).count ? b : a, labels[0]);
+                    const maxContract = labels.reduce((a, b) => stats.get(b).contract > stats.get(a).contract ? b : a, labels[0]);
+                    const maxPayment = labels.reduce((a, b) => stats.get(b).payment > stats.get(a).payment ? b : a, labels[0]);
+                    typeInsightText.value = `
+                        <strong>📌 分析结论 (${year}年):</strong>
+                        项目数量最多: ${maxCount} (${stats.get(maxCount).count}个)
+                        &nbsp;|&nbsp;
+                        合同额最高: ${maxContract} (${stats.get(maxContract).contract.toFixed(1)}万)
+                        &nbsp;|&nbsp;
+                        回款额最高: ${maxPayment} (${stats.get(maxPayment).payment.toFixed(1)}万)
+                    `;
+                } else {
+                    typeInsightText.value = `<strong>📌 分析结论 (${year}年):</strong> 暂无项目数据`;
+                }
+            }
+            
+            function refreshStagePieChart() { let year = stageYear.value; let quarter = stageQuarter.value; let projects = allProjects.value.filter(p=> p.signDate && new Date(p.signDate).getFullYear()===year); if(quarter !== '0') { projects = projects.filter(p=> { let m = new Date(p.signDate).getMonth()+1; let q = Math.ceil(m/3); return q == quarter; }); } const stageMap = new Map(); projects.forEach(p=>{ const s = p.stage || '未知'; stageMap.set(s, (stageMap.get(s)||0)+1); }); const labels = Array.from(stageMap.keys()); const data = labels.map(l=>stageMap.get(l)); const colorPalette = ['#2c6e9e', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a']; const bgColors = labels.map((_,i)=> colorPalette[i%colorPalette.length]); destroyChart('stagePie'); charts.stagePie = new Chart(document.getElementById('stagePieChart'), { type:'pie', data:{ labels, datasets:[{ data, backgroundColor:bgColors }] } }); }
+            function refreshYoYChart() { const baseYear = yoyYear.value; const nextYear = baseYear+1; const contractBase = getStudioContractByYear(baseYear); const contractNext = getStudioContractByYear(nextYear); const paymentBase = getStudioPaymentByYear(baseYear); const paymentNext = getStudioPaymentByYear(nextYear); const contractGrowth = contractBase ? ((contractNext-contractBase)/contractBase)*100 : 0; const paymentGrowth = paymentBase ? ((paymentNext-paymentBase)/paymentBase)*100 : 0; destroyChart('yoy'); charts.yoy = new Chart(document.getElementById('yoyChart'), { type:'bar', data:{ labels:['同比增长率'], datasets:[{ label:'合同额同比增长率 (%)', data:[contractGrowth], backgroundColor:'#2c6e9e'},{ label:'回款额同比增长率 (%)', data:[paymentGrowth], backgroundColor:'#10b981' }] } }); }
+            
+            // 环比分析模块
+            function getMonthlyContractAndPayment(year) {
+                let monthlyContract = Array(12).fill(0);
+                let monthlyPayment = Array(12).fill(0);
+                allProjects.value.forEach(p => {
+                    if(p.signDate && new Date(p.signDate).getFullYear() === year) {
+                        const m = new Date(p.signDate).getMonth();
+                        monthlyContract[m] += (p.contractAmount || 0);
+                    }
+                    if(p.payments) {
+                        p.payments.forEach(pay => {
+                            if(pay.date && new Date(pay.date).getFullYear() === year) {
+                                const m = new Date(pay.date).getMonth();
+                                monthlyPayment[m] += (pay.amount || 0);
+                            }
+                        });
+                    }
+                });
+                return { monthlyContract, monthlyPayment };
+            }
+            
+            function getQuarterlyFromMonthly(monthlyArr) {
+                let quarterly = Array(4).fill(0);
+                for(let i=0; i<12; i++) {
+                    const q = Math.floor(i/3);
+                    quarterly[q] += monthlyArr[i];
+                }
+                return quarterly;
+            }
+            
+            function computeMomRates(dataArray) {
+                let rates = [null];
+                for(let i=1; i<dataArray.length; i++) {
+                    const prev = dataArray[i-1];
+                    const curr = dataArray[i];
+                    if(prev !== 0 && curr !== 0) {
+                        rates.push(((curr - prev) / prev) * 100);
+                    } else if(prev === 0 && curr !== 0) {
+                        rates.push(100);
+                    } else {
+                        rates.push(0);
+                    }
+                }
+                return rates;
+            }
+            
+            function refreshMoMChart() {
+                const year = momYear.value;
+                const type = momType.value;
+                const { monthlyContract, monthlyPayment } = getMonthlyContractAndPayment(year);
+                
+                let contractData, paymentData, labels;
+                if(type === 'month') {
+                    contractData = monthlyContract;
+                    paymentData = monthlyPayment;
+                    labels = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+                } else {
+                    contractData = getQuarterlyFromMonthly(monthlyContract);
+                    paymentData = getQuarterlyFromMonthly(monthlyPayment);
+                    labels = ['Q1','Q2','Q3','Q4'];
+                }
+                
+                const contractMom = computeMomRates(contractData);
+                const paymentMom = computeMomRates(paymentData);
+                
+                destroyChart('momChart');
+                const ctx = document.getElementById('momChart')?.getContext('2d');
+                if(ctx) {
+                    charts.momChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                { label: '合同额环比增长率 (%)', data: contractMom, backgroundColor: '#2c6e9e', borderColor: '#1e4a6e', borderWidth: 1 },
+                                { label: '回款额环比增长率 (%)', data: paymentMom, backgroundColor: '#10b981', borderColor: '#0e8f60', borderWidth: 1 }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ctx) => {
+                                            let val = ctx.raw;
+                                            if(val === null) return `${ctx.dataset.label}: 无上期数据`;
+                                            return `${ctx.dataset.label}: ${val.toFixed(1)}%`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    title: { display: true, text: '环比增长率 (%)', font: { weight: 'bold' } },
+                                    ticks: { callback: (val) => val + '%' }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                let insight = `<strong>📌 ${year}年 ${type==='month'?'月度':'季度'}环比分析：</strong><br>`;
+                const validContract = contractMom.slice(1).map((v,i) => ({ idx: i+1, val: v }));
+                const validPayment = paymentMom.slice(1).map((v,i) => ({ idx: i+1, val: v }));
+                if(validContract.length) {
+                    const maxContract = validContract.reduce((a,b) => (b.val > a.val ? b : a), validContract[0]);
+                    const minContract = validContract.reduce((a,b) => (b.val < a.val ? b : a), validContract[0]);
+                    insight += `合同额环比：最大增长 ${maxContract.val.toFixed(1)}% (${labels[maxContract.idx]})，最大下降 ${minContract.val.toFixed(1)}% (${labels[minContract.idx]})。<br>`;
+                }
+                if(validPayment.length) {
+                    const maxPayment = validPayment.reduce((a,b) => (b.val > a.val ? b : a), validPayment[0]);
+                    const minPayment = validPayment.reduce((a,b) => (b.val < a.val ? b : a), validPayment[0]);
+                    insight += `回款额环比：最大增长 ${maxPayment.val.toFixed(1)}% (${labels[maxPayment.idx]})，最大下降 ${minPayment.val.toFixed(1)}% (${labels[minPayment.idx]})。<br>`;
+                }
+                momInsightText.value = insight;
+            }
+            
+            // ========== 整合后的 AI 经营建议（包含行动清单）==========
+            function generateAIAdvice() {
+                if (!allProjects.value || allProjects.value.length === 0) {
+                    aiAdviceText.value = "暂无数据，请先导入部门数据";
+                    return;
+                }
+                const year = new Date().getFullYear();
+                // 1. 基础数据
+                const contract = getStudioContractByYear(year);
+                const payment = getStudioPaymentByYear(year);
+                const target = studioContractTarget.value;
+                const completion = target ? contract / target : 0;
+                const totalContract = totalContractAll.value;
+                const totalPayment = totalPaymentAll.value;
+                const outstanding = totalOutstandingPayment.value;
+                const cumulativeConversion = totalContract ? (totalPayment / totalContract * 100) : 0;
+                const yearlyConversion = contract ? (getTotalPaymentForProjectsSignedInYear(year) / contract * 100) : 0;
+                // 2. 增长判断
+                let growthText = "";
+                if (completion > 1) growthText = "增长强劲";
+                else if (completion > 0.7) growthText = "增长稳健";
+                else growthText = "增长承压";
+                // 3. 风险判断
+                let riskText = "";
+                const outstandingRatio = totalContract ? (outstanding / totalContract) : 0;
+                if (outstandingRatio > 0.5) riskText = "回款风险较高";
+                else if (outstandingRatio > 0.3) riskText = "存在一定回款压力";
+                else riskText = "回款风险可控";
+                // 4. 结构联动
+                let stageMap = {};
+                let stagePaymentMap = {};
+                allProjects.value.forEach(p => {
+                    const s = p.stage || "未知";
+                    if (!stageMap[s]) { stageMap[s] = 0; stagePaymentMap[s] = 0; }
+                    if (p.signDate && new Date(p.signDate).getFullYear() === year) stageMap[s]++;
+                    if (p.payments) p.payments.forEach(pay => stagePaymentMap[s] += (pay.amount || 0));
+                });
+                const stages = Object.keys(stageMap);
+                let mainStage = stages[0];
+                let mainPayStage = stages[0];
+                stages.forEach(s => {
+                    if (stageMap[s] > stageMap[mainStage]) mainStage = s;
+                    if (stagePaymentMap[s] > stagePaymentMap[mainPayStage]) mainPayStage = s;
+                });
+                const structureMismatch = mainStage !== mainPayStage;
+                // 5. 月度低点 & 异常波动
+                const { contractData } = getMonthlyTrendData("current");
+                const monthly = contractData[year] || Array(12).fill(0);
+                const minMonth = monthly.indexOf(Math.min(...monthly)) + 1;
+                let abnormal = [];
+                for (let i = 1; i < 12; i++) {
+                    if (monthly[i-1] > 0) {
+                        let change = (monthly[i] - monthly[i-1]) / monthly[i-1];
+                        if (Math.abs(change) > 0.5) abnormal.push(i+1);
+                    }
+                }
+                // 6. 现金流季度高峰
+                let quarterly = [0,0,0,0];
+                allProjects.value.forEach(p => {
+                    if(p.payments) p.payments.forEach(pay => {
+                        if(pay.date) {
+                            let d = new Date(pay.date);
+                            if(d.getFullYear() === year) quarterly[Math.floor(d.getMonth()/3)] += pay.amount || 0;
+                        }
+                    });
+                });
+                const maxQuarter = quarterly.indexOf(Math.max(...quarterly)) + 1;
+                // 7. 未回款项目清单（用于行动建议）
+                let unpaidProjects = [];
+                allProjects.value.forEach(p => {
+                    const totalPaid = (p.payments || []).reduce((s, pay) => s + (pay.amount || 0), 0);
+                    const remaining = (p.contractAmount || 0) - totalPaid;
+                    if (remaining > 0) {
+                        unpaidProjects.push({ name: p.name || "未命名项目", remaining, stage: p.stage || "未知" });
+                    }
+                });
+                unpaidProjects.sort((a, b) => b.remaining - a.remaining);
+                allUnpaidProjects.value = unpaidProjects;
+                const totalRecoverable = unpaidProjects.reduce((s, p) => s + p.remaining, 0);
+                // 8. 阶段卡点（项目数最多的阶段）
+                let stageCount = {};
+                allProjects.value.forEach(p => {
+                    const s = p.stage || "未知";
+                    stageCount[s] = (stageCount[s] || 0) + 1;
+                });
+                const stuckStage = Object.keys(stageCount).reduce((a, b) => stageCount[b] > stageCount[a] ? b : a);
+                // 9. 生成行动建议文本（使用原生 onclick 调用全局函数）
+                const actionHtml = unpaidProjects.length > 0 
+                    ? `<br><span class="clickable-link" onclick="window.showUnpaidModal && window.showUnpaidModal()">👉 点击查看未回款项目清单（${unpaidProjects.length}个项目，预计可回收${totalRecoverable.toFixed(1)}万）</span>`
+                    : "";
+                // 10. 整合输出
+                aiAdviceText.value = `
+                    <strong>📊 综合判断（${year}年）：</strong>${growthText}，合同额完成率 ${(completion*100).toFixed(1)}%，${riskText}<br><br>
+                    <strong>🔍 关键洞察：</strong><br>
+                    • 项目集中在「${mainStage}」，回款集中在「${mainPayStage}」 → ${structureMismatch ? "阶段与回款错位，转化效率偏低" : "结构匹配良好"}<br>
+                    • 回款高峰在 Q${maxQuarter}，需提前保障现金流<br>
+                    • 低点月份：${minMonth}月${abnormal.length ? `，异常波动月份：${abnormal.join("、")}` : ""}<br>
+                    • 累计转化率 ${cumulativeConversion.toFixed(1)}%，当年项目转化率 ${yearlyConversion.toFixed(1)}%<br><br>
+                    <strong>🎯 行动清单：</strong><br>
+                    1. 优先推进回款项目${actionHtml}<br>
+                    2. 加快「${stuckStage}」阶段项目向下一阶段转化<br>
+                    3. 重点关注 ${minMonth} 月业务低点，提前部署营销活动<br>
+                    ${structureMismatch ? "4. 优化阶段转化链路，提升后端回款效率" : ""}
+                    <br><br>
+                    <strong>📌 执行说明：</strong><br>
+                    建议优先处理高金额未回款项目，同时推动关键阶段转化，以提升整体现金流效率。
+                `;
+            }
+            
+            // 全局方法：显示未回款项目弹窗
+            window.showUnpaidModal = () => {
+                actionProjectList.value = allUnpaidProjects.value;
+                showProjectModal.value = true;
+            };
+            
+            function getMonthlyTrendData(rangeVal) { const currentYear = new Date().getFullYear(); let years=[]; if(rangeVal==='current') years=[currentYear]; else { let cnt=parseInt(rangeVal); for(let i=0;i<cnt;i++) years.push(currentYear-i); } years=years.filter(y=>y>=Math.min(...availableYears.value, currentYear-4)); if(years.length===0) years=[currentYear]; const contractData={}, paymentData={}; years.forEach(y=>{ contractData[y]=Array(12).fill(0); paymentData[y]=Array(12).fill(0); }); allProjects.value.forEach(p=>{ if(p.signDate){ let y=new Date(p.signDate).getFullYear(); if(contractData[y]) contractData[y][new Date(p.signDate).getMonth()]+=p.contractAmount; } if(p.payments) p.payments.forEach(pay=>{ if(pay.date){ let y=new Date(pay.date).getFullYear(); if(paymentData[y]) paymentData[y][new Date(pay.date).getMonth()]+=pay.amount; } }); }); return { years, contractData, paymentData }; }
+            
+            function refreshQuarterlyStackChart() { const currentYear = new Date().getFullYear(); let years = [currentYear-2, currentYear-1, currentYear].filter(y=>y>=Math.min(...availableYears.value, currentYear-2)); if(years.length===0) years=[currentYear]; const quarters = ['Q1','Q2','Q3','Q4']; const dataByYear = years.map(y=> quarters.map(q=>0)); allProjects.value.forEach(p=>{ if(p.payments) p.payments.forEach(pay=>{ if(pay.date){ const d = new Date(pay.date); const y = d.getFullYear(); const idxYear = years.indexOf(y); if(idxYear!==-1){ const qIdx = Math.floor(d.getMonth()/3); dataByYear[idxYear][qIdx] += pay.amount||0; } } }); }); destroyChart('quarterlyStack'); charts.quarterlyStack = new Chart(document.getElementById('quarterlyStackChart'), { type:'bar', data:{ labels: quarters, datasets: years.map((y,idx)=>({ label:`${y}年`, data: dataByYear[idx], backgroundColor: `hsl(${idx*120+200}, 65%, 60%)` })) }, options:{ scales:{ x:{ stacked:true }, y:{ stacked:true } } } }); }
+            function refreshDeptCompare() { if(!departments.value.length) return; const year=compareYear.value; const deptNames=departments.value.map(d=>d.name); const contractRates=departments.value.map(d=>getDeptContractCompletionRate(d.id, year)); const paymentRates=departments.value.map(d=>getDeptPaymentCompletionRate(d.id, year)); destroyChart('deptCompletion'); charts.deptCompletion = new Chart(document.getElementById('deptCompletionChart'), { type:'bar', data:{ labels:deptNames, datasets:[{ label:'合同完成率%', data:contractRates, backgroundColor:'#2c6e9e'},{ label:'回款完成率%', data:paymentRates, backgroundColor:'#10b981'}] } }); const contractGap=departments.value.map(d=>Math.max(0, d.contractTarget - getDeptYearlyContract(d.id, year))); const paymentGap=departments.value.map(d=>Math.max(0, d.paymentTarget - getDeptYearlyPayment(d.id, year))); destroyChart('deptRemain'); charts.deptRemain = new Chart(document.getElementById('deptRemainTaskChart'), { type:'bar', data:{ labels:deptNames, datasets:[{ label:'合同缺口(万)', data:contractGap, backgroundColor:'#f97316'},{ label:'回款缺口(万)', data:paymentGap, backgroundColor:'#ef4444'}] } }); const months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']; const monthlyContractDatasets=departments.value.map((dept,idx)=>{ let monthlyData=Array(12).fill(0); dept.projects.forEach(p=>{ if(p.signDate && new Date(p.signDate).getFullYear()===year){ let m=new Date(p.signDate).getMonth(); monthlyData[m]+=p.contractAmount; } }); return { label:dept.name, data:monthlyData, borderColor:`hsl(${idx*45},70%,55%)`, fill:false }; }); destroyChart('deptMonthlyContract'); charts.deptMonthlyContract = new Chart(document.getElementById('deptMonthlyContractChart'), { type:'line', data:{ labels:months, datasets:monthlyContractDatasets } }); const monthlyPaymentDatasets=departments.value.map((dept,idx)=>{ let monthlyData=Array(12).fill(0); dept.projects.forEach(p=>{ if(p.payments) p.payments.forEach(pay=>{ if(pay.date && new Date(pay.date).getFullYear()===year){ let m=new Date(pay.date).getMonth(); monthlyData[m]+=pay.amount; } }); }); return { label:dept.name, data:monthlyData, borderColor:`hsl(${idx*45+180},70%,55%)`, fill:false }; }); destroyChart('deptMonthlyPayment'); charts.deptMonthlyPayment = new Chart(document.getElementById('deptMonthlyPaymentChart'), { type:'line', data:{ labels:months, datasets:monthlyPaymentDatasets } }); }
+            function refreshDeptDetailAnalysis() { const dept = departments.value.find(d=>d.id===selectedDeptId.value); if(!dept) return; const year = deptAnalysisYear.value; const types = new Map(); dept.projects.forEach(p=>{ if(p.signDate && new Date(p.signDate).getFullYear()===year && p.type){ const t = p.type; if(!types.has(t)) types.set(t,{count:0,contract:0,payment:0}); let s=types.get(t); s.count++; s.contract += p.contractAmount||0; if(p.payments) p.payments.forEach(pay=> s.payment += pay.amount||0); } }); const labels = Array.from(types.keys()); const counts = labels.map(l=>types.get(l).count); const contracts = labels.map(l=>types.get(l).contract); const payments = labels.map(l=>types.get(l).payment); const colorPalette = ['#2c6e9e', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a']; const bgColors = labels.map((_,i)=> colorPalette[i%colorPalette.length]); destroyChart('deptTypeCount'); destroyChart('deptTypeContract'); destroyChart('deptTypePayment'); if(labels.length){ charts.deptTypeCount = new Chart(document.getElementById('deptTypeCountPie'), { type:'pie', data:{ labels, datasets:[{ data:counts, backgroundColor:bgColors }] } }); charts.deptTypeContract = new Chart(document.getElementById('deptTypeContractPie'), { type:'pie', data:{ labels, datasets:[{ data:contracts, backgroundColor:bgColors }] } }); charts.deptTypePayment = new Chart(document.getElementById('deptTypePaymentPie'), { type:'pie', data:{ labels, datasets:[{ data:payments, backgroundColor:bgColors }] } }); const maxCount = labels.reduce((a,b)=> types.get(b).count > types.get(a).count ? b : a, labels[0]); const maxContract = labels.reduce((a,b)=> types.get(b).contract > types.get(a).contract ? b : a, labels[0]); const maxPayment = labels.reduce((a,b)=> types.get(b).payment > types.get(a).payment ? b : a, labels[0]); deptTypeInsightText.value = `<strong>📌 ${dept.name} (${year}年):</strong> 项目数量最多: ${maxCount} (${types.get(maxCount).count}个) &nbsp;|&nbsp; 合同额最高: ${maxContract} (${types.get(maxContract).contract.toFixed(1)}万) &nbsp;|&nbsp; 回款额最高: ${maxPayment} (${types.get(maxPayment).payment.toFixed(1)}万)`; } else { deptTypeInsightText.value = `<strong>📌 ${dept.name} (${year}年):</strong> 暂无类型数据`; } }
+            function refreshDeptStagePie() { const dept = departments.value.find(d=>d.id===selectedDeptId.value); if(!dept) return; let year = deptStageYear.value; let quarter = deptStageQuarter.value; let projects = dept.projects.filter(p=> p.signDate && new Date(p.signDate).getFullYear()===year); if(quarter !== '0') { projects = projects.filter(p=> { let m = new Date(p.signDate).getMonth()+1; let q = Math.ceil(m/3); return q == quarter; }); } const stageMap = new Map(); projects.forEach(p=>{ const s = p.stage || '未知'; stageMap.set(s, (stageMap.get(s)||0)+1); }); const labels = Array.from(stageMap.keys()); const data = labels.map(l=>stageMap.get(l)); const colorPalette = ['#2c6e9e', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']; const bgColors = labels.map((_,i)=> colorPalette[i%colorPalette.length]); destroyChart('deptStage'); charts.deptStage = new Chart(document.getElementById('deptStagePieChart'), { type:'pie', data:{ labels, datasets:[{ data, backgroundColor:bgColors }] } }); }
+            function refreshTimeAnalysisChart() { let year=analysisYear.value, dim=timeDim.value; let month=null, quarter=null; if(dim==='month') month=analysisMonth.value; if(dim==='quarter') quarter=analysisQuarter.value; let contract=0, payment=0; allProjects.value.forEach(p=>{ if(p.signDate){ let d=new Date(p.signDate); if(d.getFullYear()===year){ if(dim==='month' && d.getMonth()+1===month) contract+=p.contractAmount; else if(dim==='quarter'){ let q=Math.floor(d.getMonth()/3)+1; if(q===quarter) contract+=p.contractAmount;} else if(dim==='year') contract+=p.contractAmount;} } if(p.payments) p.payments.forEach(pay=>{ if(pay.date){ let pd=new Date(pay.date); if(pd.getFullYear()===year){ if(dim==='month' && pd.getMonth()+1===month) payment+=pay.amount; else if(dim==='quarter'){ let q=Math.floor(pd.getMonth()/3)+1; if(q===quarter) payment+=pay.amount;} else if(dim==='year') payment+=pay.amount;} } }); }); timeStats.value={amount:contract.toFixed(1), paid:payment.toFixed(1), paidPercent:contract?((payment/contract)*100).toFixed(1):0}; destroyChart('studioTime'); let ctx=document.getElementById('studioTimeChart'); if(ctx) charts.studioTime = new Chart(ctx, { type:'bar', data:{ labels:['合同额(万)','回款额(万)'], datasets:[{ label:`${year}年`, data:[contract,payment], backgroundColor:['#2c6e9e','#10b981'] }] } }); }
+            function refreshTrendCharts() { const { years, contractData, paymentData } = getMonthlyTrendData(trendRange.value); destroyChart('contractTrend'); const contractCtx = document.getElementById('contractTrendChart')?.getContext('2d'); if(contractCtx) charts.contractTrend = new Chart(contractCtx, { type:'line', data:{ labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], datasets: years.map((y,idx)=> ({ label:`${y}年合同额`, data: contractData[y], borderColor: ['#2c6e9e','#e53e3e','#10b981','#f59e0b','#8b5cf6'][idx%5], backgroundColor: ['#2c6e9e','#e53e3e','#10b981','#f59e0b','#8b5cf6'][idx%5] + '33', fill: true, tension:0.3 })) } }); destroyChart('paymentTrend'); const payCtx = document.getElementById('paymentTrendChart')?.getContext('2d'); if(payCtx) charts.paymentTrend = new Chart(payCtx, { type:'line', data:{ labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], datasets: years.map((y,idx)=> ({ label:`${y}年回款额`, data: paymentData[y], borderColor: ['#2c6e9e','#e53e3e','#10b981','#f59e0b','#8b5cf6'][idx%5], backgroundColor: ['#2c6e9e','#e53e3e','#10b981','#f59e0b','#8b5cf6'][idx%5] + '33', fill: true, tension:0.3 })) } }); }
+            
+            function refreshAllCharts() { refreshTimeAnalysisChart(); refreshTrendCharts(); refreshDeptCompare(); refreshTypePieCharts(); refreshTypeCompareChart(); refreshStagePieChart(); refreshYoYChart(); refreshQuarterlyStackChart(); if(selectedDeptId.value) refreshDeptDetailAnalysis(); refreshDeptStagePie(); generateAIAdvice(); refreshMoMChart(); }
+            
+            const STORAGE_KEY="market_summary_app";
+            function saveFullStateToLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ departments:departments.value, studioContractTarget:studioContractTarget.value, studioPaymentTarget:studioPaymentTarget.value, totalStaffCount:totalStaffCount.value, analysisYear:analysisYear.value, compareYear:compareYear.value, trendRange:trendRange.value })); alert("已保存"); }
+            function loadFullState() { const raw=localStorage.getItem(STORAGE_KEY); if(raw){ const data=JSON.parse(raw); departments.value=data.departments||[]; studioContractTarget.value=data.studioContractTarget??2000; studioPaymentTarget.value=data.studioPaymentTarget??1500; totalStaffCount.value=data.totalStaffCount??20; analysisYear.value=data.analysisYear??new Date().getFullYear(); compareYear.value=data.compareYear??new Date().getFullYear(); trendRange.value=data.trendRange??"current"; recomputeAllDeptTotals(); } if(departments.value.length===0) addDepartment(); else refreshAllCharts(); }
+            function exportBackup() { const blob=new Blob([JSON.stringify({ departments:departments.value, studioContractTarget:studioContractTarget.value, studioPaymentTarget:studioPaymentTarget.value, totalStaffCount:totalStaffCount.value, analysisYear:analysisYear.value, compareYear:compareYear.value, trendRange:trendRange.value })], {type:"application/json"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`market_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); }
+            function triggerImportBackup() { backupFileInput.value.click(); }
+            function handleBackupImport(e) { const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=ev=>{ try{ const data=JSON.parse(ev.target.result); if(data.departments) departments.value=data.departments; if(data.studioContractTarget!==undefined) studioContractTarget.value=data.studioContractTarget; if(data.studioPaymentTarget!==undefined) studioPaymentTarget.value=data.studioPaymentTarget; if(data.totalStaffCount!==undefined) totalStaffCount.value=data.totalStaffCount; if(data.analysisYear) analysisYear.value=data.analysisYear; if(data.compareYear) compareYear.value=data.compareYear; if(data.trendRange) trendRange.value=data.trendRange; recomputeAllDeptTotals(); saveFullStateToLocal(); refreshAllCharts(); alert("恢复成功"); }catch(err){ alert("解析失败"); } }; reader.readAsText(file); e.target.value=''; }
+            
+            onMounted(()=>{ loadFullState(); watch([analysisYear, timeDim, analysisMonth, analysisQuarter],()=>refreshTimeAnalysisChart()); watch(()=>compareYear.value,()=>refreshDeptCompare()); watch(()=>trendRange.value,()=>refreshTrendCharts()); watch(()=>departments.value,()=>{ nextTick(()=>refreshAllCharts()); },{deep:true}); watch(()=>selectedDeptId.value,()=>{ if(selectedDeptId.value) refreshDeptDetailAnalysis(); });
+            watch([typeCompareRange, typeCompareMetric], () => { refreshTypeCompareChart(); });
+            watch([momType, momYear], () => { refreshMoMChart(); });
+            });
+            return { departments, studioContractTarget, studioPaymentTarget, totalStaffCount, analysisYear, timeDim, analysisMonth, analysisQuarter, trendRange, compareYear, studioYearlyContractSum, studioYearlyPaymentSum, studioContractPercent, studioPaymentPercent, studioYearlyProjectCount, studioYearlyCompletedCount, totalOutstandingPayment, availableYears, timeStats, backupFileInput, avgContractPerPerson, avgPaymentPerPerson, contractConversionRateAll, contractConversionRateForYear, typeAnalysisYear, typeCompareRange, typeCompareMetric, stageYear, stageQuarter, yoyYear, selectedDeptId, deptAnalysisYear, deptStageYear, deptStageQuarter, getDeptYearlyContract, getDeptYearlyPayment, getDeptContractCompletionRate, getDeptPaymentCompletionRate, getDeptConversionRate, addDepartment, removeDepartment, triggerImportForDept, handleDeptFileUpload, refreshTimeAnalysisChart, refreshTrendCharts, refreshDeptCompare, refreshAllCharts, refreshTypePieCharts, refreshTypeCompareChart, refreshStagePieChart, refreshYoYChart, refreshQuarterlyStackChart, refreshDeptDetailAnalysis, refreshDeptStagePie, saveFullStateToLocal, exportBackup, triggerImportBackup, handleBackupImport, typeInsightText, deptTypeInsightText, aiAdviceText, actionProjectList, showProjectModal, momType, momYear, momInsightText, refreshMoMChart };
+        }
+    }).mount("#app");
+</script>
+</body>
+</html>

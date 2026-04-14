@@ -50,7 +50,6 @@
         .gantt-wrapper .gantt-container { min-height: 300px; position: relative; }
         .gantt-today-line { stroke: #e53e3e; stroke-width: 2px; stroke-dasharray: 4px; }
         .gantt-today-label { fill: #e53e3e; font-size: 11px; font-weight: bold; }
-        /* 甘特图任务条颜色自定义 */
         .bar.overdue-bar { fill: #e53e3e !important; }
         .bar.completed-bar { fill: #9ca3af !important; }
         .bar.normal-bar { fill: #10b981 !important; }
@@ -69,8 +68,13 @@
         .member-tag .remove-member { cursor: pointer; color: #ef4444; font-weight: bold; margin-left: 4px; }
         .add-member-select { width: 200px; }
         .payment-record-section { margin-top: 24px; }
-        .submission-input { margin-left: 16px; width: 300px; }
-        /* 打印样式 */
+        /* 基本信息两列布局 */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px 24px; align-items: start; }
+        .info-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+        .info-item label { font-weight: 600; min-width: 90px; color: #334155; }
+        .info-item input, .info-item select { flex: 1; min-width: 160px; }
+        .full-width { grid-column: 1 / -1; }
+        .location-hint { font-size: 0.7rem; color: #6c757d; margin-left: 8px; }
         @media print {
             body * { visibility: hidden; }
             .print-report, .print-report * { visibility: visible; }
@@ -104,7 +108,8 @@
                 <div style="overflow-x: auto;">
                     <table>
                         <thead><tr><th>项目名称</th><th>重要/急迫</th><th>设计阶段</th><th>下一步计划</th><th>商务/回款</th><th>负责人</th><th>进度%</th><th>操作</th></tr></thead>
-                        <tbody><tr v-for="proj in filteredSortedProjects" :key="proj.id" :class="['project-row', getRowClass(proj)]" @click="goToDetail(proj.id)"><td><strong>{{proj.name}}</strong><div class="tag">{{proj.type}}</div></td><td><span :class="proj.priority==='red'?'badge-red':'badge-green'">{{proj.priority==='red'?'🔴 重要急迫':'🟢 普通'}}</span></td><td><span :class="getStageBadgeClass(proj.stage)">{{proj.stage}}</span></td><td><span v-if="getNextTask(proj)">{{getNextTask(proj).content}}<br>{{formatDate(getNextTask(proj).endDate)}}</span><span v-else>-</span></td><td>合同: {{proj.contractAmount}}万<br>已回: {{getPaidSum(proj)}}万 / {{proj.contractAmount}}万</td><td>{{getStaffName(proj.ownerId)}}<br><small>{{getStaffNames(proj.memberIds).slice(0,10)}}</small></td><td>{{proj.progressPercent || 0}}%</td><td @click.stop><button class="btn btn-sm btn-danger" @click="deleteProject(proj.id)"><i class="fas fa-trash-alt"></i> 删除</button></td></tr></tbody>
+                        <tbody><tr v-for="proj in filteredSortedProjects" :key="proj.id" :class="['project-row', getRowClass(proj)]" @click="goToDetail(proj.id)"><td><strong>{{proj.name}}</strong><div class="tag">{{proj.type}}</div></td><td><span :class="proj.priority==='red'?'badge-red':'badge-green'">{{proj.priority==='red'?'🔴 重要急迫':'🟢 普通'}}</span></td><td><span :class="getStageBadgeClass(proj.stage)">{{proj.stage}}</span></td><td><span v-if="getNextTask(proj)">{{getNextTask(proj).content}}<br>{{formatDate(getNextTask(proj).endDate)}}</span><span v-else>-</span></td><td>合同: {{proj.contractAmount}}万<br>已回: {{getPaidSum(proj)}}万 / {{proj.contractAmount}}万</td><td>{{getStaffName(proj.ownerId)}}<br><small>{{getStaffNames(proj.memberIds).slice(0,10)}}</small></td><td>{{proj.progressPercent || 0}}%</td><td @click.stop><button class="btn btn-sm btn-danger" @click="deleteProject(proj.id)"><i class="fas fa-trash-alt"></i> 删除</button></td></tr>
+                    </tbody>
                     </table>
                 </div>
             </div>
@@ -117,10 +122,24 @@
                 <h2><i class="fas fa-folder-open"></i> <input type="text" v-model="currentProject.name" style="font-size:1.5rem; font-weight:bold; width:400px; border:none; background:transparent; border-bottom:2px solid #ccc;"><select v-model="currentProject.priority" class="btn-sm" style="width:auto; margin-left:12px;"><option value="red">🔴 重要急迫</option><option value="green">🟢 普通</option></select></h2>
                 <div><button class="btn" @click="saveCurrentProject"><i class="fas fa-save"></i> 保存项目</button><button class="btn" @click="view='home'"><i class="fas fa-home"></i> 返回主页</button></div>
             </div>
-            <div class="detail-card"><div class="detail-section"><h3>📌 基本信息</h3><div class="flex-between" style="gap:20px; flex-wrap:wrap;"><label>项目类型: <input v-model="currentProject.type" list="typeOptions" style="width:200px"></label><datalist id="typeOptions"><option v-for="t in presetTypes" :value="t"></datalist><label>阶段: <select v-model="currentProject.stage"><option v-for="s in presetStages" :value="s">{{s}}</option></select></label><label>负责人: <select v-model="currentProject.ownerId"><option v-for="s in staffs" :value="s.id">{{s.name}}</option></select></label><label>参与人员:</label><div style="flex:1;"><div class="member-list"><span v-for="mid in currentProject.memberIds" :key="mid" class="member-tag">{{getStaffName(mid)}} <span class="remove-member" @click="removeMember(mid)">✖</span></span><select class="add-member-select" v-model="newMemberId" @change="addMember"><option value="">+ 添加人员</option><option v-for="s in staffs.filter(s => !currentProject.memberIds.includes(s.id))" :value="s.id">{{s.name}} ({{s.major}})</option></select></div></div></div></div></div>
+            <div class="detail-card">
+                <div class="detail-section"><h3>📌 基本信息</h3>
+                    <div class="info-grid">
+                        <div class="info-item"><label>项目类型:</label><select v-model="currentProject.type"><option v-for="t in presetTypes" :value="t">{{t}}</option></select></div>
+                        <div class="info-item"><label>设计阶段:</label><select v-model="currentProject.stage"><option v-for="s in presetStages" :value="s">{{s}}</option></select></div>
+                        <div class="info-item"><label>规模(公顷):</label><input type="number" step="0.01" v-model.number="currentProject.areaHectares" placeholder="公顷"></div>
+                        <div class="info-item"><label>业主单位:</label><input v-model="currentProject.owner" placeholder="业主名称"></div>
+                        <div class="info-item"><label>省份/直辖市:</label><input v-model="currentProject.province" placeholder="例: 北京市"></div>
+                        <div class="info-item"><label>城市:</label><input v-model="currentProject.city" placeholder="例: 北京市"></div>
+                        <div class="info-item"><label>详细地址:</label><input v-model="currentProject.addressDetail" placeholder="街道/具体位置"><span class="location-hint">(北京市项目请填写详细地址)</span></div>
+                        <div class="info-item"><label>负责人:</label><select v-model="currentProject.ownerId"><option v-for="s in staffs" :value="s.id">{{s.name}}</option></select></div>
+                        <div class="info-item full-width"><label>参与人员:</label><div style="flex:1;"><div class="member-list"><span v-for="mid in currentProject.memberIds" :key="mid" class="member-tag">{{getStaffName(mid)}} <span class="remove-member" @click="removeMember(mid)">✖</span></span><select class="add-member-select" v-model="newMemberId" @change="addMember"><option value="">+ 添加人员</option><option v-for="s in staffs.filter(s => !currentProject.memberIds.includes(s.id))" :value="s.id">{{s.name}} ({{s.major}})</option></select></div></div></div>
+                    </div>
+                </div>
+            </div>
             <div class="detail-card"><div class="detail-section"><h3>📋 计划安排 <button class="btn btn-sm" @click="addTask">+ 添加任务</button></h3><div v-for="(task,idx) in currentProject.tasks" :key="task.id" class="task-item" :class="{'line-through':task.completed}"><div class="task-header"><input type="checkbox" v-model="task.completed" @change="recalcProgress"><input type="text" v-model="task.content" class="task-title" placeholder="任务标题"><button @click="removeTask(idx)" class="btn btn-sm">删除</button></div><div style="margin-top:8px;">起始: <input type="date" v-model="task.startDate"> 截止: <input type="date" v-model="task.endDate"> 分配专业/责任人: <input placeholder="专业/人" v-model="task.assignedTo"></div></div><div><strong>📈 总体进度: {{currentProject.progressPercent}}% </strong> (基于任务完成率)</div></div></div>
             <div class="detail-card"><div class="detail-section"><h3>⚠️ 风险与策略 <button class="btn btn-sm" @click="addRisk">+ 添加风险</button></h3><div v-for="(risk,idx) in currentProject.risks" :key="idx" class="risk-item" :style="{background: risk.resolved?'#e9ecef':'#fff0f0', opacity: risk.resolved?0.7:1}"><div class="risk-header"><input type="checkbox" v-model="risk.resolved"><input type="text" v-model="risk.description" class="risk-title" placeholder="风险描述"><button @click="removeRisk(idx)" class="btn btn-sm">删除</button></div><div>解决策略: <input style="width:80%; margin-top:6px;" v-model="risk.strategy"></div></div></div></div>
-            <div class="detail-card"><div class="detail-section"><h3>💰 商务进展</h3><div>签约时间: <input type="date" v-model="currentProject.signDate"></div><div style="margin-top: 16px;">合同总额(万元): <input type="number" v-model.number="currentProject.contractAmount"><span style="margin-left: 20px;">合同主要内容: <input type="text" v-model="currentProject.submissionResult" placeholder="如：方案设计、种植设计等" style="width: 300px;"></span></div><div class="payment-record-section"><strong>回款记录</strong> <button @click="addPayment" class="btn btn-sm">+ 添加回款</button></div><div v-for="(p,idx) in currentProject.payments" :key="idx" style="margin:10px 0;">日期: <input type="date" v-model="p.date"> 金额(万元): <input type="number" v-model.number="p.amount"> 提交成果: <input type="text" v-model="currentProject.submissionResult" placeholder="如：方案文本、施工图纸等" style="width: 300px;"><button @click="removePayment(idx)">删除</button></div><div>剩余待回款: {{currentProject.contractAmount - getPaidSum(currentProject)}} 万元</div></div></div>
+            <div class="detail-card"><div class="detail-section"><h3>💰 商务进展</h3><div>签约时间: <input type="date" v-model="currentProject.signDate"></div><div style="margin-top: 16px;">合同总额(万元): <input type="number" v-model.number="currentProject.contractAmount"><span style="margin-left: 20px;">合同主要内容: <input type="text" v-model="currentProject.contractContent" placeholder="如：方案设计、种植设计等" style="width: 300px;"></span></div><div class="payment-record-section"><strong>回款记录</strong> <button @click="addPayment" class="btn btn-sm">+ 添加回款</button></div><div v-for="(p,idx) in currentProject.payments" :key="idx" style="margin:10px 0; padding:8px; background:#f9fafb; border-radius:16px;">日期: <input type="date" v-model="p.date"> 金额(万元): <input type="number" v-model.number="p.amount"> 提交成果: <input type="text" v-model="p.submissionResult" placeholder="如：方案文本、施工图纸等" style="width: 300px;"><button @click="removePayment(idx)" style="margin-left:8px;" class="btn btn-sm btn-danger">删除</button></div><div>剩余待回款: {{currentProject.contractAmount - getPaidSum(currentProject)}} 万元</div></div></div>
             <div class="detail-card">
                 <div class="detail-section">
                     <h3>📊 甘特图 & 进度轴</h3>
@@ -130,9 +149,8 @@
                     </div>
                 </div>
             </div>
-<div class="copyright">© Twolobster ｜ 我是李工也是涛哥</div>
+            <div class="copyright">© Twolobster ｜ 我是李工也是涛哥</div>
         </div>
-
 
         <div v-if="staffModal" class="modal-mask" @click.self="staffModal=false"><div class="modal-container"><h3>工作室人员名单 <button class="btn btn-sm" @click="addStaff">+ 添加人员</button></h3><table><thead><tr><th>姓名</th><th>专业</th><th>职称</th><th>职务</th><th>操作</th></tr></thead><tbody><tr v-for="(s,idx) in staffs" :key="s.id"><td><input v-model="s.name"></td><td><input v-model="s.major"></td><td><input v-model="s.title"></td><td><input v-model="s.position"></td><td><button class="btn btn-sm btn-danger" @click="removeStaff(idx)">删除</button></td></tr></tbody></table><div class="flex-between mt-2"><button class="btn btn-primary" @click="saveStaffList">保存名单</button><button @click="staffModal=false">关闭</button></div></div></div>
 
@@ -148,18 +166,38 @@
             const presetStages = ["前期谋划","方案设计","立项","初步设计","报批","施工图设计","施工","暂停","结算","完成"];
             const STORAGE_KEY = "studio_mgr_data";
             const TARGETS_KEY = "studio_targets";
+            
             const defaultStaffs = [
                 { id:"s1", name:"小张", major:"景观", title:"高级工程师", position:"所长" },
                 { id:"s2", name:"小李", major:"建筑", title:"工程师", position:"主创" },
                 { id:"s3", name:"小王", major:"规划", title:"工程师", position:"项目负责人" }
             ];
-            const defaultProjects = [
-                { id:"p1", name:"滨河湿地公园景观提升工程", priority:"red", type:"湿地公园", stage:"方案设计", ownerId:"s1", memberIds:["s2"], contractAmount:180, submissionResult:"初步方案", signDate:"2026-02-01", payments:[{date:"2026-02-10",amount:50},{date:"2026-03-15",amount:60}], tasks:[{ id:"t1", content:"方案深化", startDate:"2026-03-01", endDate:"2026-05-01", completed:false, assignedTo:"景观组" },{ id:"t2", content:"报批准备", startDate:"2026-05-10", endDate:"2026-06-01", completed:false, assignedTo:"规划" }], risks:[{ description:"报批周期可能延长", strategy:"提前对接政府部门", resolved:false }], progressPercent:0 },
-                { id:"p2", name:"城市生态绿道设计项目", priority:"green", type:"绿道", stage:"施工图设计", ownerId:"s2", memberIds:["s1"], contractAmount:320, submissionResult:"施工图设计", signDate:"2025-01-10", payments:[{date:"2025-02-20",amount:100},{date:"2025-07-15",amount:120}], tasks:[{ id:"t3", content:"施工图绘制", startDate:"2025-03-01", endDate:"2026-10-20", completed:false, assignedTo:"景观组" }], risks:[], progressPercent:0 },
-                { id:"p3", name:"老旧街区景观微更新", priority:"red", type:"城市更新", stage:"施工", ownerId:"s3", memberIds:["s1","s2"], contractAmount:560, submissionResult:"施工配合", signDate:"2024-09-01", payments:[{date:"2024-10-10",amount:200},{date:"2025-03-20",amount:150}], tasks:[{ id:"t4", content:"现场配合", startDate:"2025-04-01", endDate:"2026-12-01", completed:false, assignedTo:"现场团队" }], risks:[{ description:"施工变更频繁", strategy:"加强驻场", resolved:false }], progressPercent:0 }
+            // 默认项目包含新增字段
+            const defaultProjectsRaw = [
+                { id:"p1", name:"滨河湿地公园景观提升工程", priority:"red", type:"湿地公园", stage:"方案设计", ownerId:"s1", memberIds:["s2"], contractAmount:180, contractContent:"初步方案及扩初设计", signDate:"2026-02-01", payments:[{date:"2026-02-10",amount:50, submissionResult:"概念方案汇报"},{date:"2026-03-15",amount:60, submissionResult:"深化方案文本"}], tasks:[{ id:"t1", content:"方案深化", startDate:"2026-03-01", endDate:"2026-05-01", completed:false, assignedTo:"景观组" },{ id:"t2", content:"报批准备", startDate:"2026-05-10", endDate:"2026-06-01", completed:false, assignedTo:"规划" }], risks:[{ description:"报批周期可能延长", strategy:"提前对接政府部门", resolved:false }], progressPercent:0, areaHectares:12.5, owner:"市水务局", province:"河北省", city:"石家庄市", addressDetail:"裕华区滨河路88号" },
+                { id:"p2", name:"城市生态绿道设计项目", priority:"green", type:"绿道", stage:"施工图设计", ownerId:"s2", memberIds:["s1"], contractAmount:320, contractContent:"绿道全程施工图设计及现场服务", signDate:"2025-01-10", payments:[{date:"2025-02-20",amount:100, submissionResult:"初步设计成果"},{date:"2025-07-15",amount:120, submissionResult:"施工图交付"}], tasks:[{ id:"t3", content:"施工图绘制", startDate:"2025-03-01", endDate:"2026-10-20", completed:false, assignedTo:"景观组" }], risks:[], progressPercent:0, areaHectares:8.2, owner:"市园林局", province:"北京市", city:"北京市", addressDetail:"朝阳区奥林匹克森林公园南园" },
+                { id:"p3", name:"老旧街区景观微更新", priority:"red", type:"城市更新", stage:"施工", ownerId:"s3", memberIds:["s1","s2"], contractAmount:560, contractContent:"街道微更新、公共设施设计", signDate:"2024-09-01", payments:[{date:"2024-10-10",amount:200, submissionResult:"方案设计提交"},{date:"2025-03-20",amount:150, submissionResult:"施工图及选材"}], tasks:[{ id:"t4", content:"现场配合", startDate:"2025-04-01", endDate:"2026-12-01", completed:false, assignedTo:"现场团队" }], risks:[{ description:"施工变更频繁", strategy:"加强驻场", resolved:false }], progressPercent:0, areaHectares:3.7, owner:"街道办事处", province:"广东省", city:"深圳市", addressDetail:"南山区科技园片区" }
             ];
+            
             function calcProjectProgress(proj) { if(!proj.tasks || proj.tasks.length===0) return 0; const done = proj.tasks.filter(t=>t.completed).length; return Math.floor((done/proj.tasks.length)*100); }
             function refreshAllProgress(projects) { projects.forEach(p=>{ p.progressPercent = calcProjectProgress(p); }); }
+            
+            function migrateProjectData(projectsList) {
+                projectsList.forEach(proj => {
+                    if (!proj.contractContent && proj.submissionResult) proj.contractContent = proj.submissionResult;
+                    else if (!proj.contractContent) proj.contractContent = "";
+                    if (proj.submissionResult !== undefined) delete proj.submissionResult;
+                    if (!proj.payments) proj.payments = [];
+                    proj.payments.forEach(pay => { if (pay.submissionResult === undefined) pay.submissionResult = ""; });
+                    if (proj.areaHectares === undefined) proj.areaHectares = null;
+                    if (proj.owner === undefined) proj.owner = "";
+                    if (proj.province === undefined) proj.province = "";
+                    if (proj.city === undefined) proj.city = "";
+                    if (proj.addressDetail === undefined) proj.addressDetail = "";
+                });
+                return projectsList;
+            }
+            
             const projects = ref([]);
             const staffs = ref([]);
             const view = ref("home");
@@ -203,18 +241,15 @@
             
             const yearlyProjects = computed(() => projects.value.filter(p => p.signDate && new Date(p.signDate).getFullYear() === statsYear.value));
             const yearlyContractSum = computed(() => yearlyProjects.value.reduce((s,p)=>s+(p.contractAmount||0),0));
-// 替换 yearlyPaymentSum 的 computed 定义
-const yearlyPaymentSum = computed(() => {
-    let total = 0;
-    projects.value.forEach(proj => {
-        (proj.payments || []).forEach(pay => {
-            if (pay.date && new Date(pay.date).getFullYear() === statsYear.value) {
-                total += pay.amount || 0;
-            }
-        });
-    });
-    return total;
-});
+            const yearlyPaymentSum = computed(() => {
+                let total = 0;
+                projects.value.forEach(proj => {
+                    (proj.payments || []).forEach(pay => {
+                        if (pay.date && new Date(pay.date).getFullYear() === statsYear.value) total += pay.amount || 0;
+                    });
+                });
+                return total;
+            });
             const yearlyProjectCount = computed(() => yearlyProjects.value.length);
             const yearlyCompletedCount = computed(() => yearlyProjects.value.filter(p=>p.stage==='完成').length);
             const contractTargetPercent = computed(() => contractTargets.value[statsYear.value] ? ((yearlyContractSum.value/contractTargets.value[statsYear.value])*100).toFixed(1) : 0);
@@ -246,77 +281,85 @@ const yearlyPaymentSum = computed(() => {
             });
             const timeStats = ref({count:0, amount:0, paid:0, paidPercent:0});
 
-// 替换 refreshTimeAnalysis 函数
-function refreshTimeAnalysis() { 
-    // 合同额：按签约日期筛选
-    let contractFiltered = projects.value.filter(p => {
-        if (!p.signDate) return false;
-        let d = new Date(p.signDate);
-        let year = d.getFullYear();
-        if (year !== selectedYear.value) return false;
-        if (timeDim.value === 'month') return d.getMonth() + 1 === selectedMonth.value;
-        if (timeDim.value === 'quarter') {
-            let q = Math.floor(d.getMonth() / 3) + 1;
-            return q === Number(selectedQuarter.value);
-        }
-        return true;
-    });
-    let contractAmount = contractFiltered.reduce((s, p) => s + (p.contractAmount || 0), 0);
-    let count = contractFiltered.length;
-
-    // 回款：按支付日期筛选
-    let paidAmount = 0;
-    projects.value.forEach(proj => {
-        (proj.payments || []).forEach(pay => {
-            if (!pay.date) return;
-            let d = new Date(pay.date);
-            let year = d.getFullYear();
-            if (year !== selectedYear.value) return;
-            if (timeDim.value === 'month' && d.getMonth() + 1 !== selectedMonth.value) return;
-            if (timeDim.value === 'quarter') {
-                let q = Math.floor(d.getMonth() / 3) + 1;
-                if (q !== Number(selectedQuarter.value)) return;
+            function refreshTimeAnalysis() { 
+                let contractFiltered = projects.value.filter(p => {
+                    if (!p.signDate) return false;
+                    let d = new Date(p.signDate);
+                    let year = d.getFullYear();
+                    if (year !== selectedYear.value) return false;
+                    if (timeDim.value === 'month') return d.getMonth() + 1 === selectedMonth.value;
+                    if (timeDim.value === 'quarter') { let q = Math.floor(d.getMonth() / 3) + 1; return q === Number(selectedQuarter.value); }
+                    return true;
+                });
+                let contractAmount = contractFiltered.reduce((s, p) => s + (p.contractAmount || 0), 0);
+                let count = contractFiltered.length;
+                let paidAmount = 0;
+                projects.value.forEach(proj => {
+                    (proj.payments || []).forEach(pay => {
+                        if (!pay.date) return;
+                        let d = new Date(pay.date);
+                        let year = d.getFullYear();
+                        if (year !== selectedYear.value) return;
+                        if (timeDim.value === 'month' && d.getMonth() + 1 !== selectedMonth.value) return;
+                        if (timeDim.value === 'quarter') { let q = Math.floor(d.getMonth() / 3) + 1; if (q !== Number(selectedQuarter.value)) return; }
+                        paidAmount += pay.amount || 0;
+                    });
+                });
+                timeStats.value = { count, amount: contractAmount.toFixed(1), paid: paidAmount.toFixed(1), paidPercent: contractAmount ? ((paidAmount / contractAmount) * 100).toFixed(1) : 0 };
+                if (timeChart) { timeChart.data.datasets[0].data = [count, contractAmount, paidAmount]; timeChart.update(); }
             }
-            paidAmount += pay.amount || 0;
-        });
-    });
-
-    timeStats.value = {
-        count: count,
-        amount: contractAmount.toFixed(1),
-        paid: paidAmount.toFixed(1),
-        paidPercent: contractAmount ? ((paidAmount / contractAmount) * 100).toFixed(1) : 0
-    };
-    if (timeChart) {
-        timeChart.data.datasets[0].data = [count, contractAmount, paidAmount];
-        timeChart.update();
-    }
-}
             function renderTimeChart(){ const canvas = document.getElementById('timeChart'); if(!canvas) return; if(timeChart) timeChart.destroy(); timeChart = new Chart(canvas, { type:'bar', data:{ labels:['数量(个)','合同额(万)','回款(万)'], datasets:[{ label:'当前时段数据', data:[timeStats.value.count, timeStats.value.amount, timeStats.value.paid], backgroundColor:'#2c6e9e'}] } }); }
             function renderSelectedChart(){ const canvas = document.getElementById('selectedChart'); if(!canvas) return; if(selectedChart) selectedChart.destroy(); selectedChart = new Chart(canvas, { type:'pie', data:{ labels:['合同总额','回款总额'], datasets:[{ data:[selectedContractSum.value, selectedPaymentSum.value], backgroundColor:['#3b82f6','#10b981'] }] } }); }
             function getMonthlyTrendData(rangeType) { const currentYear = new Date().getFullYear(); let years = []; if(rangeType === 'current') years = [currentYear]; else { const count = parseInt(rangeType); years = Array.from({length: count}, (_,i) => currentYear - i).filter(y => y >= (availableYears.value[availableYears.value.length-1] || currentYear-4)); } if(years.length === 0) years = [currentYear]; const contractData = {}, paymentData = {}; years.forEach(y => { contractData[y] = Array(12).fill(0); paymentData[y] = Array(12).fill(0); }); projects.value.forEach(p => { if(p.signDate) { const year = new Date(p.signDate).getFullYear(); if(contractData[year]) contractData[year][new Date(p.signDate).getMonth()] += p.contractAmount; } if(p.payments) p.payments.forEach(pay => { if(pay.date) { const year = new Date(pay.date).getFullYear(); if(paymentData[year]) paymentData[year][new Date(pay.date).getMonth()] += pay.amount; } }); }); return { years, contractData, paymentData }; }
-            function loadTrendData() { const { years, contractData, paymentData } = getMonthlyTrendData(trendRange.value); const contractCtx = document.getElementById('contractTrendChart')?.getContext('2d'); if(contractCtx) { if(contractTrendChart) contractTrendChart.destroy(); contractTrendChart = new Chart(contractCtx, { type:'line', data:{ labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], datasets: years.map((y, idx) => ({ label: `${y}年合同额`, data: contractData[y], borderColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5] })) } }); } const paymentCtx = document.getElementById('paymentTrendChart')?.getContext('2d'); if(paymentCtx) { if(paymentTrendChart) paymentTrendChart.destroy(); paymentTrendChart = new Chart(paymentCtx, { type:'line', data:{ labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], datasets: years.map((y, idx) => ({ label: `${y}年回款额`, data: paymentData[y], borderColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5] })) } }); } }
-            function loadTargets() { const raw = localStorage.getItem(TARGETS_KEY); if(raw) { try { const data = JSON.parse(raw); contractTargets.value = data.contract || {}; paymentTargets.value = data.payment || {}; } catch(e) {} } availableYears.value.forEach(y => { if(!contractTargets.value[y]) contractTargets.value[y] = 800; if(!paymentTargets.value[y]) paymentTargets.value[y] = 600; }); }
-            function saveTargets() { localStorage.setItem(TARGETS_KEY, JSON.stringify({ contract: contractTargets.value, payment: paymentTargets.value })); }
-
-            function formatLocalDate(dateObj) { 
-                if(!dateObj) return ''; 
-                const d = new Date(dateObj);
-                const y = d.getFullYear(); 
-                const m = String(d.getMonth() + 1).padStart(2,'0'); 
-                const day = String(d.getDate()).padStart(2,'0'); 
-                return `${y}-${m}-${day}`; 
-            }
-            
-            function syncCurrentProjectToStore() {
-                if (!currentProject.value) return;
-                const idx = projects.value.findIndex(p => p.id === currentProject.value.id);
-                if (idx !== -1) {
-                    projects.value[idx] = JSON.parse(JSON.stringify(currentProject.value));
-                    saveToLocal();
+            function loadTrendData() { 
+                const { years, contractData, paymentData } = getMonthlyTrendData(trendRange.value);
+                const contractCtx = document.getElementById('contractTrendChart')?.getContext('2d');
+                if(contractCtx) {
+                    if(contractTrendChart) contractTrendChart.destroy();
+                    contractTrendChart = new Chart(contractCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+                            datasets: years.map((y, idx) => ({
+                                label: `${y}年合同额`,
+                                data: contractData[y],
+                                borderColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5],
+                                backgroundColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5] + '33',
+                                fill: true,
+                                tension: 0.3,
+                                pointBackgroundColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5],
+                                pointRadius: 3
+                            }))
+                        }
+                    });
+                }
+                const paymentCtx = document.getElementById('paymentTrendChart')?.getContext('2d');
+                if(paymentCtx) {
+                    if(paymentTrendChart) paymentTrendChart.destroy();
+                    paymentTrendChart = new Chart(paymentCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+                            datasets: years.map((y, idx) => ({
+                                label: `${y}年回款额`,
+                                data: paymentData[y],
+                                borderColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5],
+                                backgroundColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5] + '33',
+                                fill: true,
+                                tension: 0.3,
+                                pointBackgroundColor: ['#2c6e9e','#ef4444','#10b981','#f59e0b','#8b5cf6'][idx%5],
+                                pointRadius: 3
+                            }))
+                        }
+                    });
                 }
             }
+            function loadTargets() { const raw = localStorage.getItem(TARGETS_KEY); if(raw) { try { const data = JSON.parse(raw); contractTargets.value = data.contract || {}; paymentTargets.value = data.payment || {}; } catch(e) {} } availableYears.value.forEach(y => { if(!contractTargets.value[y]) contractTargets.value[y] = 800; if(!paymentTargets.value[y]) paymentTargets.value[y] = 600; }); }
+            function saveTargets() { localStorage.setItem(TARGETS_KEY, JSON.stringify({ contract: contractTargets.value, payment: paymentTargets.value })); }
+            function formatLocalDate(dateObj) { if(!dateObj) return ''; const d = new Date(dateObj); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+            function syncCurrentProjectToStore() { if (!currentProject.value) return; const idx = projects.value.findIndex(p => p.id === currentProject.value.id); if (idx !== -1) { projects.value[idx] = JSON.parse(JSON.stringify(currentProject.value)); saveToLocal(); } }
             
+            // ======================= 甘特图模块（完全参照 studio pms.html） =======================
             function renderGantt() {
                 if (!showGantt.value || !currentProject.value) return;
                 const container = document.getElementById('ganttChart');
@@ -360,7 +403,6 @@ function refreshTimeAnalysis() {
                 } catch(err) { console.error(err); container.innerHTML = '<div style="padding:20px;text-align:center;color:#e74c3c;">甘特图渲染失败</div>'; }
             }
             
-            // 增强甘特图：今日线 + 红色(逾期未完成) + 绿色(正常未完成) + 灰色(已完成)
             function enhanceGanttWithColors(ganttTasks) {
                 const container = document.getElementById('ganttChart');
                 if (!container) return;
@@ -368,7 +410,6 @@ function refreshTimeAnalysis() {
                 if (!svg) return;
                 
                 const todayStr = formatLocalDate(new Date());
-                // 获取每个任务的逾期状态、完成状态
                 const taskStatusMap = {};
                 ganttTasks.forEach(t => {
                     const isCompleted = t.progress === 100;
@@ -380,7 +421,6 @@ function refreshTimeAnalysis() {
                 bars.forEach(bar => {
                     let taskId = bar.getAttribute('data-id');
                     if (!taskId) {
-                        // 尝试通过索引匹配，但最好用id
                         const titleElem = bar.parentElement?.querySelector('.bar-label');
                         if (titleElem) {
                             const name = titleElem.textContent;
@@ -401,12 +441,10 @@ function refreshTimeAnalysis() {
                             bar.classList.remove('overdue-bar', 'completed-bar');
                         }
                     } else {
-                        // 默认给绿色
                         bar.classList.add('normal-bar');
                     }
                 });
                 
-                // 今日线逻辑
                 let minDate = null, maxDate = null;
                 ganttTasks.forEach(t => { const s = new Date(t.start); const e = new Date(t.end); if (!minDate || s < minDate) minDate = s; if (!maxDate || e > maxDate) maxDate = e; });
                 if (minDate && maxDate) {
@@ -447,80 +485,33 @@ function refreshTimeAnalysis() {
                 }
             }
             
-            function toggleGantt() { 
-                showGantt.value = !showGantt.value; 
-                if (showGantt.value) nextTick(() => renderGantt()); 
-            }
-            
-            watch(() => currentProject.value?.tasks, () => { 
-                if (showGantt.value) nextTick(renderGantt); 
-            }, { deep: true });
+            function toggleGantt() { showGantt.value = !showGantt.value; if (showGantt.value) nextTick(() => renderGantt()); }
+            watch(() => currentProject.value?.tasks, () => { if (showGantt.value) nextTick(renderGantt); }, { deep: true });
             watch(showGantt, (val) => { if (val) nextTick(renderGantt); });
-
+            // ======================= 甘特图模块结束 =======================
+            
             function calcTargetProgress(){}
-            function generateMeetingDoc(){ 
-                let selected = projects.value.filter(p=>selectedAnalysisIds.value.includes(p.id)); 
-                if(!selected.length){ alert("请至少选择一个项目"); return; } 
-                let html = `<div class="print-report"><h2 style="text-align:center;">设计工作室例会汇报</h2><p style="text-align:center;">生成时间：${new Date().toLocaleString()}</p>`; 
-                selected.forEach(p=>{ 
-                    html+=`<div style="border:1px solid #ccc;margin:12px 0;padding:12px;border-radius:16px;page-break-inside:avoid;">
-                        <h4>${p.name} <span style="background:${p.priority==='red'?'#ffcccc':'#ccffcc'};padding:2px 8px;border-radius:20px;">${p.priority==='red'?'重要急迫':'普通'}</span></h4>
-                        <p>阶段:${p.stage} | 类型:${p.type} | 负责人:${getStaffName(p.ownerId)}</p>
-                        <p>合同额:${p.contractAmount}万, 已回款:${getPaidSum(p)}万, 剩余:${p.contractAmount-getPaidSum(p)}万</p>
-                        <p>进度:${p.progressPercent}%</p>
-                        <p><strong>下一步计划:</strong> ${getNextTask(p)?.content || '无'}</p>
-                        <p><strong>风险项:</strong> ${(p.risks||[]).filter(r=>!r.resolved).map(r=>r.description).join('; ')||'暂无'}</p>
-                    </div>`; 
-                }); 
-                html+=`</div>`; 
-                meetingHtml.value = html; 
-                meetingModal.value=true; 
-            }
-            // 导出PDF：打开新窗口，写入内容并调用打印
-            function exportMeetingToPDF() {
-                const printContent = document.getElementById('meetingReportContent').innerHTML;
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head><title>例会汇报</title>
-                    <style>
-                        body { font-family: 'Inter', system-ui, sans-serif; margin: 40px; color: #0f172a; }
-                        .print-report { max-width: 1000px; margin: 0 auto; }
-                        h2, p { margin: 0.5rem 0; }
-                        div { margin-bottom: 20px; }
-                        @media print {
-                            body { margin: 0; padding: 20px; }
-                        }
-                    </style>
-                    </head>
-                    <body>${printContent}</body>
-                    </html>
-                `);
-                printWindow.document.close();
-                printWindow.focus();
-                printWindow.print();
-            }
+            function generateMeetingDoc(){ let selected = projects.value.filter(p=>selectedAnalysisIds.value.includes(p.id)); if(!selected.length){ alert("请至少选择一个项目"); return; } let html = `<div class="print-report"><h2 style="text-align:center;">设计工作室例会汇报</h2><p style="text-align:center;">生成时间：${new Date().toLocaleString()}</p>`; selected.forEach(p=>{ html+=`<div style="border:1px solid #ccc;margin:12px 0;padding:12px;border-radius:16px;page-break-inside:avoid;"><h4>${p.name} <span style="background:${p.priority==='red'?'#ffcccc':'#ccffcc'};padding:2px 8px;border-radius:20px;">${p.priority==='red'?'重要急迫':'普通'}</span></h4><p>阶段:${p.stage} | 类型:${p.type} | 负责人:${getStaffName(p.ownerId)}</p><p>合同额:${p.contractAmount}万, 已回款:${getPaidSum(p)}万, 剩余:${p.contractAmount-getPaidSum(p)}万</p><p>进度:${p.progressPercent}%</p><p><strong>下一步计划:</strong> ${getNextTask(p)?.content || '无'}</p><p><strong>风险项:</strong> ${(p.risks||[]).filter(r=>!r.resolved).map(r=>r.description).join('; ')||'暂无'}</p></div>`; }); html+=`</div>`; meetingHtml.value = html; meetingModal.value=true; }
+            function exportMeetingToPDF() { const printContent = document.getElementById('meetingReportContent').innerHTML; const printWindow = window.open('', '_blank'); printWindow.document.write(`<!DOCTYPE html><html><head><title>例会汇报</title><style>body { font-family: 'Inter', system-ui, sans-serif; margin: 40px; } .print-report { max-width: 1000px; margin: 0 auto; } @media print { body { margin: 0; padding: 20px; } }</style></head><body>${printContent}</body></html>`); printWindow.document.close(); printWindow.focus(); printWindow.print(); }
             function exportData(){ const data = { projects: projects.value, staffs: staffs.value }; const blob = new Blob([JSON.stringify(data)], {type:"application/json"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "studio_backup.json"; a.click(); }
-            function importDataPrompt(){ let input = document.createElement('input'); input.type = 'file'; input.accept='application/json'; input.onchange = e=>{ let file = e.target.files[0]; let reader = new FileReader(); reader.onload = ev=>{ try{ let json = JSON.parse(ev.target.result); if(json.projects && json.staffs){ projects.value = json.projects; staffs.value = json.staffs; refreshAllProgress(projects.value); alert("导入成功"); }else alert("文件格式错误"); }catch(e){ alert("解析失败"); } }; reader.readAsText(file); }; input.click(); }
+            function importDataPrompt(){ let input = document.createElement('input'); input.type = 'file'; input.accept='application/json'; input.onchange = e=>{ let file = e.target.files[0]; let reader = new FileReader(); reader.onload = ev=>{ try{ let json = JSON.parse(ev.target.result); if(json.projects && json.staffs){ projects.value = migrateProjectData(json.projects); staffs.value = json.staffs; refreshAllProgress(projects.value); alert("导入成功"); }else alert("文件格式错误"); }catch(e){ alert("解析失败"); } }; reader.readAsText(file); }; input.click(); }
             function saveToLocal(){ localStorage.setItem(STORAGE_KEY, JSON.stringify({projects:projects.value, staffs:staffs.value})); saveTargets(); }
-            function loadFromLocal(){ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ try{ const data=JSON.parse(raw); projects.value=data.projects; staffs.value=data.staffs; refreshAllProgress(projects.value); }catch(e){} }else{ projects.value=defaultProjects; staffs.value=defaultStaffs; refreshAllProgress(projects.value); } loadTargets(); }
+            function loadFromLocal(){ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ try{ const data=JSON.parse(raw); projects.value = migrateProjectData(data.projects); staffs.value=data.staffs; refreshAllProgress(projects.value); }catch(e){} }else{ projects.value = migrateProjectData(JSON.parse(JSON.stringify(defaultProjectsRaw))); staffs.value=defaultStaffs; refreshAllProgress(projects.value); } loadTargets(); }
             function goToDetail(id){ const proj = projects.value.find(p=>p.id===id); if(proj){ currentProject.value = JSON.parse(JSON.stringify(proj)); view.value="detail"; showGantt.value=false; } }
             function deleteProject(id){ if(confirm("确认删除该项目？不可恢复。")){ projects.value = projects.value.filter(p=>p.id !== id); if(selectedAnalysisIds.value.includes(id)) selectedAnalysisIds.value = selectedAnalysisIds.value.filter(i=>i!==id); saveToLocal(); } }
-            function saveCurrentProject(){ const idx = projects.value.findIndex(p=>p.id===currentProject.value.id); if(idx!==-1){ const newProgress = calcProjectProgress(currentProject.value); currentProject.value.progressPercent = newProgress; projects.value[idx] = JSON.parse(JSON.stringify(currentProject.value)); saveToLocal(); alert("已保存"); }else{ currentProject.value.id = "p"+Date.now(); currentProject.value.progressPercent = calcProjectProgress(currentProject.value); projects.value.push(JSON.parse(JSON.stringify(currentProject.value))); saveToLocal(); } view.value="home"; }
+            function saveCurrentProject(){ const idx = projects.value.findIndex(p=>p.id===currentProject.value.id); const newProgress = calcProjectProgress(currentProject.value); currentProject.value.progressPercent = newProgress; if(idx!==-1){ projects.value[idx] = JSON.parse(JSON.stringify(currentProject.value)); }else{ currentProject.value.id = "p"+Date.now(); projects.value.push(JSON.parse(JSON.stringify(currentProject.value))); } saveToLocal(); alert("已保存"); view.value="home"; }
             function addTask(){ currentProject.value.tasks.push({ id:Date.now(), content:"可编辑任务", startDate:"", endDate:"", completed:false, assignedTo:"" }); }
             function removeTask(idx){ currentProject.value.tasks.splice(idx,1); recalcProgress(); }
             function addRisk(){ currentProject.value.risks.push({ description:"可编辑风险描述", strategy:"待定策略", resolved:false }); }
             function removeRisk(idx){ currentProject.value.risks.splice(idx,1); }
-            function addPayment(){ currentProject.value.payments.push({ date:"", amount:0 }); }
+            function addPayment(){ currentProject.value.payments.push({ date:"", amount:0, submissionResult:"" }); }
             function removePayment(idx){ currentProject.value.payments.splice(idx,1); }
             function recalcProgress(){ if(currentProject.value) currentProject.value.progressPercent = calcProjectProgress(currentProject.value); }
-            function getTaskWidth(task){ let start=new Date(task.startDate), end=new Date(task.endDate); let totalDays=180; let days=(end-start)/(1000*3600*24); return Math.min(100, Math.max(2, (days/totalDays)*100)); }
             function openStaffModal(){ staffModal.value=true; }
             function addStaff(){ staffs.value.push({ id:"s"+Date.now(), name:"新成员", major:"", title:"", position:"" }); }
             function removeStaff(idx){ const removedId = staffs.value[idx].id; staffs.value.splice(idx,1); projects.value.forEach(p=>{ if(p.ownerId === removedId) p.ownerId = ""; p.memberIds = p.memberIds.filter(mid=>mid !== removedId); }); saveToLocal(); }
             function saveStaffList(){ staffModal.value=false; saveToLocal(); }
-            function openNewProject(){ const newProj = { id:"p"+Date.now(), name:"新项目", priority:"green", type:"公园", stage:"前期谋划", ownerId:staffs.value[0]?.id||"", memberIds:[], submissionResult:"", contractAmount:0, signDate:"", payments:[], tasks:[], risks:[], progressPercent:0 }; projects.value.push(newProj); goToDetail(newProj.id); }
+            function openNewProject(){ const newProj = { id:"p"+Date.now(), name:"新项目", priority:"green", type:"公园", stage:"前期谋划", ownerId:staffs.value[0]?.id||"", memberIds:[], contractContent:"", contractAmount:0, signDate:"", payments:[], tasks:[], risks:[], progressPercent:0, areaHectares:null, owner:"", province:"", city:"", addressDetail:"" }; projects.value.push(newProj); goToDetail(newProj.id); }
             function clearFilters(){ searchKeyword.value=""; filterStage.value=""; filterOwner.value=""; filterMember.value=""; }
             function selectAllProjects(){ selectedAnalysisIds.value = projects.value.map(p=>p.id); }
             function clearSelection(){ selectedAnalysisIds.value = []; }
@@ -529,13 +520,7 @@ function refreshTimeAnalysis() {
             function initCharts() { nextTick(()=>{ renderTimeChart(); renderSelectedChart(); loadTrendData(); }); }
             watch([filteredSortedProjects, selectedAnalysisIds, () => timeStats.value], () => { nextTick(()=>{ renderSelectedChart(); renderTimeChart(); }); });
             watch(()=>view.value, (newVal)=>{ if(newVal==='home'){ nextTick(()=>{ renderTimeChart(); renderSelectedChart(); loadTrendData(); }); } });
-            onMounted(() => { 
-                loadFromLocal(); 
-                refreshTimeAnalysis(); 
-                initCharts(); 
-                staffModal.value = false;
-                meetingModal.value = false;
-            });
+            onMounted(() => { loadFromLocal(); refreshTimeAnalysis(); initCharts(); staffModal.value = false; meetingModal.value = false; });
             return {
                 view, projects, staffs, presetTypes, presetStages, searchKeyword, filterStage, filterOwner, filterMember, selectedAnalysisIds,
                 contractTargets, paymentTargets, statsYear, timeDim, selectedYear, selectedMonth, selectedQuarter, trendRange, availableYears, timeStats, staffModal, meetingModal, meetingHtml, showGantt, currentProject, newMemberId,
@@ -543,7 +528,7 @@ function refreshTimeAnalysis() {
                 selectedContractSum, selectedPaymentSum, selectedPaymentPercent, filteredSortedProjects,
                 getStaffName, getStaffNames, getPaidSum, getNextTask, formatDate, getRowClass, getStageBadgeClass, refreshTimeAnalysis, calcTargetProgress,
                 generateMeetingDoc, exportMeetingToPDF, exportData, importDataPrompt, goToDetail, deleteProject, saveCurrentProject, addTask, removeTask, addRisk, removeRisk,
-                addPayment, removePayment, recalcProgress, getTaskWidth, openStaffModal, addStaff, removeStaff, saveStaffList, openNewProject, clearFilters,
+                addPayment, removePayment, recalcProgress, openStaffModal, addStaff, removeStaff, saveStaffList, openNewProject, clearFilters,
                 selectAllProjects, clearSelection, loadTrendData, addMember, removeMember, saveTargets, toggleGantt
             };
         }
