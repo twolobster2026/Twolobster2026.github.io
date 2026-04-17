@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>经营分析高级版 · 项目地图与客户（本地地图版）</title>
+    <title>经营分析高级版 · 项目地图与客户（稳定地图版）</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
@@ -11,7 +11,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
         body { background: #f1f5f9; padding: 28px 24px; color: #0f172a; }
         .app-container { max-width: 1600px; margin: 0 auto; }
-        .card { background: white; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); padding: 24px 28px; margin-bottom: 32px; }
+        .card { background: white; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); padding: 24px 28px; margin-bottom: 32px; transition: all 0.2s; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
         h1 { font-size: 1.8rem; font-weight: 700; display: flex; align-items: center; gap: 12px; }
         h1 i { color: #2c6e9e; }
@@ -28,7 +28,6 @@
         .stat-card { background: #f1f5f9; border-radius: 24px; padding: 20px; text-align: center; }
         .stat-card i { font-size: 1.8rem; color: #2c6e9e; margin-bottom: 8px; }
         .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; margin: 8px 0; color: #0f172a; }
-        .stat-label { font-size: 0.85rem; color: #4b5563; }
         .badge { background: #e2e8f0; border-radius: 40px; padding: 4px 14px; font-size: 0.75rem; font-weight: 500; }
         .insight-text { background: #e6f7ec; padding: 14px 20px; border-radius: 20px; margin-top: 20px; font-size: 0.9rem; color: #0e5e2e; }
         .warning-text { background: #fff3e0; color: #b45309; }
@@ -44,12 +43,15 @@
         .chart-box { flex: 1; min-width: 280px; background: #fafcff; border-radius: 20px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .chart-box h4 { margin-bottom: 12px; font-size: 1rem; }
         .copyright { text-align: center; font-size: 12px; color: #6c757d; margin-top: 32px; padding: 20px 0; border-top: 1px solid #e2e8f0; }
+        hr { margin: 20px 0; }
+        .map-header-actions { display: flex; gap: 12px; align-items: center; }
+        .retry-map-btn { background: #e2e8f0; border-radius: 30px; padding: 4px 16px; font-size: 0.75rem; }
     </style>
 </head>
 <body>
 <div id="app">
     <div class="app-container">
-        <!-- 头部 -->
+        <!-- 头部 + 部门管理 -->
         <div class="flex-between" style="margin-bottom: 20px;">
             <h1><i class="fas fa-chart-line"></i> 经营分析高级版 · 项目地图与客户</h1>
             <div><button class="btn btn-primary" @click="addDepartment"><i class="fas fa-plus"></i> 新增部门</button></div>
@@ -79,24 +81,25 @@
             <div class="insight-text" style="margin-top:16px; background:#eef2ff;"><i class="fas fa-info-circle"></i> 每个部门可独立导入数据，所有部门项目将合并用于全局地图与客户分析。</div>
         </div>
 
-        <!-- 模块2：地图 + 饼图 -->
+        <!-- 模块2：省市热力分布图 (联动年份筛选 + 手动重试) -->
         <div class="card">
-<div class="flex-between">
-    <h3><i class="fas fa-map-marked-alt"></i> 项目省市热力分布</h3>
-    <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="filter-bar" style="margin:0">
-            <span class="badge">年份筛选:</span>
-            <select v-model="mapYearFilter">
-                <option v-for="y in availableYearsForMap" :value="y">{{ y }}年</option>
-                <option value="recent2">近2年</option>
-                <option value="recent5">近5年</option>
-                <option value="all">全部年份</option>
-            </select>
-        </div>
-        <button class="btn btn-sm btn-outline" @click="forceReloadMap"><i class="fas fa-sync-alt"></i> 重新加载地图</button>
-    </div>
-</div>
+            <div class="flex-between">
+                <h3><i class="fas fa-map-marked-alt"></i> 项目省市热力分布</h3>
+                <div class="map-header-actions">
+                    <div class="filter-bar" style="margin:0">
+                        <span class="badge">年份筛选:</span>
+                        <select v-model="mapYearFilter">
+                            <option v-for="y in availableYearsForMap" :value="y">{{ y }}年</option>
+                            <option value="recent2">近2年</option>
+                            <option value="recent5">近5年</option>
+                            <option value="all">全部年份</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-sm btn-outline retry-map-btn" @click="forceReloadMap"><i class="fas fa-sync-alt"></i> 重新加载地图</button>
+                </div>
+            </div>
             <div id="chinaMap" class="map-container"></div>
+            <!-- 统计卡片 -->
             <div class="grid-stats" style="margin-top: 20px;">
                 <div class="stat-card">
                     <i class="fas fa-folder-open"></i>
@@ -114,6 +117,7 @@
                     <div class="stat-label">项目数最多省份</div>
                 </div>
             </div>
+            <!-- 总结 + 饼图分析 -->
             <div class="chart-row">
                 <div class="chart-box">
                     <h4>项目数量前三省市</h4>
@@ -169,6 +173,7 @@
                 </div>
             </div>
             <div class="insight-text" style="margin-top:12px;"><i class="fas fa-chalkboard-user"></i> <strong>经营指导意见：</strong> {{ operationAdvice }}</div>
+
             <div style="margin-top: 16px; border-top: 1px dashed #e2e8f0; padding-top: 12px;">
                 <button class="btn btn-sm btn-outline" @click="toggleStandard" style="margin-bottom: 8px;">
                     <i class="fas fa-question-circle"></i> {{ showStandard ? '隐藏标准' : '显示标准' }}
@@ -182,7 +187,7 @@
                 </div>
             </div>
         </div>
-        <div class="copyright">©Twolobster | Advanced Business Analysis Edition</div>
+        <div class="copyright">©Twolobster | Advanced Business Analysis Edition (地图多源备份·稳定加载)</div>
     </div>
 </div>
 
@@ -226,132 +231,246 @@
             let provincePieChart = null;
             let ownerContractChart = null;
             let ownerPaymentChart = null;
-            let isMapRegistered = false;
+            let isMapRegistered = false;        // 标记地图是否已注册成功
             let mapRegisterPromise = null;
+            let currentMapErrorDisplay = false;  // 辅助标记
 
-            // ========== 核心修改：仅使用本地地图文件 ==========
+            // ---------- 多源备用地图加载 + 自适应省份过滤 ----------
+            // 地图数据源列表 (高可用)
+            const GEOJSON_SOURCES = [
+                'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
+                'https://cdn.jsdelivr.net/npm/echarts-map@1.0.0/map/geo/china_geo.json',
+                'https://unpkg.com/echarts-map@1.0.0/map/geo/china_geo.json',
+                'https://raw.githubusercontent.com/apache/echarts-examples/gh-pages/public/data/geo/geo.geojson'
+            ];
+
+            // 智能适配GeoJson，提取省份级features
+            function adaptProvinceFeatures(geoJson) {
+                if (!geoJson || !geoJson.features) return [];
+                let features = geoJson.features;
+                // 方法1: 如果存在 level 属性并且值为 'province'，则过滤
+                if (features.length > 0 && features[0].properties && features[0].properties.level) {
+                    const filtered = features.filter(f => f.properties.level === 'province');
+                    if (filtered.length > 0) return filtered;
+                }
+                // 方法2: 基于名称粗略过滤，排除明显不是省份的条目 (常见情况: 直辖市、省、自治区，长度小于6或包含特定关键词)
+                // 保留大多数标准省份，过滤掉"市辖区"、"县"等细粒度 (如果是全量中国地图备用)
+                const provinceKeywords = ['省', '自治区', '市', '特别行政区'];
+                const filteredByName = features.filter(f => {
+                    const name = f.properties?.name || f.properties?.NAME || '';
+                    if (!name) return false;
+                    // 包含上述关键词，且长度小于8，并且不是区/县级别(简单策略)
+                    if (provinceKeywords.some(k => name.includes(k))) {
+                        // 排除明显区县级: 包含"区"但不包含"自治区"且长度较短? 避免过滤掉直辖市
+                        if (name.includes('区') && !name.includes('自治区') && name.length <= 4 && !['北京市','上海市','天津市','重庆市'].includes(name)) return false;
+                        return true;
+                    }
+                    // 常见省级行政单位名称直接保留
+                    const knownProvinces = ['北京','上海','天津','重庆','河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海','台湾','香港','澳门','内蒙古','广西','西藏','宁夏','新疆'];
+                    if (knownProvinces.some(p => name === p || name === p+'省' || name === p+'市' || name === p+'自治区')) return true;
+                    return false;
+                });
+                if (filteredByName.length > 0) return filteredByName;
+                // 兜底: 直接返回所有features (有些源本身就是省份集合)
+                return features;
+            }
+
+            // 带超时及多源fallback的加载器
+            async function loadGeoJsonWithRetry() {
+                const fetchWithTimeout = (url, timeout = 8000) => {
+                    return Promise.race([
+                        fetch(url),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error(`请求超时: ${url}`)), timeout))
+                    ]);
+                };
+                for (let source of GEOJSON_SOURCES) {
+                    try {
+                        console.log(`尝试加载地图数据: ${source}`);
+                        const response = await fetchWithTimeout(source);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const geoJson = await response.json();
+                        // 校验数据完整性
+                        if (!geoJson || !geoJson.features || geoJson.features.length === 0) throw new Error('无效GeoJSON结构');
+                        const provinceFeatures = adaptProvinceFeatures(geoJson);
+                        if (provinceFeatures.length === 0) throw new Error('未提取到省份数据');
+                        // 构建标准FeatureCollection
+                        const adaptedGeoJson = {
+                            type: 'FeatureCollection',
+                            features: provinceFeatures
+                        };
+                        return adaptedGeoJson;
+                    } catch (err) {
+                        console.warn(`源 ${source} 加载失败:`, err.message);
+                        continue;
+                    }
+                }
+                throw new Error('所有地图数据源均不可用，请检查网络或稍后重试');
+            }
+
+            // 注册中国地图（全局只需注册一次）
             async function registerChinaMap(force = false) {
                 if (isMapRegistered && !force) return true;
                 if (mapRegisterPromise && !force) return mapRegisterPromise;
-
+                
                 mapRegisterPromise = (async () => {
                     try {
-                        console.log('尝试加载本地地图文件: ./map/china.json');
-                        const res = await fetch('./map/china.json');
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        const geoJson = await res.json();
-                        
-                        // 阿里云的 GeoJSON 需要提取省份级 features（它包含省、市、区县）
-                        // 我们只取 level === 'province' 的要素，避免重复或过多细节
-                        let features = geoJson.features;
-                        if (features && features[0]?.properties?.level) {
-                            features = features.filter(f => f.properties.level === 'province');
-                            console.log(`过滤后得到 ${features.length} 个省级行政区`);
+                        const chinaGeoJson = await loadGeoJsonWithRetry();
+                        if (echarts.registerMap) {
+                            echarts.registerMap('china', chinaGeoJson);
+                            isMapRegistered = true;
+                            console.log('中国地图注册成功');
+                            return true;
+                        } else {
+                            throw new Error('ECharts registerMap不可用');
                         }
-                        // 如果没有 level 字段，直接使用全部 features（一般也可用）
-                        const finalGeoJson = {
-                            type: 'FeatureCollection',
-                            features: features || geoJson.features || []
-                        };
-                        if (finalGeoJson.features.length === 0) throw new Error('没有可用的省份数据');
-                        
-                        echarts.registerMap('china', finalGeoJson);
-                        isMapRegistered = true;
-                        console.log('本地地图加载成功，省份数量:', finalGeoJson.features.length);
-                        return true;
                     } catch (err) {
-                        console.error('本地地图加载失败:', err);
-                        mapRegisterPromise = null;
+                        console.error('地图注册失败:', err);
+                        isMapRegistered = false;
                         throw err;
+                    } finally {
+                        mapRegisterPromise = null;
                     }
                 })();
                 return mapRegisterPromise;
             }
 
-            // 显示地图错误遮罩（与之前相同）
-            function showMapErrorOverlay(container, retryFn) {
+            // 清除地图容器中的错误遮罩
+            function clearMapErrorOverlay(container) {
                 if (!container) return;
-                const existing = container.querySelector('.map-error-overlay');
-                if (existing) existing.remove();
+                const existingOverlay = container.querySelector('.map-error-overlay');
+                if (existingOverlay) existingOverlay.remove();
+                currentMapErrorDisplay = false;
+            }
+
+            // 显示错误遮罩和重试按钮
+            function showMapErrorOverlay(container, retryCallback) {
+                if (!container) return;
+                clearMapErrorOverlay(container);
                 const overlay = document.createElement('div');
                 overlay.className = 'map-error-overlay';
                 overlay.innerHTML = `
-                    <div style="background:white; border-radius:28px; padding:24px 32px; text-align:center; max-width:340px; box-shadow:0 8px 24px rgba(0,0,0,0.12);">
-                        <i class="fas fa-map-marked-alt" style="font-size:48px; color:#b91c1c; margin-bottom:16px;"></i>
-                        <h4 style="margin-bottom:12px;">地图加载失败</h4>
-                        <p style="margin-bottom:20px; color:#4b5563;">本地地图文件缺失或路径错误，请检查 ./map/china.json 是否存在</p>
-                        <button class="btn btn-primary" id="mapRetryBtn"><i class="fas fa-sync-alt"></i> 重新加载</button>
+                    <div style="background: white; border-radius: 28px; padding: 24px 32px; text-align: center; max-width: 340px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);">
+                        <i class="fas fa-map-marked-alt" style="font-size: 48px; color: #b91c1c; margin-bottom: 16px; display: block;"></i>
+                        <h4 style="margin-bottom: 12px; font-size: 1.2rem;">地图加载失败</h4>
+                        <p style="margin-bottom: 20px; color: #4b5563; font-size: 0.85rem;">可能是网络问题或地图数据源暂时不可用，您可以手动重试。</p>
+                        <button class="btn btn-primary" id="mapRetryBtn"><i class="fas fa-sync-alt"></i> 重新加载地图</button>
+                        <div style="margin-top: 14px; font-size: 12px; color: #6c757d;">💡 请确保网络通畅，或点击刷新</div>
                     </div>
                 `;
                 container.style.position = 'relative';
                 container.appendChild(overlay);
-                overlay.querySelector('#mapRetryBtn')?.addEventListener('click', (e) => {
+                const retryBtn = overlay.querySelector('#mapRetryBtn');
+                if (retryBtn) retryBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    retryFn();
+                    if (retryCallback) retryCallback();
                 });
+                currentMapErrorDisplay = true;
             }
 
-            async function renderMapOnly() {
+            // 核心渲染函数 (包含错误处理+手动重试)
+            async function renderMap() {
                 const dom = document.getElementById('chinaMap');
                 if (!dom) return;
-                if (mapChart) mapChart.dispose();
-                const overlay = dom.querySelector('.map-error-overlay');
-                if (overlay) overlay.remove();
+                // 清理原有错误遮罩
+                clearMapErrorOverlay(dom);
+                // 如果已有地图实例但注册状态异常，先销毁
+                if (mapChart) {
+                    mapChart.dispose();
+                    mapChart = null;
+                }
                 try {
+                    // 确保地图注册（多源重试）
                     await registerChinaMap(false);
+                    // 准备数据
                     const provinceData = provinceAggregation.value.map(p => ({
-                        name: p.name, value: p.value, contract: p.contract, payment: p.payment
+                        name: p.name,
+                        value: p.value,
+                        contract: p.contract,
+                        payment: p.payment,
+                        completed: 0
                     }));
                     const maxValue = provinceData.length ? Math.max(...provinceData.map(d => d.value), 1) : 1;
+                    
+                    // 初始化echarts地图
                     mapChart = echarts.init(dom);
                     mapChart.setOption({
                         tooltip: {
                             trigger: 'item',
-                            formatter: params => params.data ? `<strong>${params.name}</strong><br/>项目数:${params.data.value}个<br/>合同额:${(params.data.contract||0).toFixed(1)}万<br/>回款额:${(params.data.payment||0).toFixed(1)}万` : `${params.name}<br/>暂无数据`
+                            formatter: (params) => {
+                                if (params.data) {
+                                    return `<strong>${params.name}</strong><br/>项目总数: ${params.data.value} 个<br/>合同额: ${(params.data.contract || 0).toFixed(1)}万<br/>回款额: ${(params.data.payment || 0).toFixed(1)}万`;
+                                }
+                                return `${params.name}<br/>暂无项目数据`;
+                            }
                         },
                         visualMap: {
-                            min: 0, max: maxValue, left: 'left', bottom: 20, calculable: true,
-                            inRange: { color: ['#ffe0e0', '#ffaaaa', '#ff6b6b', '#e63946', '#b91c1c'] }
+                            min: 0,
+                            max: maxValue,
+                            left: 'left',
+                            bottom: 20,
+                            calculable: true,
+                            inRange: { color: ['#ffe0e0', '#ffaaaa', '#ff6b6b', '#e63946', '#b91c1c'] },
+                            outOfRange: { color: '#e2e8f0' },
+                            text: ['高项目数', '低项目数']
                         },
                         series: [{
-                            type: 'map', map: 'china', roam: true, zoom: 1.2,
-                            label: { show: true, fontSize: 10 },
+                            type: 'map',
+                            map: 'china',
+                            roam: true,
+                            zoom: 1.2,
+                            label: { show: true, fontSize: 10, color: '#1e293b' },
+                            emphasis: { label: { show: true, fontWeight: 'bold' }, itemStyle: { areaColor: '#ffedd5' } },
                             data: provinceData,
-                            itemStyle: { borderColor: '#cbd5e1', areaColor: '#e2e8f0' }
+                            itemStyle: { borderColor: '#cbd5e1', borderWidth: 0.8, areaColor: '#e2e8f0' }
                         }]
                     });
+                    mapChart.on('click', (params) => { /* 可选交互 */ });
                     window.addEventListener('resize', () => mapChart?.resize());
+                    
+                    // 更新饼图 (合同额占比)
+                    const contractPieData = [...provinceAggregation.value].sort((a,b)=>b.contract - a.contract).slice(0,5);
+                    const pieCtx = document.getElementById('provinceContractPie');
+                    if (pieCtx) {
+                        if (provincePieChart) provincePieChart.dispose();
+                        provincePieChart = echarts.init(pieCtx);
+                        provincePieChart.setOption({
+                            tooltip: { trigger: 'item' },
+                            legend: { orient: 'vertical', left: 'left', textStyle: { fontSize: 10 } },
+                            series: [{ type: 'pie', radius: '55%', data: contractPieData.map(d => ({ name: d.name, value: d.contract })), label: { formatter: '{b}: {d}%' } }]
+                        });
+                    }
                 } catch (err) {
                     console.error('地图渲染失败:', err);
-                    showMapErrorOverlay(dom, () => forceReloadMap());
+                    // 显示友好的重试遮罩
+                    showMapErrorOverlay(dom, () => {
+                        // 重试前重置注册标志，强制重新加载地图资源
+                        isMapRegistered = false;
+                        mapRegisterPromise = null;
+                        renderMap();
+                    });
+                    // 同时确保饼图不受影响
+                    const pieCtx = document.getElementById('provinceContractPie');
+                    if (pieCtx && provincePieChart) {
+                        provincePieChart.dispose();
+                        provincePieChart = null;
+                    }
                 }
             }
 
-            function renderPieChart() {
-                const pieContainer = document.getElementById('provinceContractPie');
-                if (!pieContainer) return;
-                const data = provinceAggregation.value;
-                const pieData = [...data].sort((a, b) => b.contract - a.contract).slice(0, 5);
-                if (provincePieChart) provincePieChart.dispose();
-                provincePieChart = echarts.init(pieContainer);
-                provincePieChart.setOption({
-                    tooltip: { trigger: 'item' },
-                    legend: { orient: 'vertical', left: 'left', textStyle: { fontSize: 10 } },
-                    series: [{
-                        type: 'pie', radius: '55%',
-                        data: pieData.map(d => ({ name: d.name, value: d.contract })),
-                        label: { formatter: '{b}: {d}%' }
-                    }]
-                });
-            }
-
+            // 强制重载地图 (用户主动)
             async function forceReloadMap() {
                 isMapRegistered = false;
                 mapRegisterPromise = null;
-                await renderMapOnly();
+                const dom = document.getElementById('chinaMap');
+                if (dom) clearMapErrorOverlay(dom);
+                if (mapChart) {
+                    mapChart.dispose();
+                    mapChart = null;
+                }
+                await renderMap();
             }
 
-            // ---------- 数据聚合（与原代码完全相同）----------
+            // 合并所有项目
             const allProjects = computed(() => {
                 let projs = [];
                 departments.value.forEach(dept => {
@@ -368,7 +487,7 @@
                         if (!isNaN(y)) years.add(y);
                     }
                 });
-                return Array.from(years).sort((a, b) => b - a);
+                return Array.from(years).sort((a,b)=>b-a);
             });
 
             const filteredProjectsByMapYear = computed(() => {
@@ -376,15 +495,17 @@
                 let projects = allProjects.value;
                 if (filter === "all") return projects;
                 if (filter === "recent2") {
-                    const limit = currentYear - 1;
-                    return projects.filter(p => p.signDate && new Date(p.signDate).getFullYear() >= limit);
+                    const limitYear = currentYear - 1;
+                    return projects.filter(p => p.signDate && new Date(p.signDate).getFullYear() >= limitYear);
                 }
                 if (filter === "recent5") {
-                    const limit = currentYear - 4;
-                    return projects.filter(p => p.signDate && new Date(p.signDate).getFullYear() >= limit);
+                    const limitYear = currentYear - 4;
+                    return projects.filter(p => p.signDate && new Date(p.signDate).getFullYear() >= limitYear);
                 }
                 const yearNum = parseInt(filter);
-                if (!isNaN(yearNum)) return projects.filter(p => p.signDate && new Date(p.signDate).getFullYear() === yearNum);
+                if (!isNaN(yearNum)) {
+                    return projects.filter(p => p.signDate && new Date(p.signDate).getFullYear() === yearNum);
+                }
                 return projects;
             });
 
@@ -393,7 +514,7 @@
                 filteredProjectsByMapYear.value.forEach(p => {
                     const std = toStandardProvinceName(p.province);
                     if (!std) return;
-                    if (!map.has(std)) map.set(std, { total: 0, contract: 0, payment: 0 });
+                    if (!map.has(std)) map.set(std, { total:0, contract:0, payment:0 });
                     const entry = map.get(std);
                     entry.total += 1;
                     entry.contract += (p.contractAmount || 0);
@@ -406,31 +527,34 @@
                 const data = provinceAggregation.value;
                 const totalProjects = data.reduce((s, d) => s + d.value, 0);
                 const coveredProvinces = data.length;
-                const sortedByCount = [...data].sort((a, b) => b.value - a.value);
-                const top3Count = sortedByCount.slice(0, 3).map(c => ({ name: c.name, value: c.value }));
-                const sortedByContract = [...data].sort((a, b) => b.contract - a.contract);
-                const top3Contract = sortedByContract.slice(0, 3).map(c => ({ name: c.name, value: c.contract }));
-                const sortedByPayment = [...data].sort((a, b) => b.payment - a.payment);
-                const top3Payment = sortedByPayment.slice(0, 3).map(c => ({ name: c.name, value: c.payment }));
-                const topProvinceByCount = sortedByCount[0] || null;
+                const sortedByCount = [...data].sort((a,b)=>b.value - a.value);
+                const top3Count = sortedByCount.slice(0,3).map(c => ({ name: c.name, value: c.value }));
+                const sortedByContract = [...data].sort((a,b)=>b.contract - a.contract);
+                const top3Contract = sortedByContract.slice(0,3).map(c => ({ name: c.name, value: c.contract }));
+                const sortedByPayment = [...data].sort((a,b)=>b.payment - a.payment);
+                const top3Payment = sortedByPayment.slice(0,3).map(c => ({ name: c.name, value: c.payment }));
+                const topProvinceByCount = sortedByCount.length ? sortedByCount[0] : null;
                 return { totalProjects, coveredProvinces, top3Count, top3Contract, top3Payment, topProvinceByCount };
             });
 
             const mapInsight = computed(() => {
-                const top3CountStr = mapSummary.value.top3Count.map(t => `${t.name}(${t.value}个)`).join('、');
-                const top3ContractStr = mapSummary.value.top3Contract.map(t => `${t.name}(${t.value.toFixed(1)}万)`).join('、');
-                const top3PaymentStr = mapSummary.value.top3Payment.map(t => `${t.name}(${t.value.toFixed(1)}万)`).join('、');
-                return `<i class="fas fa-chalkboard-user"></i> 当前筛选条件下，共聚合 ${provinceAggregation.value.length} 个省级行政区，项目总数 ${mapSummary.value.totalProjects} 个。<br>项目数前三：${top3CountStr}<br>合同额前三：${top3ContractStr}<br>回款额前三：${top3PaymentStr}`;
+                const top3CountStr = mapSummary.value.top3Count.map(t=>`${t.name}(${t.value}个)`).join('、');
+                const top3ContractStr = mapSummary.value.top3Contract.map(t=>`${t.name}(${t.value.toFixed(1)}万)`).join('、');
+                const top3PaymentStr = mapSummary.value.top3Payment.map(t=>`${t.name}(${t.value.toFixed(1)}万)`).join('、');
+                return `<i class="fas fa-chalkboard-user"></i> 当前筛选条件下，共聚合 ${provinceAggregation.value.length} 个省级行政区，项目总数 ${mapSummary.value.totalProjects} 个。<br>
+                1. 项目数量前三：${top3CountStr || '—'}<br>
+                2. 合同额前三：${top3ContractStr || '—'}<br>
+                3. 回款额前三：${top3PaymentStr || '—'}`;
             });
 
-            // 客户分析（完全独立）
+            // 客户分析逻辑
             const filteredProjectsByOwnerRange = computed(() => {
                 const range = ownerTimeRange.value;
                 let projs = allProjects.value;
                 if (range === "current") return projs.filter(p => p.signDate && new Date(p.signDate).getFullYear() === currentYear);
                 if (range === "recent2") {
-                    const limit = currentYear - 1;
-                    return projs.filter(p => p.signDate && new Date(p.signDate).getFullYear() >= limit);
+                    const limitYear = currentYear - 1;
+                    return projs.filter(p => p.signDate && new Date(p.signDate).getFullYear() >= limitYear);
                 }
                 return projs;
             });
@@ -440,7 +564,7 @@
                 const ownerMap = new Map();
                 projects.forEach(p => {
                     const owner = p.owner || "未知客户";
-                    if (!ownerMap.has(owner)) ownerMap.set(owner, { contractSum: 0, paymentSum: 0, projectCount: 0, projects: [] });
+                    if (!ownerMap.has(owner)) ownerMap.set(owner, { contractSum:0, paymentSum:0, projectCount:0, projects: [] });
                     const entry = ownerMap.get(owner);
                     entry.contractSum += (p.contractAmount || 0);
                     entry.paymentSum += getProjectPaidSum(p);
@@ -451,17 +575,20 @@
                     let firstPaymentDelayAvg = null;
                     let completedNotFullPaid = 0;
                     data.projects.forEach(proj => {
-                        if (proj.stage === '完成' && getProjectPaidSum(proj) < (proj.contractAmount || 0)) completedNotFullPaid++;
+                        if (proj.stage === '完成') {
+                            if (getProjectPaidSum(proj) < (proj.contractAmount || 0)) completedNotFullPaid++;
+                        }
                         if (proj.signDate && proj.payments && proj.payments.length) {
                             const sign = new Date(proj.signDate);
-                            const firstPay = new Date(proj.payments[0].date);
-                            if (!isNaN(sign) && !isNaN(firstPay)) {
-                                const days = (firstPay - sign) / (1000 * 3600 * 24);
-                                firstPaymentDelayAvg = firstPaymentDelayAvg === null ? days : (firstPaymentDelayAvg + days) / 2;
+                            const firstPayDate = new Date(proj.payments[0].date);
+                            if (!isNaN(sign) && !isNaN(firstPayDate)) {
+                                const days = (firstPayDate - sign) / (1000*3600*24);
+                                if (firstPaymentDelayAvg === null) firstPaymentDelayAvg = days;
+                                else firstPaymentDelayAvg = (firstPaymentDelayAvg + days)/2;
                             }
                         }
                     });
-                    const paymentRatio = data.contractSum > 0 ? data.paymentSum / data.contractSum : 0;
+                    const paymentRatio = data.contractSum > 0 ? (data.paymentSum / data.contractSum) : 0;
                     let creditScore = '良好';
                     if (paymentRatio < 0.4) creditScore = '差';
                     else if (paymentRatio < 0.7) creditScore = '中等';
@@ -470,26 +597,24 @@
                     if (firstPaymentDelayAvg && firstPaymentDelayAvg > 180) creditScore = '回款周期过长';
                     return { name, contractSum: data.contractSum, paymentSum: data.paymentSum, projectCount: data.projectCount, paymentRatio, completedNotFullPaid, firstPaymentDelayAvg: firstPaymentDelayAvg?.toFixed(0), creditScore };
                 });
-                list.sort((a, b) => b.contractSum - a.contractSum);
-                const top10Contract = list.slice(0, 10);
-                const top10Payment = [...list].sort((a, b) => b.paymentSum - a.paymentSum).slice(0, 10);
+                list.sort((a,b)=>b.contractSum - a.contractSum);
+                const top10Contract = list.slice(0,10);
+                const top10Payment = [...list].sort((a,b)=>b.paymentSum - a.paymentSum).slice(0,10);
                 return { list, top10Contract, top10Payment };
             });
 
             const goodClientAdvice = computed(() => {
                 const owners = ownerAnalysis.value.list;
-                const goodOnes = owners.filter(o => o.paymentRatio >= 0.85 && o.completedNotFullPaid === 0 && (o.firstPaymentDelayAvg === null || o.firstPaymentDelayAvg < 90)).slice(0, 5);
+                const goodOnes = owners.filter(o => o.paymentRatio >= 0.85 && o.completedNotFullPaid === 0 && (o.firstPaymentDelayAvg === null || o.firstPaymentDelayAvg < 90)).slice(0,5);
                 if (goodOnes.length === 0) return "暂无高信誉优质客户，建议加强回款跟进。";
-                return goodOnes.map(o => `✅ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio * 100).toFixed(1)}%，回款及时，信誉优秀`).join('<br>');
+                return goodOnes.map(o => `✅ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio*100).toFixed(1)}%，回款及时，信誉优秀`).join('<br>');
             });
-
             const riskClientAdvice = computed(() => {
                 const owners = ownerAnalysis.value.list;
-                const risky = owners.filter(o => (o.paymentRatio < 0.5 && o.contractSum > 100) || o.completedNotFullPaid > 0 || (o.firstPaymentDelayAvg > 180)).sort((a, b) => b.contractSum - a.contractSum).slice(0, 6);
+                const risky = owners.filter(o => (o.paymentRatio < 0.5 && o.contractSum > 100) || o.completedNotFullPaid > 0 || (o.firstPaymentDelayAvg > 180)).sort((a,b)=>b.contractSum - a.contractSum).slice(0,6);
                 if (risky.length === 0) return "暂无明显高风险客户。";
-                return risky.map(o => `⚠️ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio * 100).toFixed(1)}%，${o.completedNotFullPaid > 0 ? '已完成项目未结清 ' : ''}${o.firstPaymentDelayAvg ? `首款延迟${o.firstPaymentDelayAvg}天` : ''}`).join('<br>');
+                return risky.map(o => `⚠️ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio*100).toFixed(1)}%，${o.completedNotFullPaid>0?'已完成项目未结清 ':''}${o.firstPaymentDelayAvg ? `首款延迟${o.firstPaymentDelayAvg}天` : ''}`).join('<br>');
             });
-
             const operationAdvice = computed(() => {
                 const riskyCount = ownerAnalysis.value.list.filter(o => o.paymentRatio < 0.5 && o.contractSum > 80).length;
                 return `重点关注 ${riskyCount} 个高合同低回款客户，建议采取预付款+节点付款制；优质客户可签订长期框架协议，加速转化。针对已完成未回款项目启动专项催收，提升现金流。`;
@@ -508,8 +633,8 @@
                         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
                         grid: { containLabel: true, left: '10%', right: '5%' },
                         xAxis: { type: 'value', name: '万元' },
-                        yAxis: { type: 'category', data: topContract.map(o => o.name), axisLabel: { rotate: 0, interval: 0, fontSize: 10 } },
-                        series: [{ name: '合同额', type: 'bar', data: topContract.map(o => o.contractSum), itemStyle: { color: (params) => `hsl(${params.dataIndex * 30}, 70%, 55%)` }, label: { show: true, position: 'right' } }]
+                        yAxis: { type: 'category', data: topContract.map(o=>o.name), axisLabel: { rotate: 0, interval: 0, fontSize: 10 } },
+                        series: [{ name: '合同额', type: 'bar', data: topContract.map(o=>o.contractSum), itemStyle: { color: (params) => `hsl(${params.dataIndex * 30}, 70%, 55%)` }, label: { show: true, position: 'right' } }]
                     });
                 }
                 if (paymentCtx) {
@@ -517,23 +642,22 @@
                     ownerPaymentChart.setOption({
                         tooltip: { trigger: 'axis' },
                         xAxis: { type: 'value', name: '万元' },
-                        yAxis: { type: 'category', data: topPayment.map(o => o.name), axisLabel: { fontSize: 10 } },
-                        series: [{ name: '回款额', type: 'bar', data: topPayment.map(o => o.paymentSum), itemStyle: { color: (params) => `hsl(${params.dataIndex * 35 + 180}, 70%, 55%)` }, label: { show: true } }]
+                        yAxis: { type: 'category', data: topPayment.map(o=>o.name), axisLabel: { fontSize: 10 } },
+                        series: [{ name: '回款额', type: 'bar', data: topPayment.map(o=>o.paymentSum), itemStyle: { color: (params) => `hsl(${params.dataIndex * 35 + 180}, 70%, 55%)` }, label: { show: true } }]
                     });
                 }
             }
-
             function refreshOwnerAnalysis() { nextTick(() => refreshOwnerCharts()); }
 
-            // 部门管理函数（与原代码相同）
-            function getDeptContractTotal(dept) { return (dept.projects || []).reduce((s, p) => s + (p.contractAmount || 0), 0); }
-            function getDeptPaymentTotal(dept) { return (dept.projects || []).reduce((s, p) => s + getProjectPaidSum(p), 0); }
-            function addDepartment() { const newId = 'dept_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6); departments.value.push({ id: newId, name: `部门${departments.value.length + 1}`, projects: [], lastImportTime: null }); saveToLocal(); }
-            function removeDepartment(idx) { if (confirm("删除部门会清除其项目数据，确定吗？")) { departments.value.splice(idx, 1); saveToLocal(); refreshAll(); } }
-            function triggerImportForDept(deptId) { document.getElementById('file_' + deptId)?.click(); }
+            // 部门管理
+            function getDeptContractTotal(dept) { return (dept.projects || []).reduce((s,p)=>s+(p.contractAmount||0),0); }
+            function getDeptPaymentTotal(dept) { return (dept.projects || []).reduce((s,p)=>s+getProjectPaidSum(p),0); }
+            function addDepartment() { const newId = 'dept_'+Date.now()+'_'+Math.random().toString(36).substr(2,6); departments.value.push({ id: newId, name: `部门${departments.value.length+1}`, projects: [], lastImportTime: null }); saveToLocal(); }
+            function removeDepartment(idx) { if(confirm("删除部门会清除其项目数据，确定吗？")) { departments.value.splice(idx,1); saveToLocal(); refreshAll(); } }
+            function triggerImportForDept(deptId) { document.getElementById('file_'+deptId)?.click(); }
             function handleDeptFileUpload(event, deptId) {
                 const file = event.target.files[0];
-                if (!file) return;
+                if(!file) return;
                 const reader = new FileReader();
                 reader.onload = e => {
                     try {
@@ -543,7 +667,7 @@
                         else if (Array.isArray(json)) projectsArr = json;
                         else if (json.projectList) projectsArr = json.projectList;
                         if (!projectsArr) throw new Error("未找到projects数组");
-                        const dept = departments.value.find(d => d.id === deptId);
+                        const dept = departments.value.find(d=>d.id === deptId);
                         if (dept) {
                             dept.projects = projectsArr.map(p => ({ ...p, province: p.province || '', contractAmount: p.contractAmount || 0, payments: p.payments || [], signDate: p.signDate || '', stage: p.stage || '', owner: p.owner || '' }));
                             dept.lastImportTime = new Date().toLocaleString();
@@ -551,7 +675,7 @@
                             refreshAll();
                             alert(`导入成功，共 ${dept.projects.length} 个项目`);
                         }
-                    } catch (err) { alert("解析失败: " + err.message); }
+                    } catch(err) { alert("解析失败: "+err.message); }
                 };
                 reader.readAsText(file);
                 event.target.value = '';
@@ -564,43 +688,33 @@
                         const saved = JSON.parse(raw);
                         if (Array.isArray(saved)) departments.value = saved;
                         else departments.value = [];
-                    } catch (e) { }
+                    } catch(e) {}
                 }
                 if (departments.value.length === 0) {
                     const sampleProjects = [
-                        { id: "s1", name: "滨河湿地公园", province: "河北省", stage: "方案设计", contractAmount: 180, payments: [{ date: "2026-02-10", amount: 50 }], signDate: "2026-02-01", owner: "市水务局" },
-                        { id: "s2", name: "城市生态绿道", province: "北京市", stage: "施工图设计", contractAmount: 320, payments: [{ date: "2025-02-20", amount: 100 }], signDate: "2025-01-10", owner: "市园林局" },
-                        { id: "s3", name: "老旧街区微更新", province: "广东省", stage: "施工", contractAmount: 560, payments: [{ date: "2024-10-10", amount: 200 }], signDate: "2024-09-01", owner: "街道办事处" },
-                        { id: "s4", name: "滨江景观带", province: "浙江省", stage: "施工图设计", contractAmount: 420, payments: [{ date: "2025-06-01", amount: 180 }], signDate: "2025-03-01", owner: "新城管委会" },
-                        { id: "s5", name: "绿道体系", province: "四川省", stage: "方案设计", contractAmount: 290, payments: [{ date: "2025-07-10", amount: 90 }], signDate: "2025-05-20", owner: "城市建设集团" },
-                        { id: "s6", name: "郊野公园", province: "河北省", stage: "初步设计", contractAmount: 780, payments: [{ date: "2025-08-01", amount: 200 }], signDate: "2025-04-12", owner: "城市建设集团" }
+                        { id:"s1", name:"滨河湿地公园", province:"河北省", stage:"方案设计", contractAmount:180, payments:[{date:"2026-02-10",amount:50}], signDate:"2026-02-01", owner:"市水务局" },
+                        { id:"s2", name:"城市生态绿道", province:"北京市", stage:"施工图设计", contractAmount:320, payments:[{date:"2025-02-20",amount:100}], signDate:"2025-01-10", owner:"市园林局" },
+                        { id:"s3", name:"老旧街区微更新", province:"广东省", stage:"施工", contractAmount:560, payments:[{date:"2024-10-10",amount:200}], signDate:"2024-09-01", owner:"街道办事处" },
+                        { id:"s4", name:"滨江景观带", province:"浙江省", stage:"施工图设计", contractAmount:420, payments:[{date:"2025-06-01",amount:180}], signDate:"2025-03-01", owner:"新城管委会" },
+                        { id:"s5", name:"绿道体系", province:"四川省", stage:"方案设计", contractAmount:290, payments:[{date:"2025-07-10",amount:90}], signDate:"2025-05-20", owner:"城市建设集团" },
+                        { id:"s6", name:"郊野公园", province:"河北省", stage:"初步设计", contractAmount:780, payments:[{date:"2025-08-01",amount:200}], signDate:"2025-04-12", owner:"城市建设集团" }
                     ];
-                    departments.value.push({ id: "dept_demo", name: "设计工作室", projects: sampleProjects, lastImportTime: "示例数据" });
+                    departments.value.push({ id:"dept_demo", name:"设计工作室", projects: sampleProjects, lastImportTime: "示例数据" });
                     saveToLocal();
                 }
             }
-            function refreshAll() { nextTick(() => { renderMapOnly(); renderPieChart(); refreshOwnerCharts(); }); }
+            function refreshAll() { nextTick(() => { renderMap(); refreshOwnerCharts(); }); }
             function toggleStandard() { showStandard.value = !showStandard.value; }
 
-            // 监听数据变化
-            watch([filteredProjectsByMapYear, provinceAggregation], () => {
-                renderMapOnly();
-                renderPieChart();
-            });
-            watch([ownerAnalysis], () => refreshOwnerCharts(), { deep: true });
+            watch([filteredProjectsByMapYear, provinceAggregation], () => { renderMap(); });
+            watch([ownerAnalysis], () => { refreshOwnerCharts(); }, { deep: true });
             watch(() => ownerTimeRange.value, () => refreshOwnerAnalysis());
 
             onMounted(() => {
                 loadFromLocal();
-                renderMapOnly();
-                renderPieChart();
+                renderMap();
                 refreshOwnerAnalysis();
-                window.addEventListener('resize', () => {
-                    if (mapChart) mapChart.resize();
-                    if (provincePieChart) provincePieChart.resize();
-                    if (ownerContractChart) ownerContractChart.resize();
-                    if (ownerPaymentChart) ownerPaymentChart.resize();
-                });
+                window.addEventListener('resize', () => { if(mapChart) mapChart.resize(); if(provincePieChart) provincePieChart.resize(); if(ownerContractChart) ownerContractChart.resize(); if(ownerPaymentChart) ownerPaymentChart.resize(); });
             });
 
             return {
