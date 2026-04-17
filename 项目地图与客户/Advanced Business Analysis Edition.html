@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>经营分析高级版 · 项目地图与客户（最终稳定版）</title>
+    <title>经营分析高级版 · 项目地图与客户（纯 GeoJSON 稳定版）</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
@@ -28,6 +28,7 @@
         .stat-card { background: #f1f5f9; border-radius: 24px; padding: 20px; text-align: center; }
         .stat-card i { font-size: 1.8rem; color: #2c6e9e; margin-bottom: 8px; }
         .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; margin: 8px 0; color: #0f172a; }
+        .stat-label { font-size: 0.85rem; color: #4b5563; }
         .badge { background: #e2e8f0; border-radius: 40px; padding: 4px 14px; font-size: 0.75rem; font-weight: 500; }
         .insight-text { background: #e6f7ec; padding: 14px 20px; border-radius: 20px; margin-top: 20px; font-size: 0.9rem; color: #0e5e2e; }
         .warning-text { background: #fff3e0; color: #b45309; }
@@ -181,14 +182,14 @@
                 </div>
             </div>
         </div>
-        <div class="copyright">©Twolobster | 地图采用多源热备 + 饼图独立渲染，确保 GitHub Pages 完美运行</div>
+        <div class="copyright">©Twolobster | 地图使用 ECharts 官方 GeoJSON，确保 GitHub Pages 完美运行</div>
     </div>
 </div>
 
 <script>
     const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
 
-    // ================== 省份标准化 ==================
+    // 省份标准化
     function toStandardProvinceName(raw) {
         if (!raw) return null;
         let name = raw.trim();
@@ -228,17 +229,14 @@
             let isMapRegistered = false;
             let mapRegisterPromise = null;
 
-            // ================== 地图数据源（稳定可靠） ==================
-            // 优先使用 Apache ECharts 官方示例 GeoJSON（最稳定，支持跨域）
-            // 备用源：jsdelivr 上的 china_geo.json，以及阿里云 DataV
+            // ---------- 地图加载（纯 GeoJSON 多源回退，无外部脚本）----------
             const GEOJSON_SOURCES = [
-                'https://echarts.apache.org/examples/data/geo/geo.geojson',          // 官方示例，首选
+                'https://echarts.apache.org/examples/data/geo/geo.geojson',   // 官方示例，最稳定
                 'https://cdn.jsdelivr.net/npm/echarts-map@1.0.0/map/geo/china_geo.json',
-                'https://raw.githubusercontent.com/apache/echarts-examples/gh-pages/public/data/geo/geo.geojson',
                 'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json'
             ];
 
-            // 智能提取省份 features（兼容多种 GeoJSON 结构）
+            // 智能提取省份 features
             function extractProvinceFeatures(geoJson) {
                 if (!geoJson || !geoJson.features) return [];
                 let features = geoJson.features;
@@ -247,7 +245,7 @@
                     const filtered = features.filter(f => f.properties.level === 'province');
                     if (filtered.length) return filtered;
                 }
-                // 方法2：通过名称列表匹配（覆盖所有省级单位）
+                // 方法2：通过名称匹配（覆盖所有省级单位）
                 const provinceNames = [
                     '北京','北京市','上海','上海市','天津','天津市','重庆','重庆市',
                     '河北','河北省','山西','山西省','辽宁','辽宁省','吉林','吉林省','黑龙江','黑龙江省',
@@ -262,30 +260,15 @@
                     return provinceNames.some(pn => name === pn || name === pn + '省' || name === pn + '市' || name === pn + '自治区' || name === pn + '特别行政区');
                 });
                 if (filtered.length) return filtered;
-                // 方法3：兜底返回所有 features（可能包含市县，但 ECharts 会尽量匹配）
+                // 兜底：返回全部
                 return features;
             }
 
-            // 带超时的 fetch
-            async function fetchWithTimeout(url, timeout = 8000) {
-                const controller = new AbortController();
-                const id = setTimeout(() => controller.abort(), timeout);
-                try {
-                    const response = await fetch(url, { signal: controller.signal });
-                    clearTimeout(id);
-                    return response;
-                } catch (err) {
-                    clearTimeout(id);
-                    throw err;
-                }
-            }
-
-            // 多源加载 GeoJSON
             async function loadGeoJsonWithRetry() {
                 for (let source of GEOJSON_SOURCES) {
                     try {
                         console.log(`尝试加载地图源: ${source}`);
-                        const response = await fetchWithTimeout(source);
+                        const response = await fetch(source);
                         if (!response.ok) throw new Error(`HTTP ${response.status}`);
                         const geoJson = await response.json();
                         const provinceFeatures = extractProvinceFeatures(geoJson);
@@ -296,10 +279,9 @@
                         console.warn(`源 ${source} 失败:`, err.message);
                     }
                 }
-                throw new Error('所有地图数据源均不可用，请检查网络');
+                throw new Error('所有地图数据源均不可用');
             }
 
-            // 注册地图（带缓存）
             async function registerChinaMap(force = false) {
                 if (isMapRegistered && !force) return true;
                 if (mapRegisterPromise && !force) return mapRegisterPromise;
@@ -313,7 +295,6 @@
                 return mapRegisterPromise;
             }
 
-            // 显示错误遮罩
             function showMapErrorOverlay(container, retryFn) {
                 if (!container) return;
                 const existing = container.querySelector('.map-error-overlay');
@@ -336,7 +317,6 @@
                 });
             }
 
-            // 纯地图渲染
             async function renderMapOnly() {
                 const dom = document.getElementById('chinaMap');
                 if (!dom) return;
@@ -373,7 +353,6 @@
                 }
             }
 
-            // 饼图独立渲染（不依赖地图）
             function renderPieChart() {
                 const pieContainer = document.getElementById('provinceContractPie');
                 if (!pieContainer) return;
@@ -392,17 +371,18 @@
                 });
             }
 
-            // 强制重载地图
             async function forceReloadMap() {
                 isMapRegistered = false;
                 mapRegisterPromise = null;
                 await renderMapOnly();
             }
 
-            // ================== 数据聚合与业务逻辑 ==================
+            // ---------- 数据聚合 ----------
             const allProjects = computed(() => {
                 let projs = [];
-                departments.value.forEach(dept => { if (dept.projects) projs.push(...dept.projects); });
+                departments.value.forEach(dept => {
+                    if (dept.projects && Array.isArray(dept.projects)) projs.push(...dept.projects);
+                });
                 return projs;
             });
 
@@ -469,7 +449,7 @@
                 return `<i class="fas fa-chalkboard-user"></i> 共聚合 ${provinceAggregation.value.length} 个省级行政区，项目总数 ${mapSummary.value.totalProjects} 个。<br>项目数前三：${top3CountStr}<br>合同额前三：${top3ContractStr}<br>回款额前三：${top3PaymentStr}`;
             });
 
-            // 客户分析逻辑（与原版相同，略作精简但功能完整）
+            // 客户分析（完全独立）
             const filteredProjectsByOwnerRange = computed(() => {
                 const range = ownerTimeRange.value;
                 let projs = allProjects.value;
@@ -498,7 +478,7 @@
                     let completedNotFullPaid = 0;
                     data.projects.forEach(proj => {
                         if (proj.stage === '完成' && getProjectPaidSum(proj) < (proj.contractAmount || 0)) completedNotFullPaid++;
-                        if (proj.signDate && proj.payments?.length) {
+                        if (proj.signDate && proj.payments && proj.payments.length) {
                             const sign = new Date(proj.signDate);
                             const firstPay = new Date(proj.payments[0].date);
                             if (!isNaN(sign) && !isNaN(firstPay)) {
@@ -508,7 +488,13 @@
                         }
                     });
                     const paymentRatio = data.contractSum > 0 ? data.paymentSum / data.contractSum : 0;
-                    return { name, contractSum: data.contractSum, paymentSum: data.paymentSum, projectCount: data.projectCount, paymentRatio, completedNotFullPaid, firstPaymentDelayAvg: firstPaymentDelayAvg?.toFixed(0) };
+                    let creditScore = '良好';
+                    if (paymentRatio < 0.4) creditScore = '差';
+                    else if (paymentRatio < 0.7) creditScore = '中等';
+                    else creditScore = '优秀';
+                    if (completedNotFullPaid > 0) creditScore = '风险(已完成未结清)';
+                    if (firstPaymentDelayAvg && firstPaymentDelayAvg > 180) creditScore = '回款周期过长';
+                    return { name, contractSum: data.contractSum, paymentSum: data.paymentSum, projectCount: data.projectCount, paymentRatio, completedNotFullPaid, firstPaymentDelayAvg: firstPaymentDelayAvg?.toFixed(0), creditScore };
                 });
                 list.sort((a, b) => b.contractSum - a.contractSum);
                 const top10Contract = list.slice(0, 10);
@@ -518,24 +504,26 @@
 
             const goodClientAdvice = computed(() => {
                 const owners = ownerAnalysis.value.list;
-                const good = owners.filter(o => o.paymentRatio >= 0.85 && o.completedNotFullPaid === 0 && (o.firstPaymentDelayAvg === null || o.firstPaymentDelayAvg < 90)).slice(0, 5);
-                if (!good.length) return "暂无高信誉优质客户。";
-                return good.map(o => `✅ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio * 100).toFixed(1)}%，信誉优秀`).join('<br>');
+                const goodOnes = owners.filter(o => o.paymentRatio >= 0.85 && o.completedNotFullPaid === 0 && (o.firstPaymentDelayAvg === null || o.firstPaymentDelayAvg < 90)).slice(0, 5);
+                if (goodOnes.length === 0) return "暂无高信誉优质客户，建议加强回款跟进。";
+                return goodOnes.map(o => `✅ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio * 100).toFixed(1)}%，回款及时，信誉优秀`).join('<br>');
             });
 
             const riskClientAdvice = computed(() => {
                 const owners = ownerAnalysis.value.list;
                 const risky = owners.filter(o => (o.paymentRatio < 0.5 && o.contractSum > 100) || o.completedNotFullPaid > 0 || (o.firstPaymentDelayAvg > 180)).sort((a, b) => b.contractSum - a.contractSum).slice(0, 6);
-                if (!risky.length) return "暂无明显高风险客户。";
-                return risky.map(o => `⚠️ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio * 100).toFixed(1)}%，${o.completedNotFullPaid > 0 ? '已完成未结清 ' : ''}${o.firstPaymentDelayAvg ? `首款延迟${o.firstPaymentDelayAvg}天` : ''}`).join('<br>');
+                if (risky.length === 0) return "暂无明显高风险客户。";
+                return risky.map(o => `⚠️ ${o.name} : 合同额 ${o.contractSum.toFixed(1)}万，回款比例 ${(o.paymentRatio * 100).toFixed(1)}%，${o.completedNotFullPaid > 0 ? '已完成项目未结清 ' : ''}${o.firstPaymentDelayAvg ? `首款延迟${o.firstPaymentDelayAvg}天` : ''}`).join('<br>');
             });
 
             const operationAdvice = computed(() => {
                 const riskyCount = ownerAnalysis.value.list.filter(o => o.paymentRatio < 0.5 && o.contractSum > 80).length;
-                return `重点关注 ${riskyCount} 个高合同低回款客户，建议预付款+节点付款制；优质客户签订长期框架协议。`;
+                return `重点关注 ${riskyCount} 个高合同低回款客户，建议采取预付款+节点付款制；优质客户可签订长期框架协议，加速转化。针对已完成未回款项目启动专项催收，提升现金流。`;
             });
 
             function refreshOwnerCharts() {
+                const topContract = ownerAnalysis.value.top10Contract;
+                const topPayment = ownerAnalysis.value.top10Payment;
                 const contractCtx = document.getElementById('ownerContractChart');
                 const paymentCtx = document.getElementById('ownerPaymentChart');
                 if (ownerContractChart) ownerContractChart.dispose();
@@ -543,21 +531,24 @@
                 if (contractCtx) {
                     ownerContractChart = echarts.init(contractCtx);
                     ownerContractChart.setOption({
-                        tooltip: { trigger: 'axis' }, grid: { containLabel: true, left: '10%' },
+                        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                        grid: { containLabel: true, left: '10%', right: '5%' },
                         xAxis: { type: 'value', name: '万元' },
-                        yAxis: { type: 'category', data: ownerAnalysis.value.top10Contract.map(o => o.name) },
-                        series: [{ name: '合同额', type: 'bar', data: ownerAnalysis.value.top10Contract.map(o => o.contractSum), label: { show: true, position: 'right' } }]
+                        yAxis: { type: 'category', data: topContract.map(o => o.name), axisLabel: { rotate: 0, interval: 0, fontSize: 10 } },
+                        series: [{ name: '合同额', type: 'bar', data: topContract.map(o => o.contractSum), itemStyle: { color: (params) => `hsl(${params.dataIndex * 30}, 70%, 55%)` }, label: { show: true, position: 'right' } }]
                     });
                 }
                 if (paymentCtx) {
                     ownerPaymentChart = echarts.init(paymentCtx);
                     ownerPaymentChart.setOption({
+                        tooltip: { trigger: 'axis' },
                         xAxis: { type: 'value', name: '万元' },
-                        yAxis: { type: 'category', data: ownerAnalysis.value.top10Payment.map(o => o.name) },
-                        series: [{ name: '回款额', type: 'bar', data: ownerAnalysis.value.top10Payment.map(o => o.paymentSum), label: { show: true } }]
+                        yAxis: { type: 'category', data: topPayment.map(o => o.name), axisLabel: { fontSize: 10 } },
+                        series: [{ name: '回款额', type: 'bar', data: topPayment.map(o => o.paymentSum), itemStyle: { color: (params) => `hsl(${params.dataIndex * 35 + 180}, 70%, 55%)` }, label: { show: true } }]
                     });
                 }
             }
+
             function refreshOwnerAnalysis() { nextTick(() => refreshOwnerCharts()); }
 
             // 部门管理函数
@@ -573,7 +564,10 @@
                 reader.onload = e => {
                     try {
                         const json = JSON.parse(e.target.result);
-                        let projectsArr = json.projects || (Array.isArray(json) ? json : json.projectList);
+                        let projectsArr = null;
+                        if (json.projects && Array.isArray(json.projects)) projectsArr = json.projects;
+                        else if (Array.isArray(json)) projectsArr = json;
+                        else if (json.projectList) projectsArr = json.projectList;
                         if (!projectsArr) throw new Error("未找到projects数组");
                         const dept = departments.value.find(d => d.id === deptId);
                         if (dept) {
@@ -591,7 +585,13 @@
             function saveToLocal() { localStorage.setItem('pro_analytics_departments', JSON.stringify(departments.value)); }
             function loadFromLocal() {
                 const raw = localStorage.getItem('pro_analytics_departments');
-                if (raw) { try { const saved = JSON.parse(raw); if (Array.isArray(saved)) departments.value = saved; } catch (e) { } }
+                if (raw) {
+                    try {
+                        const saved = JSON.parse(raw);
+                        if (Array.isArray(saved)) departments.value = saved;
+                        else departments.value = [];
+                    } catch (e) { }
+                }
                 if (departments.value.length === 0) {
                     const sampleProjects = [
                         { id: "s1", name: "滨河湿地公园", province: "河北省", stage: "方案设计", contractAmount: 180, payments: [{ date: "2026-02-10", amount: 50 }], signDate: "2026-02-01", owner: "市水务局" },
