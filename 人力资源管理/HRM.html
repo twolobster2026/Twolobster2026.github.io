@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0">
+    <title>设计工作室 · 人力资源管理</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --primary: #2c6e9e;
+            --primary-hover: #1e4a6e;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --border: #e2e8f0;
+            --badge-red-bg: #fee2e2;
+            --badge-red-text: #b91c1c;
+            --badge-green-bg: #e0f2e9;
+            --badge-green-text: #166534;
+            --badge-blue-bg: #dbeafe;
+            --badge-blue-text: #1e40af;
+            --badge-gray-bg: #e5e7eb;
+            --badge-gray-text: #374151;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            --radius: 28px;
+            --radius-sm: 24px;
+            --transition: 0.2s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            padding: 28px 24px;
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px 28px;
+            margin-bottom: 28px;
+            transition: all var(--transition);
+        }
+
+        .detail-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-sm);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            background: #e2e8f0;
+            transition: 0.2s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover {
+            opacity: 0.85;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.75rem;
+        }
+        .btn-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-outline:hover {
+            background: #e8f0f7;
+        }
+
+        .badge-red {
+            background: var(--badge-red-bg);
+            color: var(--badge-red-text);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-green {
+            background: var(--badge-green-bg);
+            color: var(--badge-green-text);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-blue {
+            background: var(--badge-blue-bg);
+            color: var(--badge-blue-text);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-gray {
+            background: var(--badge-gray-bg);
+            color: var(--badge-gray-text);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #f8fafc;
+            border-radius: var(--radius-sm);
+            padding: 18px 16px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all var(--transition);
+        }
+        .stat-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 16px;
+        }
+        .chart-container {
+            background: #fafbfc;
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid #e8ecf1;
+            position: relative;
+        }
+        .chart-container h4 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .chart-container canvas {
+            max-width: 100%;
+            max-height: 260px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        select,
+        input,
+        textarea {
+            border: 1px solid #cbd5e1;
+            border-radius: 24px;
+            padding: 8px 14px;
+            background: white;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        select:focus,
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(44, 110, 158, 0.1);
+        }
+        input[type="date"],
+        input[type="month"] {
+            padding: 7px 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th,
+        td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        tbody tr {
+            transition: 0.1s;
+            cursor: pointer;
+        }
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+        tbody tr:nth-child(even) {
+            background: #fdfdfd;
+        }
+        tbody tr:nth-child(even):hover {
+            background: #f1f5f9;
+        }
+
+        .modal-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-container {
+            background: white;
+            width: 820px;
+            max-width: 95vw;
+            max-height: 88vh;
+            overflow-y: auto;
+            border-radius: 32px;
+            padding: 28px 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        .modal-container h3 {
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px 20px;
+        }
+        .form-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-item label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .form-item input,
+        .form-item select {
+            width: 100%;
+        }
+        .form-item .computed-value {
+            padding: 8px 14px;
+            background: #f1f5f9;
+            border-radius: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .tag {
+            background: #e2e8f0;
+            border-radius: 40px;
+            padding: 2px 10px;
+            font-size: 0.7rem;
+            display: inline-block;
+            margin: 1px;
+            font-weight: 500;
+        }
+
+        .copyright {
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 32px;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .highlight-row {
+            animation: highlightFade 1.5s ease-out;
+        }
+        @keyframes highlightFade {
+            0% {
+                background: #dbeafe;
+            }
+            100% {
+                background: transparent;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                padding: 16px 10px;
+            }
+            .card {
+                padding: 16px 14px;
+                border-radius: 20px;
+                margin-bottom: 20px;
+            }
+            .charts-grid {
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 14px;
+            }
+            .chart-container canvas {
+                max-height: 220px;
+            }
+            .form-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+            .modal-container {
+                padding: 20px 14px;
+                border-radius: 24px;
+                max-height: 92vh;
+            }
+            th,
+            td {
+                padding: 8px 6px;
+                font-size: 0.78rem;
+            }
+            .btn {
+                padding: 6px 12px;
+                font-size: 0.78rem;
+            }
+            .stat-card .stat-number {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px 6px;
+            }
+            .card {
+                padding: 12px 10px;
+                border-radius: 16px;
+                margin-bottom: 14px;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .grid-stats {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 8px;
+            }
+            .stat-card {
+                padding: 12px 8px;
+                border-radius: 16px;
+            }
+            .stat-card .stat-number {
+                font-size: 1.3rem;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .filter-bar {
+                gap: 6px;
+            }
+            .filter-bar select,
+            .filter-bar input {
+                flex: 1 1 auto;
+                min-width: 100px;
+                font-size: 0.78rem;
+                padding: 6px 10px;
+            }
+            .flex-between {
+                gap: 8px;
+            }
+            h1 {
+                font-size: 1.2rem;
+            }
+            h2 {
+                font-size: 1.1rem;
+            }
+            h3 {
+                font-size: 1rem;
+            }
+            .table-wrap {
+                max-height: 50vh;
+            }
+            th,
+            td {
+                padding: 6px 5px;
+                font-size: 0.72rem;
+            }
+            .modal-container {
+                width: 98vw;
+                max-width: 98vw;
+                border-radius: 20px;
+                padding: 14px 8px;
+                max-height: 94vh;
+            }
+            .btn {
+                padding: 5px 10px;
+                font-size: 0.72rem;
+            }
+            .btn-sm {
+                padding: 4px 10px;
+                font-size: 0.68rem;
+            }
+            .chart-container canvas {
+                max-height: 180px;
+            }
+            .action-btns {
+                gap: 3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .stat-card {
+                padding: 10px 6px;
+                border-radius: 12px;
+            }
+            .stat-card .stat-number {
+                font-size: 1.1rem;
+            }
+            .stat-card .stat-label {
+                font-size: 0.7rem;
+            }
+            th,
+            td {
+                padding: 5px 4px;
+                font-size: 0.68rem;
+            }
+            .btn {
+                padding: 4px 8px;
+                font-size: 0.68rem;
+            }
+            .modal-container {
+                padding: 10px 4px;
+                border-radius: 16px;
+            }
+            .form-item label {
+                font-size: 0.7rem;
+            }
+            select,
+            input {
+                font-size: 0.75rem;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <div class="flex-between" style="margin-bottom: 20px;">
+                <h1><i class="fas fa-users-cog"></i> 设计工作室 · 人力资源管理</h1>
+                <div class="action-btns">
+                    <button class="btn btn-outline" @click="exportDataJSON"><i class="fas fa-save"></i> 导出JSON</button>
+                    <button class="btn btn-outline" @click="exportDataExcel"><i class="fas fa-file-excel"></i> 导出Excel</button>
+                    <button class="btn btn-outline" @click="importDataPrompt"><i class="fas fa-upload"></i> 导入文件</button>
+                    <button class="btn btn-primary" @click="openAddModal"><i class="fas fa-plus"></i> 添加人员</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">📊 人员概览</h3>
+                <div class="grid-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ staffList.length }}</div>
+                        <div class="stat-label"><i class="fas fa-user-friends"></i> 总人数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ maleCount }}</div>
+                        <div class="stat-label"><i class="fas fa-male"></i> 男性</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ femaleCount }}</div>
+                        <div class="stat-label"><i class="fas fa-female"></i> 女性</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ avgAge }}</div>
+                        <div class="stat-label"><i class="fas fa-calendar-alt"></i> 平均年龄</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ avgTenure }}</div>
+                        <div class="stat-label"><i class="fas fa-clock"></i> 平均在职(年)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" v-model="searchKeyword" placeholder="🔍 搜索姓名/部门" style="min-width:160px;">
+                    <select v-model="filterAgeGroup">
+                        <option value="">全部年龄段</option>
+                        <option value="under30">30岁以下</option>
+                        <option value="30-39">30-39岁</option>
+                        <option value="40-49">40-49岁</option>
+                        <option value="over50">50岁以上</option>
+                    </select>
+                    <select v-model="filterEducation">
+                        <option value="">全部学历</option>
+                        <option v-for="e in educationOptions" :value="e">{{ e }}</option>
+                    </select>
+                    <select v-model="filterMajor">
+                        <option value="">全部专业</option>
+                        <option v-for="m in majorOptions" :value="m">{{ m }}</option>
+                    </select>
+                    <select v-model="filterTitle">
+                        <option value="">全部职称</option>
+                        <option v-for="t in titleOptions" :value="t">{{ t }}</option>
+                    </select>
+                    <select v-model="filterDepartment">
+                        <option value="">全部部门</option>
+                        <option v-for="d in allDepartments" :value="d">{{ d }}</option>
+                    </select>
+                    <select v-model="filterTenureGroup">
+                        <option value="">全部在职时间</option>
+                        <option value="under1">1年以下</option>
+                        <option value="1-3">1-3年</option>
+                        <option value="3-5">3-5年</option>
+                        <option value="5-10">5-10年</option>
+                        <option value="over10">10年以上</option>
+                    </select>
+                    <button class="btn btn-sm" @click="clearFilters"><i class="fas fa-undo"></i> 重置</button>
+                </div>
+                <span style="font-size:0.8rem;color:#6c757d;">筛选结果: {{ filteredStaffList.length }} 人</span>
+            </div>
+
+            <div class="card" style="padding: 16px 12px;">
+                <h3 style="margin-bottom: 12px;">📋 人员列表</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>姓名</th>
+                                <th>性别</th>
+                                <th>出生年月</th>
+                                <th>年龄</th>
+                                <th>学历</th>
+                                <th>所学专业</th>
+                                <th>职称</th>
+                                <th>职务</th>
+                                <th>所在部门</th>
+                                <th>入职年份</th>
+                                <th>在职(年)</th>
+                                <th>手机号</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(s, idx) in filteredStaffList" :key="s.id" @click="openEditModal(s)" :title="'点击编辑: ' + s.name">
+                                <td>{{ idx + 1 }}</td>
+                                <td><strong>{{ s.name }}</strong></td>
+                                <td>{{ s.gender }}</td>
+                                <td>{{ s.birthDate || '-' }}</td>
+                                <td><span :class="getAgeBadgeClass(calcAge(s.birthDate))">{{ calcAge(s.birthDate) ?? '-' }}</span></td>
+                                <td>{{ s.education || '-' }}</td>
+                                <td>{{ s.major || '-' }}</td>
+                                <td>{{ s.title || '-' }}</td>
+                                <td>{{ s.position || '-' }}</td>
+                                <td><span class="tag">{{ s.department || '-' }}</span></td>
+                                <td>{{ s.entryYear || '-' }}</td>
+                                <td>{{ calcTenure(s.entryYear) ?? '-' }}</td>
+                                <td>{{ s.phone || '-' }}</td>
+                                <td @click.stop>
+                                    <div class="action-btns">
+                                        <button class="btn btn-sm" @click="openEditModal(s)" title="编辑"><i class="fas fa-edit"></i></button>
+                                        <button class="btn btn-sm btn-danger" @click="deleteStaff(s.id)" title="删除"><i class="fas fa-trash-alt"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="filteredStaffList.length === 0">
+                                <td colspan="14" style="text-align:center;padding:30px;color:#9ca3af;">暂无匹配人员</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 16px;">📈 人员结构分析</h3>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h4>性别组成</h4>
+                        <canvas id="chartGender"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>年龄组成</h4>
+                        <canvas id="chartAge"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>学历组成</h4>
+                        <canvas id="chartEducation"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>专业组成</h4>
+                        <canvas id="chartMajor"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>职称组成</h4>
+                        <canvas id="chartTitle"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>职务组成</h4>
+                        <canvas id="chartPosition"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4>在职时间组成</h4>
+                        <canvas id="chartTenure"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="copyright">© Twolobster ｜ 我是李工也是涛哥 ｜ 人力资源管理工具</div>
+        </div>
+
+        <div v-if="showModal" class="modal-mask" @click.self="closeModal">
+            <div class="modal-container">
+                <h3><i :class="editingStaff.id ? 'fas fa-user-edit' : 'fas fa-user-plus'"></i>
+                    {{ editingStaff.id ? '编辑人员信息' : '添加新人员' }}</h3>
+                <div class="form-grid">
+                    <div class="form-item">
+                        <label>姓名 *</label>
+                        <input type="text" v-model="editingStaff.name" placeholder="请输入姓名">
+                    </div>
+                    <div class="form-item">
+                        <label>性别 *</label>
+                        <select v-model="editingStaff.gender">
+                            <option value="">请选择</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>出生年月</label>
+                        <input type="month" v-model="editingStaff.birthDate">
+                    </div>
+                    <div class="form-item">
+                        <label>年龄（自动计算）</label>
+                        <div class="computed-value">{{ calcAge(editingStaff.birthDate) ?? '—' }} 岁</div>
+                    </div>
+                    <div class="form-item">
+                        <label>学历</label>
+                        <select v-model="editingStaff.education">
+                            <option value="">请选择</option>
+                            <option v-for="e in educationOptions" :value="e">{{ e }}</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>所学专业</label>
+                        <select v-model="editingStaff.major">
+                            <option value="">请选择</option>
+                            <option v-for="m in majorOptions" :value="m">{{ m }}</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>职称</label>
+                        <select v-model="editingStaff.title">
+                            <option value="">请选择</option>
+                            <option v-for="t in titleOptions" :value="t">{{ t }}</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>职务</label>
+                        <select v-model="editingStaff.position">
+                            <option value="">请选择</option>
+                            <option v-for="p in positionOptions" :value="p">{{ p }}</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label>所在部门</label>
+                        <input type="text" v-model="editingStaff.department" list="deptList" placeholder="输入或选择部门">
+                        <datalist id="deptList">
+                            <option v-for="d in departmentPresets" :value="d">
+                        </datalist>
+                    </div>
+                    <div class="form-item">
+                        <label>入职年份</label>
+                        <input type="number" v-model.number="editingStaff.entryYear" placeholder="如2020" min="1990" :max="currentYear">
+                    </div>
+                    <div class="form-item">
+                        <label>在职时间（自动计算）</label>
+                        <div class="computed-value">{{ calcTenure(editingStaff.entryYear) ?? '—' }} 年</div>
+                    </div>
+                    <div class="form-item">
+                        <label>手机号</label>
+                        <input type="tel" v-model="editingStaff.phone" placeholder="请输入手机号码">
+                    </div>
+                </div>
+                <div class="flex-between" style="margin-top: 24px;">
+                    <button class="btn btn-danger" @click="closeModal"><i class="fas fa-times"></i> 取消</button>
+                    <button class="btn btn-primary" @click="saveStaff"><i class="fas fa-check"></i> 保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        createApp({
+            setup() {
+                const STORAGE_KEY = 'hr_staff_data_v3';
+                const currentYear = new Date().getFullYear();
+
+                const educationOptions = ['本科', '硕士', '博士', '其他'];
+                const majorOptions = ['景观园林', '建筑', '规划', '环艺', '结构', '给排水', '电气', '其他'];
+                const titleOptions = ['初级', '中级', '高级', '正高级'];
+                const positionOptions = ['助理设计师', '设计师', '项目负责人', '设计总监'];
+                const departmentPresets = ['设计一部', '设计二部', '设计三部', '规划部', '景观部', '建筑部', '综合部', '行政部', '市场部'];
+
+                const defaultStaffData = [
+                    { id: 's1', name: '张工', gender: '男', birthDate: '1985-03', education: '硕士', major: '景观园林', title: '高级', position: '设计总监', department: '设计一部', entryYear: 2010, phone: '13800138001' },
+                    { id: 's2', name: '李设计', gender: '女', birthDate: '1992-07', education: '本科', major: '建筑', title: '中级', position: '项目负责人', department: '设计二部', entryYear: 2016, phone: '13800138002' },
+                    { id: 's3', name: '王规划', gender: '男', birthDate: '1988-11', education: '博士', major: '规划', title: '正高级', position: '设计总监', department: '规划部', entryYear: 2012, phone: '13800138003' },
+                    { id: 's4', name: '赵助理', gender: '女', birthDate: '1998-01', education: '本科', major: '环艺', title: '初级', position: '助理设计师', department: '设计一部', entryYear: 2022, phone: '13800138004' },
+                    { id: 's5', name: '钱工', gender: '男', birthDate: '1990-05', education: '硕士', major: '结构', title: '高级', position: '设计师', department: '设计三部', entryYear: 2015, phone: '13800138005' },
+                    { id: 's6', name: '孙设计', gender: '女', birthDate: '1995-09', education: '本科', major: '给排水', title: '中级', position: '设计师', department: '设计二部', entryYear: 2019, phone: '13800138006' },
+                    { id: 's7', name: '周工', gender: '男', birthDate: '1982-02', education: '硕士', major: '电气', title: '正高级', position: '项目负责人', department: '综合部', entryYear: 2008, phone: '13800138007' },
+                    { id: 's8', name: '吴助理', gender: '女', birthDate: '2000-06', education: '本科', major: '景观园林', title: '初级', position: '助理设计师', department: '设计一部', entryYear: 2024, phone: '13800138008' },
+                    { id: 's9', name: '郑设计', gender: '男', birthDate: '1993-04', education: '硕士', major: '建筑', title: '中级', position: '设计师', department: '设计二部', entryYear: 2018, phone: '13800138009' },
+                    { id: 's10', name: '冯工', gender: '女', birthDate: '1987-12', education: '博士', major: '规划', title: '高级', position: '项目负责人', department: '规划部', entryYear: 2013, phone: '13800138010' },
+                ];
+
+                const staffList = ref([]);
+                const showModal = ref(false);
+                const editingStaff = ref(getEmptyStaff());
+                const searchKeyword = ref('');
+                const filterAgeGroup = ref('');
+                const filterEducation = ref('');
+                const filterMajor = ref('');
+                const filterTitle = ref('');
+                const filterDepartment = ref('');
+                const filterTenureGroup = ref('');
+
+                let chartGender = null,
+                    chartAge = null,
+                    chartEducation = null,
+                    chartMajor = null;
+                let chartTitle = null,
+                    chartPosition = null,
+                    chartTenure = null;
+
+                function getEmptyStaff() {
+                    return {
+                        id: '',
+                        name: '',
+                        gender: '',
+                        birthDate: '',
+                        education: '',
+                        major: '',
+                        title: '',
+                        position: '',
+                        department: '',
+                        entryYear: null,
+                        phone: '',
+                    };
+                }
+
+                function calcAge(birthDateStr) {
+                    if (!birthDateStr) return null;
+                    const parts = birthDateStr.split('-');
+                    if (parts.length < 2) return null;
+                    const year = parseInt(parts[0]);
+                    const month = parseInt(parts[1]);
+                    if (isNaN(year) || isNaN(month)) return null;
+                    const now = new Date();
+                    const currentYear = now.getFullYear();
+                    const currentMonth = now.getMonth() + 1;
+                    let age = currentYear - year;
+                    if (currentMonth < month) age--;
+                    return age;
+                }
+
+                function calcTenure(entryYear) {
+                    if (!entryYear || isNaN(entryYear)) return null;
+                    const currentYear = new Date().getFullYear();
+                    const tenure = currentYear - entryYear;
+                    return tenure >= 0 ? tenure : null;
+                }
+
+                function getAgeGroup(age) {
+                    if (age === null || age === undefined) return null;
+                    if (age < 30) return 'under30';
+                    if (age < 40) return '30-39';
+                    if (age < 50) return '40-49';
+                    return 'over50';
+                }
+
+                function getAgeGroupLabel(group) {
+                    const map = { 'under30': '30岁以下', '30-39': '30-39岁', '40-49': '40-49岁', 'over50': '50岁以上' };
+                    return map[group] || group;
+                }
+
+                function getTenureGroup(tenure) {
+                    if (tenure === null || tenure === undefined) return null;
+                    if (tenure < 1) return 'under1';
+                    if (tenure < 3) return '1-3';
+                    if (tenure < 5) return '3-5';
+                    if (tenure < 10) return '5-10';
+                    return 'over10';
+                }
+
+                function getTenureGroupLabel(group) {
+                    const map = { 'under1': '1年以下', '1-3': '1-3年', '3-5': '3-5年', '5-10': '5-10年', 'over10': '10年以上' };
+                    return map[group] || group;
+                }
+
+                function getAgeBadgeClass(age) {
+                    if (age === null || age === undefined) return 'badge-gray';
+                    if (age < 30) return 'badge-green';
+                    if (age < 40) return 'badge-blue';
+                    if (age < 50) return 'badge-gray';
+                    return 'badge-red';
+                }
+
+                const allDepartments = computed(() => {
+                    const depts = staffList.value.map(s => s.department).filter(Boolean);
+                    return [...new Set(depts)].sort();
+                });
+
+                const maleCount = computed(() => staffList.value.filter(s => s.gender === '男').length);
+                const femaleCount = computed(() => staffList.value.filter(s => s.gender === '女').length);
+
+                const avgAge = computed(() => {
+                    const ages = staffList.value.map(s => calcAge(s.birthDate)).filter(a => a !== null);
+                    if (ages.length === 0) return '-';
+                    return (ages.reduce((sum, a) => sum + a, 0) / ages.length).toFixed(1);
+                });
+
+                const avgTenure = computed(() => {
+                    const tenures = staffList.value.map(s => calcTenure(s.entryYear)).filter(t => t !== null);
+                    if (tenures.length === 0) return '-';
+                    return (tenures.reduce((sum, t) => sum + t, 0) / tenures.length).toFixed(1);
+                });
+
+                const filteredStaffList = computed(() => {
+                    return staffList.value.filter(s => {
+                        if (searchKeyword.value) {
+                            const kw = searchKeyword.value.toLowerCase();
+                            const matchName = s.name.toLowerCase().includes(kw);
+                            const matchDept = (s.department || '').toLowerCase().includes(kw);
+                            const matchMajor = (s.major || '').toLowerCase().includes(kw);
+                            if (!matchName && !matchDept && !matchMajor) return false;
+                        }
+                        if (filterAgeGroup.value) {
+                            const age = calcAge(s.birthDate);
+                            if (getAgeGroup(age) !== filterAgeGroup.value) return false;
+                        }
+                        if (filterEducation.value && s.education !== filterEducation.value) return false;
+                        if (filterMajor.value && s.major !== filterMajor.value) return false;
+                        if (filterTitle.value && s.title !== filterTitle.value) return false;
+                        if (filterDepartment.value && s.department !== filterDepartment.value) return false;
+                        if (filterTenureGroup.value) {
+                            const tenure = calcTenure(s.entryYear);
+                            if (getTenureGroup(tenure) !== filterTenureGroup.value) return false;
+                        }
+                        return true;
+                    });
+                });
+
+                function clearFilters() {
+                    searchKeyword.value = '';
+                    filterAgeGroup.value = '';
+                    filterEducation.value = '';
+                    filterMajor.value = '';
+                    filterTitle.value = '';
+                    filterDepartment.value = '';
+                    filterTenureGroup.value = '';
+                }
+
+                function openAddModal() {
+                    editingStaff.value = getEmptyStaff();
+                    showModal.value = true;
+                }
+
+                function openEditModal(staff) {
+                    editingStaff.value = JSON.parse(JSON.stringify(staff));
+                    showModal.value = true;
+                }
+
+                function closeModal() {
+                    showModal.value = false;
+                    editingStaff.value = getEmptyStaff();
+                }
+
+                function saveStaff() {
+                    const s = editingStaff.value;
+                    if (!s.name || !s.name.trim()) {
+                        alert('请输入姓名');
+                        return;
+                    }
+                    if (!s.gender) {
+                        alert('请选择性别');
+                        return;
+                    }
+                    if (s.id) {
+                        const idx = staffList.value.findIndex(p => p.id === s.id);
+                        if (idx !== -1) {
+                            staffList.value[idx] = JSON.parse(JSON.stringify(s));
+                        }
+                    } else {
+                        s.id = 'staff_' + Date.now();
+                        staffList.value.push(JSON.parse(JSON.stringify(s)));
+                    }
+                    saveToLocal();
+                    closeModal();
+                    nextTick(() => refreshAllCharts());
+                }
+
+                function deleteStaff(id) {
+                    if (confirm('确认删除该人员信息？此操作不可恢复。')) {
+                        staffList.value = staffList.value.filter(s => s.id !== id);
+                        saveToLocal();
+                        nextTick(() => refreshAllCharts());
+                    }
+                }
+
+                function destroyChart(chartInstance) {
+                    if (chartInstance) {
+                        chartInstance.destroy();
+                        return null;
+                    }
+                    return null;
+                }
+
+                function getChartColors(count) {
+                    const palette = [
+                        '#2c6e9e', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6',
+                        '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1',
+                        '#14b8a6', '#e11d48', '#0ea5e9', '#a855f7', '#22c55e'
+                    ];
+                    const colors = [];
+                    for (let i = 0; i < count; i++) {
+                        colors.push(palette[i % palette.length]);
+                    }
+                    return colors;
+                }
+
+                function refreshAllCharts() {
+                    nextTick(() => {
+                        renderChartGender();
+                        renderChartAge();
+                        renderChartEducation();
+                        renderChartMajor();
+                        renderChartTitle();
+                        renderChartPosition();
+                        renderChartTenure();
+                    });
+                }
+
+                function renderChartGender() {
+                    const canvas = document.getElementById('chartGender');
+                    if (!canvas) return;
+                    chartGender = destroyChart(chartGender);
+                    const male = maleCount.value;
+                    const female = femaleCount.value;
+                    chartGender = new Chart(canvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['男', '女'],
+                            datasets: [{ data: [male, female], backgroundColor: ['#2c6e9e', '#ec4899'], borderWidth: 2, borderColor: '#fff' }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } }
+                        }
+                    });
+                }
+
+                function renderChartAge() {
+                    const canvas = document.getElementById('chartAge');
+                    if (!canvas) return;
+                    chartAge = destroyChart(chartAge);
+                    const groups = ['under30', '30-39', '40-49', 'over50'];
+                    const labels = groups.map(g => getAgeGroupLabel(g));
+                    const data = groups.map(g => staffList.value.filter(s => getAgeGroup(calcAge(s.birthDate)) === g).length);
+                    const colors = ['#10b981', '#2c6e9e', '#f59e0b', '#ef4444'];
+                    chartAge = new Chart(canvas, {
+                        type: 'bar',
+                        data: { labels, datasets: [{ label: '人数', data, backgroundColor: colors, borderRadius: 8, borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                    });
+                }
+
+                function renderChartEducation() {
+                    const canvas = document.getElementById('chartEducation');
+                    if (!canvas) return;
+                    chartEducation = destroyChart(chartEducation);
+                    const data = educationOptions.map(e => staffList.value.filter(s => s.education === e).length);
+                    const colors = getChartColors(educationOptions.length);
+                    chartEducation = new Chart(canvas, {
+                        type: 'bar',
+                        data: { labels: educationOptions, datasets: [{ label: '人数', data, backgroundColor: colors, borderRadius: 8, borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                    });
+                }
+
+                function renderChartMajor() {
+                    const canvas = document.getElementById('chartMajor');
+                    if (!canvas) return;
+                    chartMajor = destroyChart(chartMajor);
+                    const data = majorOptions.map(m => staffList.value.filter(s => s.major === m).length);
+                    const colors = getChartColors(majorOptions.length);
+                    chartMajor = new Chart(canvas, {
+                        type: 'bar',
+                        data: { labels: majorOptions, datasets: [{ label: '人数', data, backgroundColor: colors, borderRadius: 8, borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { size: 10 } } } } }
+                    });
+                }
+
+                function renderChartTitle() {
+                    const canvas = document.getElementById('chartTitle');
+                    if (!canvas) return;
+                    chartTitle = destroyChart(chartTitle);
+                    const data = titleOptions.map(t => staffList.value.filter(s => s.title === t).length);
+                    const colors = getChartColors(titleOptions.length);
+                    chartTitle = new Chart(canvas, {
+                        type: 'bar',
+                        data: { labels: titleOptions, datasets: [{ label: '人数', data, backgroundColor: colors, borderRadius: 8, borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                    });
+                }
+
+                function renderChartPosition() {
+                    const canvas = document.getElementById('chartPosition');
+                    if (!canvas) return;
+                    chartPosition = destroyChart(chartPosition);
+                    const data = positionOptions.map(p => staffList.value.filter(s => s.position === p).length);
+                    const colors = getChartColors(positionOptions.length);
+                    chartPosition = new Chart(canvas, {
+                        type: 'bar',
+                        data: { labels: positionOptions, datasets: [{ label: '人数', data, backgroundColor: colors, borderRadius: 8, borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { size: 10 } } } } }
+                    });
+                }
+
+                function renderChartTenure() {
+                    const canvas = document.getElementById('chartTenure');
+                    if (!canvas) return;
+                    chartTenure = destroyChart(chartTenure);
+                    const groups = ['under1', '1-3', '3-5', '5-10', 'over10'];
+                    const labels = groups.map(g => getTenureGroupLabel(g));
+                    const data = groups.map(g => staffList.value.filter(s => getTenureGroup(calcTenure(s.entryYear)) === g).length);
+                    const colors = ['#06b6d4', '#10b981', '#2c6e9e', '#f59e0b', '#ef4444'];
+                    chartTenure = new Chart(canvas, {
+                        type: 'bar',
+                        data: { labels, datasets: [{ label: '人数', data, backgroundColor: colors, borderRadius: 8, borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                    });
+                }
+
+                function saveToLocal() {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(staffList.value));
+                }
+
+                function loadFromLocal() {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        try {
+                            const data = JSON.parse(raw);
+                            if (Array.isArray(data) && data.length > 0) {
+                                staffList.value = data.map(item => ({ ...getEmptyStaff(), ...item }));
+                                return;
+                            }
+                        } catch (e) {}
+                    }
+                    staffList.value = JSON.parse(JSON.stringify(defaultStaffData));
+                    saveToLocal();
+                }
+
+                function exportDataJSON() {
+                    const data = JSON.stringify(staffList.value, null, 2);
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'hr_staff_data_' + new Date().toISOString().slice(0, 10) + '.json';
+                    a.click();
+                }
+
+                function importDataPrompt() {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json,.xlsx,.xls';
+                    input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        const reader = new FileReader();
+                        if (ext === 'json') {
+                            reader.onload = (ev) => {
+                                try {
+                                    const data = JSON.parse(ev.target.result);
+                                    if (Array.isArray(data)) {
+                                        staffList.value = data.map(item => ({ ...getEmptyStaff(), ...item }));
+                                        saveToLocal();
+                                        alert('JSON导入成功！共导入 ' + data.length + ' 条记录。');
+                                        refreshAllCharts();
+                                    } else {
+                                        alert('JSON格式错误：需要人员数组。');
+                                    }
+                                } catch (err) {
+                                    alert('JSON解析失败：' + err.message);
+                                }
+                            };
+                            reader.readAsText(file);
+                        } else if (ext === 'xlsx' || ext === 'xls') {
+                            reader.onload = (ev) => {
+                                try {
+                                    const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true });
+                                    const ws = wb.Sheets[wb.SheetNames[0]];
+                                    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                                    const imported = rows.map((row, idx) => mapExcelRowToStaff(row, idx)).filter(s => s.name && s.name.trim());
+                                    if (imported.length === 0) {
+                                        alert('Excel文件中未找到有效数据，请检查列名。');
+                                        return;
+                                    }
+                                    staffList.value = imported;
+                                    saveToLocal();
+                                    alert('Excel导入成功！共导入 ' + imported.length + ' 条记录。');
+                                    refreshAllCharts();
+                                } catch (err) {
+                                    alert('Excel解析失败：' + err.message);
+                                }
+                            };
+                            reader.readAsArrayBuffer(file);
+                        }
+                    };
+                    input.click();
+                }
+
+                function mapExcelRowToStaff(row, idx) {
+                    const name = row['姓名'] || row['name'] || '';
+                    const gender = row['性别'] || row['gender'] || '';
+                    let birthDate = row['出生年月'] || row['birthDate'] || '';
+                    if (birthDate && typeof birthDate === 'object' && birthDate instanceof Date) {
+                        birthDate = birthDate.getFullYear() + '-' + String(birthDate.getMonth() + 1).padStart(2, '0');
+                    }
+                    const education = row['学历'] || row['education'] || '';
+                    const major = row['所学专业'] || row['专业'] || row['major'] || '';
+                    const title = row['职称'] || row['title'] || '';
+                    const position = row['职务'] || row['position'] || '';
+                    const department = row['所在部门'] || row['部门'] || row['department'] || '';
+                    let entryYear = row['入职年份'] || row['entryYear'] || null;
+                    if (entryYear && typeof entryYear === 'object' && entryYear instanceof Date) {
+                        entryYear = entryYear.getFullYear();
+                    }
+                    if (entryYear && !isNaN(Number(entryYear))) entryYear = Number(entryYear);
+                    else entryYear = null;
+                    const phone = row['手机号'] || row['phone'] || '';
+                    return {
+                        id: 'staff_import_' + Date.now() + '_' + idx,
+                        name: String(name).trim(),
+                        gender: String(gender).trim(),
+                        birthDate: String(birthDate).trim(),
+                        education: String(education).trim(),
+                        major: String(major).trim(),
+                        title: String(title).trim(),
+                        position: String(position).trim(),
+                        department: String(department).trim(),
+                        entryYear: entryYear,
+                        phone: String(phone).trim(),
+                    };
+                }
+
+                function exportDataExcel() {
+                    if (staffList.value.length === 0) {
+                        alert('暂无人员数据可导出。');
+                        return;
+                    }
+                    const exportRows = staffList.value.map((s, idx) => ({
+                        '序号': idx + 1,
+                        '姓名': s.name,
+                        '性别': s.gender,
+                        '出生年月': s.birthDate || '',
+                        '年龄': calcAge(s.birthDate) ?? '',
+                        '学历': s.education || '',
+                        '所学专业': s.major || '',
+                        '职称': s.title || '',
+                        '职务': s.position || '',
+                        '所在部门': s.department || '',
+                        '入职年份': s.entryYear || '',
+                        '在职时间(年)': calcTenure(s.entryYear) ?? '',
+                        '手机号': s.phone || '',
+                    }));
+
+                    const statsRows = [];
+                    statsRows.push({ '统计维度': '性别组成', '分类': '男', '人数': maleCount.value });
+                    statsRows.push({ '统计维度': '性别组成', '分类': '女', '人数': femaleCount.value });
+                    statsRows.push({ '统计维度': '', '分类': '', '人数': '' });
+
+                    const ageGroups = ['under30', '30-39', '40-49', 'over50'];
+                    ageGroups.forEach(g => {
+                        statsRows.push({ '统计维度': '年龄组成', '分类': getAgeGroupLabel(g), '人数': staffList.value.filter(s => getAgeGroup(calcAge(s.birthDate)) === g).length });
+                    });
+                    statsRows.push({ '统计维度': '', '分类': '', '人数': '' });
+
+                    educationOptions.forEach(e => {
+                        statsRows.push({ '统计维度': '学历组成', '分类': e, '人数': staffList.value.filter(s => s.education === e).length });
+                    });
+                    statsRows.push({ '统计维度': '', '分类': '', '人数': '' });
+
+                    majorOptions.forEach(m => {
+                        statsRows.push({ '统计维度': '专业组成', '分类': m, '人数': staffList.value.filter(s => s.major === m).length });
+                    });
+                    statsRows.push({ '统计维度': '', '分类': '', '人数': '' });
+
+                    titleOptions.forEach(t => {
+                        statsRows.push({ '统计维度': '职称组成', '分类': t, '人数': staffList.value.filter(s => s.title === t).length });
+                    });
+                    statsRows.push({ '统计维度': '', '分类': '', '人数': '' });
+
+                    positionOptions.forEach(p => {
+                        statsRows.push({ '统计维度': '职务组成', '分类': p, '人数': staffList.value.filter(s => s.position === p).length });
+                    });
+                    statsRows.push({ '统计维度': '', '分类': '', '人数': '' });
+
+                    const tenureGroups = ['under1', '1-3', '3-5', '5-10', 'over10'];
+                    tenureGroups.forEach(g => {
+                        statsRows.push({ '统计维度': '在职时间组成', '分类': getTenureGroupLabel(g), '人数': staffList.value.filter(s => getTenureGroup(calcTenure(s.entryYear)) === g).length });
+                    });
+
+                    const wb = XLSX.utils.book_new();
+                    const wsData = XLSX.utils.json_to_sheet(exportRows);
+                    const wsStats = XLSX.utils.json_to_sheet(statsRows);
+
+                    const colWidthsData = [
+                        { wch: 6 }, { wch: 12 }, { wch: 6 }, { wch: 12 }, { wch: 6 },
+                        { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
+                        { wch: 10 }, { wch: 12 }, { wch: 16 }
+                    ];
+                    wsData['!cols'] = colWidthsData;
+                    wsStats['!cols'] = [{ wch: 16 }, { wch: 16 }, { wch: 8 }];
+
+                    applyWrapStyle(wsData, exportRows.length + 1, colWidthsData.length);
+                    applyWrapStyle(wsStats, statsRows.length + 1, 3);
+
+                    XLSX.utils.book_append_sheet(wb, wsData, '人员信息');
+                    XLSX.utils.book_append_sheet(wb, wsStats, '统计分析');
+
+                    XLSX.writeFile(wb, 'hr_staff_report_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+                }
+
+                function applyWrapStyle(ws, rowCount, colCount) {
+                    for (let r = 0; r < rowCount; r++) {
+                        for (let c = 0; c < colCount; c++) {
+                            const cellRef = XLSX.utils.encode_cell({ r, c });
+                            if (ws[cellRef]) {
+                                if (!ws[cellRef].s) ws[cellRef].s = {};
+                                ws[cellRef].s.alignment = {
+                                    wrapText: true,
+                                    vertical: 'center',
+                                    horizontal: 'center',
+                                };
+                            }
+                        }
+                    }
+                    for (let c = 0; c < colCount; c++) {
+                        const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+                        if (ws[cellRef]) {
+                            if (!ws[cellRef].s) ws[cellRef].s = {};
+                            ws[cellRef].s.font = { bold: true };
+                            ws[cellRef].s.fill = { fgColor: { rgb: 'E8ECF1' } };
+                        }
+                    }
+                }
+
+                onMounted(() => {
+                    loadFromLocal();
+                    nextTick(() => refreshAllCharts());
+                });
+
+                watch([staffList], () => {
+                    nextTick(() => refreshAllCharts());
+                }, { deep: true });
+
+                return {
+                    staffList,
+                    showModal,
+                    editingStaff,
+                    searchKeyword,
+                    filterAgeGroup,
+                    filterEducation,
+                    filterMajor,
+                    filterTitle,
+                    filterDepartment,
+                    filterTenureGroup,
+                    educationOptions,
+                    majorOptions,
+                    titleOptions,
+                    positionOptions,
+                    departmentPresets,
+                    currentYear,
+                    allDepartments,
+                    maleCount,
+                    femaleCount,
+                    avgAge,
+                    avgTenure,
+                    filteredStaffList,
+                    calcAge,
+                    calcTenure,
+                    getAgeBadgeClass,
+                    clearFilters,
+                    openAddModal,
+                    openEditModal,
+                    closeModal,
+                    saveStaff,
+                    deleteStaff,
+                    exportDataJSON,
+                    exportDataExcel,
+                    importDataPrompt,
+                    refreshAllCharts,
+                };
+            },
+        }).mount('#app');
+    </script>
+</body>
+</html>
