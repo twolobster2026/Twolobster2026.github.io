@@ -114,7 +114,7 @@
                 </div>
             </div>
             <div class="card"><div class="flex-between"><span><strong>📌 项目分析</strong></span><div><button class="btn btn-sm" @click="selectAllProjects">✅ 全选</button> <button class="btn btn-sm" @click="clearSelection">清空</button><button class="btn btn-primary" @click="generateMeetingDoc">📄 生成例会汇报(所选项目)</button></div></div><div class="filter-bar"><div v-for="p in projects" :key="p.id"><label><input type="checkbox" :value="p.id" v-model="selectedAnalysisIds"> {{p.name}}</label></div></div><div class="grid-stats"><div class="stat-card">所选合同总额: {{selectedContractSum}}万</div><div class="stat-card">所选回款总额: {{selectedPaymentSum}}万</div><div class="stat-card">回款占比: {{selectedPaymentPercent}}%</div></div><canvas id="selectedChart" width="400" height="200" style="max-height: 200px"></canvas></div>
-            <div class="copyright">© Twolobster ｜ 我是李工也是涛哥</div>
+            <div class="copyright">© Twolobster ｜ Studio Project Management System</div>
         </div>
 
         <div v-if="view === 'detail' && currentProject">
