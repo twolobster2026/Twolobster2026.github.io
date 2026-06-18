@@ -220,11 +220,11 @@ input[type="text"]:focus, select:focus {
 <body>
   <div class="container">
     <header>
-      <h1>花境辅助设计工具</h1>
+      <h1>花境设计素材库</h1>
       <nav class="nav">
         <button class="btn" id="toKnowledge">花卉知识</button>
-        <button class="btn" id="toDesign">花境设计</button>
-        <button class="btn" id="toProducts">成熟产品</button>
+        <button class="btn" id="toDesign">品种推荐</button>
+        <button class="btn" id="toProducts">设计案例</button>
       </nav>
     </header>
 
@@ -232,12 +232,12 @@ input[type="text"]:focus, select:focus {
     <section id="home" class="card">
       <h2>欢迎</h2>
       <p class="muted">
-        欢迎来到【花境辅助设计工具】！这里是你打造美丽花境的小帮手，随时随地帮你轻松挑选花卉、设计梦幻花境，还能发现超棒的成熟花境搭配。丰富的图表和花期展示让你设计更直观，灵感不断，快来玩转你的花园吧！
+        欢迎来到【花境设计素材库】！这里是你打造美丽花境的小帮手，随时随地帮你轻松挑选花卉、设计梦幻花境，还能发现超棒的成熟花境搭配。丰富的图表和花期展示让你设计更直观，灵感不断，快来玩转你的花园吧！
       </p>
       <ul>
         <li>花卉知识：可按名称检索，显示属性（生境类型、花境角色、高度、寿命、花色、花期），并展示缩略图与放大查看。</li>
-        <li>花境设计：按生境类型/花境角色/花色/花期筛选并生成材料推荐清单（结果须同时满足所有选定条件），清单按角色归类，生成花期颜色图表。</li>
-        <li>成熟产品：展示经过专业搭配的成品花境组合。</li>
+        <li>品种推荐：按生境类型/花境角色/花色/花期筛选并生成材料推荐清单（结果须同时满足所有选定条件），清单按角色归类，生成花期颜色图表。</li>
+        <li>设计案例：展示经过专业搭配的成品花境组合。</li>
       </ul>
     </section>
 
@@ -253,8 +253,8 @@ input[type="text"]:focus, select:focus {
       <div id="flowerResults"></div>
     </section>
 
-    <!-- 花境设计页面 -->
-<!-- 花境设计页面 -->
+    <!-- 品种推荐页面 -->
+<!-- 品种推荐页面 -->
 <section id="design" class="card hidden">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <!-- 左侧原按钮 -->
@@ -302,7 +302,7 @@ input[type="text"]:focus, select:focus {
       </div>
     </section>
 
-    <!-- 成熟产品页面 -->
+    <!-- 设计案例页面 -->
     <section id="products" class="card hidden">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
         <button class="btn secondary" onclick="showPage('home')">返回主页面</button>
@@ -310,8 +310,8 @@ input[type="text"]:focus, select:focus {
         <button class="btn secondary" onclick="resetProducts()">重置</button>
       </div>
 
-      <h2>成品花境搭配</h2>
-      <p class="muted">点击缩略图选择需要的产品（多选），然后生成清单与图表。</p>
+      <h2>设计案例搭配</h2>
+      <p class="muted">点击缩略图选择需要的案例（多选），然后生成清单与图表。</p>
 
       <div id="productsGrid" class="grid" style="margin-top:12px"></div>
 
@@ -328,7 +328,7 @@ input[type="text"]:focus, select:focus {
       </div>
     </section>
 
-    <footer>© Twolobster ｜ 我是李工也是涛哥 | 数据更新: 2026年05月 | v3.1</code> </footer>
+    <footer>© Twolobster ｜ 我是李工也是涛哥 | 数据更新: 2026年05月 | v4.1</code> </footer>
   </div>
 
   <!-- 图片放大 modal -->
@@ -1762,7 +1762,7 @@ input[type="text"]:focus, select:focus {
       renderFlowerList(FLOWER_DB);
     }
 
-    // 花境设计
+    // 品种推荐
 
     function populateFilters() {
       const habitat = document.getElementById("habitat");
@@ -2298,7 +2298,7 @@ async function exportDesignPDF() {
   pdf.save('花境设计推荐清单.pdf');
 }
 
-    // 成熟产品页面渲染
+    // 设计案例页面渲染
     function renderProductsGrid() {
       const grid = document.getElementById("productsGrid");
       let html = "";
@@ -2325,7 +2325,7 @@ async function exportDesignPDF() {
 
 function generateFromProducts() {
   if (selectedProductIds.size === 0) {
-    alert("请先选择至少一个产品");
+    alert("请先选择至少一个案例");
     return;
   }
   const pickedProducts = PRODUCTS.filter((p) =>
@@ -2363,7 +2363,7 @@ function generateFromProducts() {
 
   // 原有合并统计表格
 html +=
-    '<h3>产品花卉清单（合并统计）</h3><table><thead><tr><th>名称</th><th>出现次数</th><th>生境</th><th>角色</th><th>高度</th><th>花色</th><th>花期</th></tr></thead><tbody>';
+    '<h3>案列花卉清单（合并统计）</h3><table><thead><tr><th>名称</th><th>出现次数</th><th>生境</th><th>角色</th><th>高度</th><th>花色</th><th>花期</th></tr></thead><tbody>';
   list.forEach((f) => {
     html += `<tr>
       <td>${f.name}</td>
