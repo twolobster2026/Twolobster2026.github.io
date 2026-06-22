@@ -1,245 +1,863 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>Twolobster｜园林设计全流程辅助平台</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+    <title>Twolobster｜园林设计全流程辅助平台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-    }
+    <style>
+        /* ===== 全局重置 ===== */
+        * {
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+        }
 
-    body {
-      margin: 0;
-      background: #ffffff;
-      color: #222;
-    }
+        body {
+            margin: 0;
+            background: #ffffff;
+            color: #222;
+            position: relative;
+        }
 
-    /* ===== 全局 ===== */
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 60px 20px;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
 
-    /* ===== 头部 ===== */
-    header {
-      text-align: center;
-      padding: 80px 20px 30px;
-    }
+        /* ===== 头部 ===== */
+        header {
+            position: relative;
+            text-align: center;
+            padding: 80px 20px 30px;
+        }
 
-    header h1 {
-      font-size: 40px;
-      margin: 0;
-      letter-spacing: 1px;
-    }
+        header h1 {
+            font-size: 40px;
+            margin: 0;
+            letter-spacing: 1px;
+        }
 
-    header p {
-      margin-top: 14px;
-      font-size: 16px;
-      color: #666;
-    }
+        header .sub {
+            margin-top: 14px;
+            font-size: 16px;
+            color: #666;
+        }
 
-    /* ===== 流程总览 ===== */
-    .flow-overview {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 32px;
-      margin-top: 60px;
-    }
+        /* ---- 右上角登录/退出 ---- */
+        .auth-area {
+            position: absolute;
+            top: 24px;
+            right: 30px;
+            font-size: 14px;
+            color: #bbb;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
 
-    .flow-stage {
-      border: 1px solid #eee;
-      border-radius: 14px;
-      padding: 32px;
-      transition: all 0.3s ease;
-    }
+        .auth-area .auth-btn {
+            color: #bbb;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            background: none;
+            border: none;
+            font-size: 14px;
+            padding: 4px 6px;
+        }
 
-    .flow-stage:hover {
-      box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-      transform: translateY(-6px);
-    }
+        .auth-area .auth-btn:hover {
+            color: #888;
+        }
 
-    .stage-index {
-      font-size: 14px;
-      font-weight: bold;
-      color: #999;
-      margin-bottom: 10px;
-    }
+        .auth-area .auth-sep {
+            color: #ddd;
+        }
 
-    .flow-stage h2 {
-      font-size: 22px;
-      margin: 0 0 12px;
-    }
+        .auth-area .username-display {
+            color: #bbb;
+            font-size: 14px;
+        }
 
-    .stage-desc {
-      font-size: 15px;
-      color: #666;
-      line-height: 1.6;
-      margin-bottom: 24px;
-    }
+        /* ===== 流程总览 ===== */
+        .flow-overview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-top: 60px;
+        }
 
-    .stage-modules {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+        .flow-stage {
+            border: 1px solid #eee;
+            border-radius: 14px;
+            padding: 32px;
+            transition: all 0.3s ease;
+        }
 
-    .stage-modules a {
-      padding: 12px 16px;
-      border-radius: 8px;
-      background: #f7f7f7;
-      font-size: 14px;
-      transition: all 0.2s ease;
-    }
+        .flow-stage:hover {
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            transform: translateY(-6px);
+        }
 
-    .stage-modules a:hover {
-      background: #2b8fed;
-      color: #fff;
-    }
+        .stage-index {
+            font-size: 14px;
+            font-weight: bold;
+            color: #999;
+            margin-bottom: 10px;
+        }
 
-    /* ===== 页脚 ===== */
-    footer {
-      border-top: 1px solid #eee;
-      padding: 40px 20px;
-      text-align: center;
-      color: #666;
-      font-size: 14px;
-    }
+        .flow-stage h2 {
+            font-size: 22px;
+            margin: 0 0 12px;
+        }
 
-    .qr {
-      margin-top: 20px;
-    }
+        .stage-desc {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
 
-    .qr img {
-      width: 120px;
-      height: 120px;
-      background: #f2f2f2;
-    }
+        .stage-modules {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-    /* ===== 响应式 ===== */
-    @media (max-width: 900px) {
-      .flow-overview {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+        .stage-modules a {
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #f7f7f7;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: block;
+            cursor: pointer;
+        }
+
+        .stage-modules a:hover {
+            background: #2b8fed;
+            color: #fff;
+        }
+
+        /* ===== 页脚 ===== */
+        footer {
+            border-top: 1px solid #eee;
+            padding: 40px 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .qr {
+            margin-top: 20px;
+        }
+
+        .qr img {
+            width: 120px;
+            height: 120px;
+            background: #f2f2f2;
+        }
+
+        /* ===== 模态框 - 登录 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px 44px 36px;
+            width: 380px;
+            max-width: 92%;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-box .modal-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #222;
+        }
+
+        .modal-box .modal-sub {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 28px;
+        }
+
+        .modal-box label {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .modal-box input[type="text"],
+        .modal-box input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: border 0.2s ease;
+            background: #fafafa;
+            margin-bottom: 18px;
+            outline: none;
+        }
+
+        .modal-box input:focus {
+            border-color: #2b8fed;
+            background: #fff;
+        }
+
+        .modal-box .form-row {
+            margin-bottom: 6px;
+        }
+
+        .modal-box .modal-error {
+            color: #e74c3c;
+            font-size: 13px;
+            min-height: 22px;
+            margin-bottom: 12px;
+        }
+
+        .modal-box .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .modal-box .modal-actions button {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-box .btn-login {
+            background: #2b8fed;
+            color: #fff;
+        }
+        .modal-box .btn-login:hover {
+            background: #1a7ad9;
+        }
+
+        .modal-box .btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .modal-box .btn-cancel:hover {
+            background: #e5e5e5;
+        }
+
+        /* ===== 提示框 (未登录点击链接) ===== */
+        .toast-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .toast-overlay.active {
+            display: flex;
+        }
+
+        .toast-box {
+            background: #fff;
+            border-radius: 14px;
+            padding: 32px 38px 28px;
+            width: 360px;
+            max-width: 90%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            animation: slideUp 0.25s ease;
+        }
+
+        .toast-box .toast-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .toast-box .toast-msg {
+            font-size: 16px;
+            color: #333;
+            margin: 8px 0 20px 0;
+            line-height: 1.6;
+        }
+
+        .toast-box .toast-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .toast-box .toast-actions button {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toast-box .btn-toast-login {
+            background: #2b8fed;
+            color: #fff;
+        }
+        .toast-box .btn-toast-login:hover {
+            background: #1a7ad9;
+        }
+
+        .toast-box .btn-toast-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+        .toast-box .btn-toast-cancel:hover {
+            background: #e5e5e5;
+        }
+
+        /* ===== 动画 ===== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(28px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 900px) {
+            .flow-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-area {
+                position: relative;
+                top: auto;
+                right: auto;
+                justify-content: center;
+                padding-top: 10px;
+            }
+
+            header {
+                padding: 30px 20px 20px;
+            }
+
+            header h1 {
+                font-size: 30px;
+            }
+
+            .modal-box {
+                padding: 30px 24px 28px;
+                width: 92%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-area {
+                font-size: 13px;
+                gap: 6px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .auth-area .auth-btn {
+                font-size: 13px;
+            }
+            .modal-box .modal-actions {
+                flex-direction: column;
+            }
+            .modal-box .modal-actions button {
+                padding: 14px 0;
+            }
+            .toast-box .toast-actions {
+                flex-direction: column;
+            }
+            .toast-box .toast-actions button {
+                padding: 12px 0;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header>
-  <h1>Twolobster</h1>
-  <p>园林设计 · 全流程辅助工具平台</p>
-  <p>鲁迅曾经说：“愿中国青年都摆脱冷气，只是向上走，不必听自暴自弃者流的话，能做事的做事，能发声的发声。有一份热，发一分光。就令萤火一般，也可以在黑暗里发一点光，不必等候炬火。”</p>
-</header>
+    <!-- ===== 头部 ===== -->
+    <header>
+        <!-- 右上角登录 / 退出 -->
+        <div class="auth-area" id="authArea">
+            <span class="username-display" id="usernameDisplay" style="display:none;"></span>
+            <span class="auth-sep" id="authSep" style="display:none;">|</span>
+            <button class="auth-btn" id="authBtn">登录</button>
+        </div>
 
-<div class="container">
+        <h1>Twolobster</h1>
+        <p class="sub">园林设计 · 全流程辅助工具平台</p>
+        <p class="sub" style="font-size:14px;color:#888;max-width:700px;margin:14px auto 0;">
+            鲁迅曾经说：“愿中国青年都摆脱冷气，只是向上走，不必听自暴自弃者流的话，能做事的做事，能发声的发声。有一份热，发一分光。就令萤火一般，也可以在黑暗里发一点光，不必等候炬火。”
+        </p>
+    </header>
 
-  <!-- 流程模块 -->
-  <div class="flow-overview">
+    <!-- ===== 主内容 ===== -->
+    <div class="container">
 
-    <!-- 阶段一 -->
-    <div class="flow-stage">
-      <div class="stage-index">STAGE 01</div>
-      <h2>条件准备阶段</h2>
-      <div class="stage-desc">
-        在设计开始之前，系统梳理项目边界、条件与风险点，避免方向性错误。
-      </div>
-      <div class="stage-modules">
-        <a href="关键条件核查/园林项目关键条件核查表v3.0.html">项目关键条件核查</a>
-      </div>
+        <div class="flow-overview">
+
+            <!-- 阶段一 -->
+            <div class="flow-stage">
+                <div class="stage-index">STAGE 01</div>
+                <h2>条件准备阶段</h2>
+                <div class="stage-desc">
+                    在设计开始之前，系统梳理项目边界、条件与风险点，避免方向性错误。
+                </div>
+                <div class="stage-modules">
+                    <a href="关键条件核查/园林项目关键条件核查表v3.0.html">项目关键条件核查</a>
+                </div>
+            </div>
+
+            <!-- 阶段二 -->
+            <div class="flow-stage">
+                <div class="stage-index">STAGE 02</div>
+                <h2>设计阶段</h2>
+                <div class="stage-desc">
+                    设计工作的核心阶段，结合规范、经验与工具，支撑方案与施工图决策。
+                </div>
+                <div class="stage-modules">
+                    <a href="规范检索系统/index_guifan.html">规范检索系统</a>
+                    <a href="规范学习与培训/index_video.html">规范学习与培训</a>
+                    <a href="项目案例分享数据库/项目案例分享数据库v4.0.html">项目案例数据库</a>
+                    <a href="花境设计素材库/花境设计素材库v4.1.html">花境设计素材库</a>
+                    <a href="花境设计系统/花境设计系统v4.3.html">花境设计系统</a>
+                    <a href="设计标准图库/设计标准图库v1.0.html">设计标准图库</a>
+                    <a href="覆土绿化种植土厚度计算工具/覆土绿化种植土厚度计算工具.html">覆土绿化种植土厚度计算工具</a>
+                    <a href="乔木荷载计算工具/乔木荷载计算工具.html">乔木荷载计算工具</a>
+                    <a href="园林方案投资估算工具/园林方案投资估算工具v3.0.html">园林方案投资估算工具</a>
+                </div>
+            </div>
+
+            <!-- 阶段三 -->
+            <div class="flow-stage">
+                <div class="stage-index">STAGE 03</div>
+                <h2>施工配合阶段</h2>
+                <div class="stage-desc">
+                    在施工过程中提供设计支持，识别风险、控制变更，确保设计意图落地。
+                </div>
+                <div class="stage-modules">
+                    <a href="施工服务与设计风险管理/施工服务设计风险管理工具v3.0.html">施工服务与设计风险管理</a>
+                </div>
+            </div>
+
+            <!-- 阶段四 -->
+            <div class="flow-stage">
+                <div class="stage-index">STAGE 04</div>
+                <h2>项目管理与支持</h2>
+                <div class="stage-desc">
+                    为项目实施与管理提供技术支持工具。
+                </div>
+                <div class="stage-modules">
+                    <a href="项目管理系统/studio pms.html">设计项目管理系统</a>
+                    <a href="经营分析平台/marketing analysis.html">经营分析平台</a>
+                    <a href="项目地图与客户/Advanced Business Analysis Edition.html">项目地图与客户</a>
+                    <a href="人力资源管理/HRM.html">人力资源管理</a>
+                    <a href="工作手账/planner.html">工作手账</a>
+                    <a href="出差住宿标准查询系统/出差住宿标准查询系统v1.0.html">出差住宿标准查询系统</a>
+                    <a href="游园雅集/游园雅集.html">游园雅集</a>
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    <!-- 阶段二 -->
-    <div class="flow-stage">
-      <div class="stage-index">STAGE 02</div>
-      <h2>设计阶段</h2>
-      <div class="stage-desc">
-        设计工作的核心阶段，结合规范、经验与工具，支撑方案与施工图决策。
-      </div>
-      <div class="stage-modules">
-        <a href="规范检索系统/index_guifan.html">规范检索系统</a>
-        <a href="规范学习与培训/index_video.html">规范学习与培训</a>
-        <a href="项目案例分享数据库/项目案例分享数据库v4.0.html">项目案例数据库</a>
-        <a href="花境设计素材库/花境设计素材库v4.1.html">花境设计素材库</a>
-        <a href="花境设计系统/花境设计系统v4.3.html">花境设计系统</a>
-        <a href="设计标准图库/设计标准图库v1.0.html">设计标准图库</a>
-        <a href="覆土绿化种植土厚度计算工具/覆土绿化种植土厚度计算工具.html">覆土绿化种植土厚度计算工具</a>
-        <a href="乔木荷载计算工具/乔木荷载计算工具.html">乔木荷载计算工具</a>
-        <a href="园林方案投资估算工具/园林方案投资估算工具v3.0.html">园林方案投资估算工具</a>
-      </div>
+    <!-- ===== 页脚 ===== -->
+    <footer>
+        <div class="qr" style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+            <div style="text-align: center;">
+                <img src="images/bilibili code.jpg" alt="B站" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=B站二维码'">
+                <div style="margin-top: 5px; font-size: 14px;">B站</div>
+            </div>
+            <div style="text-align: center;">
+                <img src="images/QQ music.jpg" alt="QQ音乐播客" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=QQ音乐二维码'">
+                <div style="margin-top: 5px; font-size: 14px;">QQ音乐播客</div>
+            </div>
+            <div style="text-align: center;">
+                <img src="images/broadcast.jpg" alt="小宇宙" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=小宇宙二维码'">
+                <div style="margin-top: 5px; font-size: 14px;">小宇宙</div>
+            </div>
+            <div style="text-align: center;">
+                <img src="images/office cat.jpg" alt="微信表情" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=微信表情二维码'">
+                <div style="margin-top: 5px; font-size: 14px;">微信表情</div>
+            </div>
+        </div>
+
+        <!-- 网站访问计数器 -->
+        <div style="margin-top: 20px;">
+            <img src="https://visitor-badge.laobi.icu/badge?page_id=twolobster_yuanlin.首页" alt="visitor badge" />
+        </div>
+
+        <!-- 版权信息 -->
+        <div style="margin-top: 15px;">© Twolobster ｜ 我是李工也是涛哥</div>
+    </footer>
+
+    <!-- ===== 登录模态框 ===== -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-box">
+            <div class="modal-title">登录</div>
+            <div class="modal-sub">请输入用户名和密码</div>
+
+            <div class="form-row">
+                <label for="loginUser">用户名</label>
+                <input type="text" id="loginUser" placeholder="请输入用户名" autocomplete="username" />
+            </div>
+            <div class="form-row">
+                <label for="loginPass">密码</label>
+                <input type="password" id="loginPass" placeholder="请输入密码" autocomplete="current-password" />
+            </div>
+
+            <div class="modal-error" id="loginError">&nbsp;</div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" id="loginCancel">取消</button>
+                <button class="btn-login" id="loginSubmit">登 录</button>
+            </div>
+        </div>
     </div>
 
-    <!-- 阶段三 -->
-    <div class="flow-stage">
-      <div class="stage-index">STAGE 03</div>
-      <h2>施工配合阶段</h2>
-      <div class="stage-desc">
-        在施工过程中提供设计支持，识别风险、控制变更，确保设计意图落地。
-      </div>
-      <div class="stage-modules">
-        <a href="施工服务与设计风险管理/施工服务设计风险管理工具v3.0.html">施工服务与设计风险管理</a>
-      </div>
+    <!-- ===== 未登录提示框 ===== -->
+    <div class="toast-overlay" id="toastModal">
+        <div class="toast-box">
+            <div class="toast-msg">您尚未登录，请先登录后再访问链接。</div>
+            <div class="toast-actions">
+                <button class="btn-toast-cancel" id="toastCancel">取消</button>
+                <button class="btn-toast-login" id="toastLogin">去登录</button>
+            </div>
+        </div>
     </div>
 
-    <!-- 项目管理与支持 -->
-    <div class="flow-stage">
-      <div class="stage-index">STAGE 04</div>
-      <h2>项目管理与支持</h2>
-      <div class="stage-desc">
-        为项目实施与管理提供技术支持工具。
-      </div>
-      <div class="stage-modules">
-        <a href="项目管理系统/studio pms.html">设计项目管理系统</a>
-        <a href="经营分析平台/marketing analysis.html">经营分析平台</a>
-        <a href="项目地图与客户/Advanced Business Analysis Edition.html">项目地图与客户</a>
-        <a href="人力资源管理/HRM.html">人力资源管理</a>
-        <a href="工作手账/planner.html">工作手账</a>
-        <a href="出差住宿标准查询系统/出差住宿标准查询系统v1.0.html">出差住宿标准查询系统</a>
-        <a href="游园雅集/游园雅集.html">游园雅集</a>
-      </div>
-    </div>
+    <!-- ============================================================ -->
+    <!-- ===== JavaScript ===== -->
+    <script>
+        (function() {
+            'use strict';
 
-  </div>
-</div>
+            // ---------- 预设账号 ----------
+            const VALID_USERS = {
+                'twolobster': '2026',
+                'T001': 'T001',
+                'P001': 'P001'
+            };
 
-<footer>
-  <div class="qr" style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
-    <div style="text-align: center;">
-      <img src="images/bilibili code.jpg" alt="B站" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=B站二维码'">
-      <div style="margin-top: 5px; font-size: 14px;">B站</div>
-    </div>
-    <div style="text-align: center;">
-      <img src="images/QQ music.jpg" alt="QQ音乐播客" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=QQ音乐二维码'">
-      <div style="margin-top: 5px; font-size: 14px;">QQ音乐播客</div>
-    </div>
-    <div style="text-align: center;">
-      <img src="images/broadcast.jpg" alt="小宇宙" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=小宇宙二维码'">
-      <div style="margin-top: 5px; font-size: 14px;">小宇宙</div>
-    </div>
-    <div style="text-align: center;">
-      <img src="images/office cat.jpg" alt="微信表情" style="width: 120px; height: 120px; background: #f2f2f2;" onerror="this.src='https://via.placeholder.com/120x120?text=微信表情二维码'">
-      <div style="margin-top: 5px; font-size: 14px;">微信表情</div>
+            // ---------- DOM 引用 ----------
+            const authBtn = document.getElementById('authBtn');
+            const usernameDisplay = document.getElementById('usernameDisplay');
+            const authSep = document.getElementById('authSep');
 
-    </div>
-  </div>
+            const loginModal = document.getElementById('loginModal');
+            const loginUser = document.getElementById('loginUser');
+            const loginPass = document.getElementById('loginPass');
+            const loginError = document.getElementById('loginError');
+            const loginSubmit = document.getElementById('loginSubmit');
+            const loginCancel = document.getElementById('loginCancel');
 
-  <!-- 网站访问计数器 -->
-  <div style="margin-top: 20px;">
-    <img src="https://visitor-badge.laobi.icu/badge?page_id=twolobster_yuanlin.首页" alt="visitor badge" />
-  </div>
+            const toastModal = document.getElementById('toastModal');
+            const toastCancel = document.getElementById('toastCancel');
+            const toastLogin = document.getElementById('toastLogin');
 
-  <!-- 版权信息 -->
-  <div style="margin-top: 15px;">© Twolobster ｜ 我是李工也是涛哥</div>
-</footer>
+            // 需要拦截的链接 —— 所有 .stage-modules 内的 a 标签
+            const protectedLinks = document.querySelectorAll('.stage-modules a');
+
+            // ---------- 状态 ----------
+            let isLoggedIn = false;
+            let currentUser = '';
+
+            // ---------- 辅助函数 ----------
+            function updateUI() {
+                if (isLoggedIn && currentUser) {
+                    usernameDisplay.textContent = '欢迎，' + currentUser;
+                    usernameDisplay.style.display = 'inline';
+                    authSep.style.display = 'inline';
+                    authBtn.textContent = '退出';
+                } else {
+                    usernameDisplay.style.display = 'none';
+                    authSep.style.display = 'none';
+                    authBtn.textContent = '登录';
+                }
+            }
+
+            // 检查登录状态（从 sessionStorage 恢复）
+            function checkSession() {
+                const saved = sessionStorage.getItem('twolobster_auth');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        if (data && data.username && data.loggedIn === true) {
+                            // 验证用户名是否有效
+                            if (VALID_USERS.hasOwnProperty(data.username)) {
+                                isLoggedIn = true;
+                                currentUser = data.username;
+                                updateUI();
+                                return true;
+                            }
+                        }
+                    } catch (_) { /* ignore */ }
+                }
+                // 未登录或失效
+                isLoggedIn = false;
+                currentUser = '';
+                sessionStorage.removeItem('twolobster_auth');
+                updateUI();
+                return false;
+            }
+
+            // 保存登录状态
+            function saveSession(username) {
+                sessionStorage.setItem('twolobster_auth', JSON.stringify({
+                    username: username,
+                    loggedIn: true
+                }));
+                isLoggedIn = true;
+                currentUser = username;
+                updateUI();
+            }
+
+            // 清除登录状态
+            function clearSession() {
+                sessionStorage.removeItem('twolobster_auth');
+                isLoggedIn = false;
+                currentUser = '';
+                updateUI();
+            }
+
+            // ---------- 登录 / 退出 ----------
+            function doLogin() {
+                const user = loginUser.value.trim();
+                const pass = loginPass.value.trim();
+
+                if (!user) {
+                    loginError.textContent = '请输入用户名';
+                    loginUser.focus();
+                    return;
+                }
+                if (!pass) {
+                    loginError.textContent = '请输入密码';
+                    loginPass.focus();
+                    return;
+                }
+
+                if (VALID_USERS.hasOwnProperty(user) && VALID_USERS[user] === pass) {
+                    // 成功
+                    loginError.textContent = '\u00A0';
+                    saveSession(user);
+                    closeLoginModal();
+                    // 如果有待跳转链接，在这里可以触发，但用全局变量存储更干净
+                    if (pendingLinkHref) {
+                        const href = pendingLinkHref;
+                        pendingLinkHref = null;
+                        window.location.href = href;
+                    }
+                } else {
+                    loginError.textContent = '用户名或密码错误，请重试';
+                    loginPass.value = '';
+                    loginPass.focus();
+                }
+            }
+
+            function doLogout() {
+                clearSession();
+                // 关闭可能开着的模态框
+                closeLoginModal();
+                closeToastModal();
+                // 可选提示
+                // 不打扰用户
+            }
+
+            // ---------- 模态框控制 ----------
+            function openLoginModal() {
+                loginModal.classList.add('active');
+                loginUser.value = '';
+                loginPass.value = '';
+                loginError.textContent = '\u00A0';
+                setTimeout(function() {
+                    loginUser.focus();
+                }, 120);
+                // 关闭 toast（如果开着）
+                closeToastModal();
+            }
+
+            function closeLoginModal() {
+                loginModal.classList.remove('active');
+            }
+
+            function openToastModal() {
+                toastModal.classList.add('active');
+            }
+
+            function closeToastModal() {
+                toastModal.classList.remove('active');
+            }
+
+            // ---------- 链接拦截 ----------
+            let pendingLinkHref = null; // 记录登录后要跳转的链接
+
+            function handleLinkClick(e) {
+                const target = e.target.closest('a');
+                if (!target) return;
+                // 只拦截受保护的链接（.stage-modules 内的 a）
+                if (!target.closest('.stage-modules')) return;
+                // 如果已经有 href 并且不是空链接
+                const href = target.getAttribute('href');
+                if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+                if (!isLoggedIn) {
+                    e.preventDefault();
+                    // 记录目标链接
+                    pendingLinkHref = href;
+                    // 显示提示框
+                    openToastModal();
+                }
+                // 已登录则正常跳转
+            }
+
+            // ---------- 事件绑定 ----------
+            // 1. 登录 / 退出按钮
+            authBtn.addEventListener('click', function() {
+                if (isLoggedIn) {
+                    doLogout();
+                } else {
+                    openLoginModal();
+                }
+            });
+
+            // 2. 登录模态框 - 提交
+            loginSubmit.addEventListener('click', doLogin);
+
+            // 3. 登录模态框 - 取消 / 关闭
+            loginCancel.addEventListener('click', function() {
+                closeLoginModal();
+            });
+
+            // 点击遮罩关闭登录模态框
+            loginModal.addEventListener('click', function(e) {
+                if (e.target === loginModal) {
+                    closeLoginModal();
+                }
+            });
+
+            // 回车键提交登录
+            loginUser.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (loginUser.value.trim()) {
+                        loginPass.focus();
+                    } else {
+                        loginUser.focus();
+                    }
+                }
+            });
+            loginPass.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    doLogin();
+                }
+            });
+
+            // 4. Toast 提示框 - 去登录
+            toastLogin.addEventListener('click', function() {
+                closeToastModal();
+                openLoginModal();
+            });
+
+            toastCancel.addEventListener('click', function() {
+                closeToastModal();
+                pendingLinkHref = null;
+            });
+
+            // 点击遮罩关闭 toast
+            toastModal.addEventListener('click', function(e) {
+                if (e.target === toastModal) {
+                    closeToastModal();
+                    pendingLinkHref = null;
+                }
+            });
+
+            // 5. 拦截所有受保护的链接（使用事件委托）
+            document.addEventListener('click', handleLinkClick);
+
+            // 额外：对于直接在页面加载时已经存在的链接，确保不会被默认行为绕过
+            // 但我们已经用事件委托处理了，无需额外操作
+
+            // ---------- 初始化 ----------
+            checkSession();
+
+            // 如果未登录，清空待跳转链接
+            if (!isLoggedIn) {
+                pendingLinkHref = null;
+            }
+
+            // 处理键盘 Esc 关闭模态框
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (loginModal.classList.contains('active')) {
+                        closeLoginModal();
+                    }
+                    if (toastModal.classList.contains('active')) {
+                        closeToastModal();
+                        pendingLinkHref = null;
+                    }
+                }
+            });
+
+            console.log('Twolobster ｜ 登录系统已启动');
+            console.log('预设账号: twolobster / 2026  |  T001 / T001 |  P001 / P001');
+
+        })();
+    </script>
 
 </body>
 </html>
