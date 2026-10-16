@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>花境植物属性清单 · 158 种（有毒 / 可食用 / 中药材）</title>
+<style>
+  :root{
+    --bg:#f6f7f5; --card:#ffffff; --line:#e3e6e0; --ink:#1f2421; --ink2:#5c635c;
+    --tox:#c0392b; --tox-bg:#fdecea; --eat:#1e7d4f; --eat-bg:#e8f6ee;
+    --med:#8a6212; --med-bg:#fdf4e3; --accent:#3d6b4a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Source Han Sans SC",sans-serif;
+    font-size:14px;line-height:1.6;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:22px;margin:0 0 6px;letter-spacing:.3px}
+  .sub{color:var(--ink2);font-size:13px;margin-bottom:20px}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  .stat{flex:1 1 150px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .stat .n{font-size:26px;font-weight:700;line-height:1.2}
+  .stat .t{font-size:12.5px;color:var(--ink2);margin-top:2px}
+  .stat.tox .n{color:var(--tox)} .stat.eat .n{color:var(--eat)} .stat.med .n{color:var(--med)}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;
+    padding:6px 15px;font-size:13px;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:#bcb}
+  .btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  input[type=search]{flex:1 1 200px;min-width:150px;border:1px solid var(--line);border-radius:999px;
+    padding:7px 15px;font-size:13px;background:var(--card);color:var(--ink);outline:none}
+  input[type=search]:focus{border-color:var(--accent)}
+  .hint{font-size:12.5px;color:var(--ink2);margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden}
+  thead th{background:#eef1ec;text-align:left;font-size:12.5px;font-weight:600;color:#3a423a;
+    padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid #f0f2ee;vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#fafbf8}
+  .idc{color:#9aa29a;font-variant-numeric:tabular-nums;font-size:12.5px;white-space:nowrap}
+  .nm{font-weight:600;white-space:nowrap}
+  .life{color:var(--ink2);font-size:12.5px;white-space:nowrap}
+  .tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;margin:0 4px 3px 0;white-space:nowrap}
+  .tag.tox{color:var(--tox);background:var(--tox-bg);border:1px solid #f3cfca}
+  .tag.eat{color:var(--eat);background:var(--eat-bg);border:1px solid #c6e8d5}
+  .tag.med{color:var(--med);background:var(--med-bg);border:1px solid #f0dcb4}
+  .tag.none{color:#7b837b;background:#f1f3ef;border:1px solid #e2e6e0}
+  .note{color:#444b44}
+  .warn{background:#fff9e8;border:1px solid #f0dcb4;border-left:4px solid #d9a520;border-radius:8px;
+    padding:13px 16px;margin:22px 0 0;font-size:13px}
+  .warn b{color:#8a6212}
+  .warn ul{margin:8px 0 0;padding-left:20px}
+  .warn li{margin:3px 0}
+  .empty{padding:40px;text-align:center;color:var(--ink2)}
+  .foot{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
+    text-align:center;color:var(--ink2);font-size:12.5px;letter-spacing:.2px}
+  @media (max-width:720px){
+    .hide-sm{display:none}
+    td,thead th{padding:9px 9px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>花境植物属性清单 · 158 种</h1>
+  <div class="sub">数据源：<code>Flower Border/index.html</code> 的 FLOWER_DB（共 158 条）——按「有毒 / 可日常食用 / 中药材」三类标注，一种植物可同时属于多类。</div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">158</div><div class="t">收录品种总数</div></div>
+    <div class="stat tox"><div class="n">34</div><div class="t">⚠️ 有毒（含小毒）</div></div>
+    <div class="stat eat"><div class="n">27</div><div class="t">🍽️ 可日常食用</div></div>
+    <div class="stat med"><div class="n">71</div><div class="t">🌿 中药材</div></div>
+  </div>
+
+  <div class="bar">
+    <button class="btn active" data-f="all">全部 (158)</button>
+    <button class="btn" data-f="毒">⚠️ 有毒 (34)</button>
+    <button class="btn" data-f="食">🍽️ 可食用 (27)</button>
+    <button class="btn" data-f="药">🌿 中药材 (71)</button>
+    <input type="search" id="q" placeholder="搜索植物名称 / 编号 / 说明关键词…">
+  </div>
+  <p class="hint">提示：分类标签可叠加；「纯观赏」表示该品种在本库中不作食用、不列药用。点击上方按钮筛选。</p>
+
+  <table>
+    <thead><tr>
+      <th style="width:52px">编号</th>
+      <th style="width:150px">植物名称</th>
+      <th style="width:64px" class="hide-sm">生命周期</th>
+      <th style="width:170px">属性标签</th>
+      <th>说明 / 依据</th>
+    </tr></thead>
+    <tbody id="tb"></tbody>
+  </table>
+  <div class="empty" id="empty" style="display:none">没有匹配的植物。</div>
+
+  <div class="warn">
+    <b>使用须知（务必先读）</b>
+    <ul>
+      <li><b>本清单基于植物学与中药文献的通识整理，不是医学或食品安全结论</b>，也不能替代现场鉴定。同科同属植物外形常极相似，“按图食用”是误食中毒的主要原因。</li>
+      <li><b>园林绿地里的植物一律不建议采食</b>：除自身毒性外，还长期接触尾气、灰尘并定期喷施养护药剂。</li>
+      <li>标注「中药材」≠ 可自行服用。多数药材须炮制、配伍，且有剂量与禁忌（孕妇、儿童、慢病人群尤其如此），请由执业中医师开具处方。</li>
+      <li>近年多发的误食事件集中在<b>大花萱草（当黄花菜吃）</b>、<b>铃兰/毛地黄（强心苷）</b>、<b>飞燕草属</b>、<b>绣球</b> 上，请重点警示。</li>
+      <li>如需确证某一品种，请以《中国植物志》《中华本草》或当地植物园、中医药机构的鉴定为准。</li>
+    </ul>
+  </div>
+
+  <footer class="foot">© Twolobster ｜ 我是李工也是涛哥 ｜ 数据更新: 2026年10月 ｜ v1.0</footer>
+</div>
+
+<script>
+const ROWS = [{"id": "f1", "name": "大花金鸡菊", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏"}, {"id": "f2", "name": "高山紫菀", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏；同属“紫菀”为药材，但本种（高山紫菀）非药用品。"}, {"id": "f3", "name": "大滨菊", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f4", "name": "赛菊芋", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏（宿根向日葵类）"}, {"id": "f5", "name": "桔梗", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食", "药"], "note": "根为中药“桔梗”（宣肺、利咽、排脓）；朝鲜族作蔬菜（桔梗咸菜），须去皮并泡水去苦。"}, {"id": "f6", "name": "柳叶马鞭草", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": [], "note": "纯观赏"}, {"id": "f7", "name": "紫松果菊", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "即紫锥菊（松果菊），欧美草药，作免疫调节；非传统中药正品。"}, {"id": "f8", "name": "甘野菊", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "野菊类，花入药（清热解毒）；可少量代茶饮。"}, {"id": "f9", "name": "‘蓝山’林荫鼠尾草", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏（园艺鼠尾草）"}, {"id": "f10", "name": "*德国鸢尾", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "根茎有毒（鸢尾苷类），不可食；园艺观赏用。"}, {"id": "f11", "name": "‘皇冠'蓍草", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "蓍草属，西草草药（止血、消炎）；中药“蓍草”多指高山蓍 A. alpina。"}, {"id": "f12", "name": "白花山桃草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f13", "name": "‘蓝色忧伤’荆芥", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "园艺唇形科荆芥属（猫薄荷类）。与药材正品“荆芥”（裂叶荆芥）非同种，不入药；叶可少量作香草。"}, {"id": "f14", "name": "‘紫雾’荆芥", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["药"], "note": "同 f13：园艺荆芥属，非药材正品荆芥。"}, {"id": "f15", "name": "‘达尔文之蓝’婆婆纳", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏"}, {"id": "f16", "name": "绵毛水苏", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏；水苏属有药用种，本种为观赏水苏。"}, {"id": "f17", "name": "百里香", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "食用香草（西餐调味）；中药“百里香/地椒”，祛风解表、行气止痛。"}, {"id": "f18", "name": "柳叶白菀", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏"}, {"id": "f19", "name": "‘蓝碟’鸽子蓝盆花", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "蓝盆花（华北蓝盆花）入药，清热利肝；亦有西洋草药用途。"}, {"id": "f20", "name": "山韭", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食", "药"], "note": "野生韭菜（山韭菜）：叶、花薹、花可食；嫩叶及鳞茎入药，活血散瘀、益肾。"}, {"id": "f21", "name": "地榆", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“地榆”（根），凉血止血、解毒敛疮。"}, {"id": "f22", "name": "千叶蓍", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "千叶蓍即西洋蓍草，欧美草药；与中药蓍草同属不同种。"}, {"id": "f23", "name": "中华景天", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["药"], "note": "景天属，民间药用（清热解毒、止血）；不建议作蔬菜。"}, {"id": "f24", "name": "八宝景天", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“景天”（八宝景天），散瘀止血、清热解毒；口感差，不作食用。"}, {"id": "f25", "name": "藁本", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“藁本”（根茎），祛风散寒、除湿止痛。"}, {"id": "f26", "name": "蓝羊茅", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏"}, {"id": "f27", "name": "‘卡尔’拂子茅", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏（观赏禾草）"}, {"id": "f28", "name": "‘小兔子’狼尾草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏/观赏草；狼尾草属部分种作饲草。"}, {"id": "f29", "name": "荚果蕨", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "拳卷嫩叶即“黄瓜香/广东菜”，著名山野菜（需焯水）；根茎作中药“贯众”。"}, {"id": "f30", "name": "*紫露草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["毒"], "note": "汁液对皮肤有刺激性，接触可致皮炎；不可食。"}, {"id": "f31", "name": "蛇鞭菊", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏（蛇鞭菊）"}, {"id": "f32", "name": "*大麻叶泽兰", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒", "药"], "note": "全株含吡咯里西啶类生物碱，长期/大量内服可致肝损伤；虽有药用记载，风险高，不建议自行使用。"}, {"id": "f33", "name": "连钱草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["药"], "note": "中药“连钱草”（活血丹），利湿通淋、清热解毒。"}, {"id": "f34", "name": "假龙头", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f35", "name": "华北香薷", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["食", "药"], "note": "中药“香薷”（华北香薷），发汗解表、化湿和中；民间亦代茶饮。"}, {"id": "f36", "name": "美丽月见草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "月见草（美丽月见草）入药，种子油入药/保健。"}, {"id": "f37", "name": "*射干", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒", "药"], "note": "中药“射干”（根茎），清热解毒、消痰利咽；有小毒，须遵医嘱。"}, {"id": "f38", "name": "*马利筋", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": ["毒"], "note": "全株有毒（强心苷类），严禁食用，误食可致心律异常。"}, {"id": "f39", "name": "*醉鱼草", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒", "药"], "note": "花叶有毒（可麻醉鱼类，故名“醉鱼草”）；中药醉鱼草有小毒，祛风利湿，须遵医嘱。"}, {"id": "f40", "name": "*毛茛", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "全株有毒（原白头翁素），鲜汁可致皮肤水疱，严禁食用。"}, {"id": "f41", "name": "蓝雪花", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f42", "name": "龙牙草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“仙鹤草”（龙牙草全草），收敛止血、补虚。"}, {"id": "f43", "name": "夏枯草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "中药“夏枯草”，清肝明目、散结消肿；常见凉茶原料（作食品原料使用）。"}, {"id": "f44", "name": "*玉簪", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["毒", "药"], "note": "全株有毒（皂苷类，可损伤牙齿）；中药玉簪花作药用、有小毒。花虽古有“拖面煎食”记载，须去雄蕊，风险高，不建议食用。"}, {"id": "f45", "name": "朝雾草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏（蒿属）"}, {"id": "f46", "name": "*耧斗菜", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "耧斗菜属有毒（种子/根含氰苷），严禁食用。"}, {"id": "f47", "name": "*蓝雾草（裂叶锥托泽兰）", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "泽兰属，含吡咯里西啶类生物碱，有肝毒性；不可食。"}, {"id": "f48", "name": "大花葱（巨韭）", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["食"], "note": "葱属，鳞茎/叶理论上可食，但园艺种一般不作食用。"}, {"id": "f49", "name": "*落新妇", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒", "药"], "note": "中药“落新妇”（根茎），清热解毒、散瘀止痛；有小毒。"}, {"id": "f50", "name": "*马蔺", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒", "药"], "note": "中药“马蔺子/马蔺花”，清热利湿；有小毒，须遵医嘱。"}, {"id": "f51", "name": "*大叶铁线莲", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒"], "note": "铁线莲属有毒（原白头翁素），严禁食用。"}, {"id": "f52", "name": "丽色画眉草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f53", "name": "披针叶苔草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏（苔草类地被）"}, {"id": "f54", "name": "涝峪苔草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏（苔草类地被）"}, {"id": "f55", "name": "*芸香", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒", "药"], "note": "中药“芸香”，祛风通络、散瘀止痛；有小毒，孕妇忌用；烹调仅极少量作调味。"}, {"id": "f56", "name": "宿根亚麻", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏；亚麻（药用/油料）为同属另一种。"}, {"id": "f57", "name": "绢毛匍匐委陵菜", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["药"], "note": "中药“委陵菜”，清热解毒、凉血止痢。"}, {"id": "f58", "name": "垂盆草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "中药“垂盆草”，清热解毒利湿；部分地区作蔬菜炒食（须焯水）。"}, {"id": "f59", "name": "青绿苔草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏（苔草类地被）"}, {"id": "f60", "name": "紫菀", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "中药“紫菀”（根），润肺下气、化痰止咳。"}, {"id": "f61", "name": "裂叶金光菊", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏"}, {"id": "f62", "name": "冬凌草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“冬凌草”，清热解毒、活血止痛（现代研究用于抗肿瘤）。"}, {"id": "f63", "name": "水杨梅", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["药"], "note": "中药“水杨梅”，清热解毒、消肿止痛。"}, {"id": "f64", "name": "紫花地丁", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "中药“紫花地丁”，清热解毒消肿；嫩苗可作野菜（须焯水）。"}, {"id": "f65", "name": "蒲棒菊", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f66", "name": "蓝刺头", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“蓝刺头”（禹州漏芦类），清热解毒、排脓。"}, {"id": "f67", "name": "硫磺菊", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": [], "note": "纯观赏"}, {"id": "f68", "name": "刺芹", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食"], "note": "刺芹（假芫荽/刺芫荽），东南亚及西南地区作香辛蔬菜食用。"}, {"id": "f69", "name": "美国薄荷", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食", "药"], "note": "美国薄荷（蜂香薄荷）：叶、花可泡茶/调味；亦作草药（缓解头痛、助消化）。"}, {"id": "f70", "name": "火尾抱茎蓼", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏（蓼属）"}, {"id": "f71", "name": "千日红", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": ["食", "药"], "note": "中药“千日红”（花序），止咳平喘；常作花茶原料。"}, {"id": "f72", "name": "*虞美人", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": ["毒"], "note": "罂粟科，全株有毒（生物碱），严禁食用。"}, {"id": "f73", "name": "千屈菜", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "中药“千屈菜”，清热解毒、凉血止血。"}, {"id": "f74", "name": "美国石竹（须苞石竹）", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏（石竹类）"}, {"id": "f75", "name": "蒲公英", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "著名野菜（嫩叶焯水可食）；中药“蒲公英”，清热解毒、消肿散结。"}, {"id": "f76", "name": "宿根天人菊", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f77", "name": "红花钓钟柳", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f78", "name": "*一枝黄花", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒", "药"], "note": "中药“一枝黄花”，疏风清热、解毒消肿；有小毒。另：近缘“加拿大一枝黄花”为恶性入侵种。"}, {"id": "f79", "name": "火炬花", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f80", "name": "*堆心菊", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "含堆心菊素等，有毒；大量误食可致流涎、呕吐、抽搐，畜禽易中毒。不可食。"}, {"id": "f81", "name": "紫斑风铃草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f82", "name": "藿香", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食", "药"], "note": "中药“藿香”，化湿和中、解暑发表；嫩叶可作香料、代茶。"}, {"id": "f83", "name": "玉带草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏禾草；虉草属含吲哚类生物碱，不宜食用。"}, {"id": "f84", "name": "*唐松草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒", "药"], "note": "中药“唐松草”，清热解毒、燥湿；有小毒，须遵医嘱。"}, {"id": "f85", "name": "芒颖大麦草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f86", "name": "重金属柳枝稷", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f87", "name": "黄花败酱", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["食", "药"], "note": "中药“败酱草”，清热解毒、消痈排脓；嫩苗可作野菜（须焯水）。"}, {"id": "f88", "name": "*荷包牡丹", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "荷包牡丹（荷包牡丹碱等），全株有毒，严禁食用。"}, {"id": "f89", "name": "斑叶芒", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f90", "name": "细叶芒", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f91", "name": "毛地黄吊钟柳", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏；注意与剧毒“毛地黄”区分，本种无毒。"}, {"id": "f92", "name": "晨光芒", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f93", "name": "芨芨草", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f94", "name": "*大花萱草", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "观赏萱草，秋水仙碱含量约为食用黄花菜的 12 倍，蒸煮、晾晒均难去除，完全不适宜食用（近年多起误食中毒事件）。"}, {"id": "f95", "name": "卵叶紫菀", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏；同属紫菀为药材，本种非药用品。"}, {"id": "f96", "name": "鞑靼紫菀", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏；同属紫菀为药材，本种非药用品。"}, {"id": "f97", "name": "波斯菊", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": [], "note": "纯观赏"}, {"id": "f98", "name": "柳叶星河", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏"}, {"id": "f99", "name": "薰衣草", "life": "一年生", "role": "主题锚点-主角特色植物", "tags": ["食", "药"], "note": "食用香草（糕点、茶饮、精油）；中药“薰衣草”，安神助眠、解痉。"}, {"id": "f100", "name": "金盏菊", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": ["食", "药"], "note": "金盏菊：花瓣可食（沙拉、糕点点缀）；药材金盏菊，消炎收敛。"}, {"id": "f101", "name": "芍药", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "中药“白芍/赤芍”（根），养血敛阴、柔肝止痛。"}, {"id": "f102", "name": "牡丹", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "中药“牡丹皮”（根皮），清热凉血、活血化瘀。"}, {"id": "f103", "name": "粉花绣线菊", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏"}, {"id": "f104", "name": "矾根", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏（矾根）；北美原住民有外用收敛记载，不作食用。"}, {"id": "f105", "name": "北葱", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["食"], "note": "葱属，嫩叶/鳞茎可食，园艺种一般不作食用。"}, {"id": "f106", "name": "贯叶金丝桃", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "中药“贯叶连翘/贯叶金丝桃”，疏肝解郁、清热利湿；亦为欧美草药“圣约翰草”。"}, {"id": "f107", "name": "剪秋萝", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏"}, {"id": "f108", "name": "*毛地黄", "life": "一年生", "role": "主题锚点-主角特色植物", "tags": ["毒", "药"], "note": "剧毒！即“洋地黄”，含强心苷，极小量即可致死；药材洋地黄必须由医师严格掌握，严禁自行采食。"}, {"id": "f109", "name": "*无尽夏绣球花", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["毒"], "note": "绣球全株有毒（含氰苷类），花、叶误食可致呕吐腹泻，严禁食用。"}, {"id": "f110", "name": "皱叶剪秋萝", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏"}, {"id": "f111", "name": "星云八宝景天", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "景天属（八宝景天类），药用散瘀止血；不作食用。"}, {"id": "f112", "name": "秋之喜悦八宝景天", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["药"], "note": "景天属（八宝景天类），药用散瘀止血；不作食用。"}, {"id": "f113", "name": "金叶莸", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": [], "note": "纯观赏"}, {"id": "f114", "name": "千禧葱", "life": "多年生", "role": "主题锚点-主角特色植物", "tags": ["食"], "note": "葱属，可食（同大花葱类）；园艺种一般不作食用。"}, {"id": "f115", "name": "瞿麦", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["药"], "note": "中药“瞿麦”，利尿通淋、活血通经。"}, {"id": "f116", "name": "早开堇菜", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["食", "药"], "note": "堇菜类，中药作地丁类使用（清热解毒）；嫩苗可作野菜（须焯水）。"}, {"id": "f117", "name": "旋覆花", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["药"], "note": "中药“旋覆花”，降气化痰、降逆止呕。"}, {"id": "f118", "name": "*地黄", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["毒", "药"], "note": "中药“地黄”（鲜地黄/生地黄/熟地黄），清热凉血；鲜品有小毒，须遵医嘱。"}, {"id": "f119", "name": "*蛇莓", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["毒", "药"], "note": "中药“蛇莓”，清热解毒、散瘀消肿；有小毒，果实不宜多食。"}, {"id": "f120", "name": "抱茎苦麦菜", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["食", "药"], "note": "抱茎苦荬菜：嫩苗为常见野菜（须焯水）；中药作苦荬菜类使用。"}, {"id": "f121", "name": "*金莲花", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["毒", "药"], "note": "中药“金莲花”，清热解毒、利咽明目；有小毒，须遵医嘱。"}, {"id": "f122", "name": "白晶菊", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": [], "note": "纯观赏"}, {"id": "f123", "name": "太阳花", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": [], "note": "“太阳花”名称有歧义（若为大花马齿苋，嫩茎叶可食；若指向日葵则籽可食）。本库未确指，按观赏处理。"}, {"id": "f124", "name": "*藿香蓟", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": ["毒"], "note": "茎叶含氢氰酸及有毒生物碱，家畜误食可致肠充血中毒；不可食（常见入侵杂草）。"}, {"id": "f125", "name": "石竹", "life": "多年生", "role": "自由浮动-特约散点植物", "tags": ["药"], "note": "中药“瞿麦/石竹”，清热利尿、通经。"}, {"id": "f126", "name": "香雪球", "life": "一年生", "role": "自由浮动-特约散点植物", "tags": [], "note": "纯观赏"}, {"id": "f127", "name": "*黄花鸢尾（黄菖蒲）", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "黄菖蒲（黄花鸢尾）根茎有毒（鸢尾苷类），不可食。"}, {"id": "f128", "name": "黄芩", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“黄芩”（根），清热燥湿、泻火解毒。"}, {"id": "f129", "name": "丹参", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“丹参”（根），活血祛瘀、通经止痛。"}, {"id": "f130", "name": "‘夏日浆果’千叶蓍", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "千叶蓍品种，同 f22（西洋草药）。"}, {"id": "f131", "name": "美丽飞蓬", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f132", "name": "黄花菜", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食", "药"], "note": "食用黄花菜。鲜花含少量秋水仙碱，须“食干不食鲜”或反复浸泡焯水；中药“萱草”亦用之。"}, {"id": "f133", "name": "*小花飞燕草", "life": "一年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "飞燕草属，全株有毒（翠雀碱），严禁食用。"}, {"id": "f134", "name": "*羽扇豆", "life": "一年生", "role": "卫星锚点-配角伴生植物", "tags": ["毒"], "note": "全株含喹诺里西啶类生物碱，种子毒性尤强；虽部分栽培种经处理可食，园艺种风险高，不建议食用。"}, {"id": "f135", "name": "山丹百合", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食", "药"], "note": "山丹百合：鳞茎可食；中药“百合”，润肺止咳、清心安神。"}, {"id": "f136", "name": "黄金喷泉绣线菊", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏"}, {"id": "f137", "name": "银灰鼠尾草", "life": "一年生", "role": "卫星锚点-配角伴生植物", "tags": [], "note": "纯观赏（鼠尾草属园艺种）"}, {"id": "f138", "name": "知母", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["药"], "note": "中药“知母”（根茎），清热泻火、滋阴润燥。"}, {"id": "f139", "name": "红脉酸模", "life": "多年生", "role": "卫星锚点-配角伴生植物", "tags": ["食", "药"], "note": "酸模类：嫩叶可食（含草酸，须焯水、不宜多食）；中药“羊蹄/酸模”，凉血止血。"}, {"id": "f140", "name": "‘京西’野古草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f141", "name": "细茎针茅", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f142", "name": "沙画眉草", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f143", "name": "蓝画眉", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f144", "name": "*铃兰", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["毒"], "note": "剧毒！铃兰全株含强心苷，误食可致心律失常甚至死亡，严禁食用（花与叶易被误当野菜）。"}, {"id": "f145", "name": "木茼蒿", "life": "一年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏（木茼蒿/玛格丽特）"}, {"id": "f146", "name": "钓钟柳", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": [], "note": "纯观赏"}, {"id": "f147", "name": "三七景天", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "中药“景天三七”，散瘀止血、宁心安神；嫩叶部分地区炒食。"}, {"id": "f148", "name": "迷迭香", "life": "多年生", "role": "基质锚点-群演填充植物", "tags": ["食", "药"], "note": "食用香草（西餐调味、精油）；中药“迷迭香”，健胃、安神。"}, {"id": "f149", "name": "白毛马鞭草", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏"}, {"id": "f150", "name": "芦竹", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草；芦竹根茎药用（民间）"}, {"id": "f151", "name": "大油芒", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f152", "name": "长序芒", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草"}, {"id": "f153", "name": "荻", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": [], "note": "纯观赏禾草（荻）；嫩芽“荻笋”民间偶有食用。"}, {"id": "f154", "name": "花椒", "life": "小乔木", "role": "结构锚点-空间定位植物", "tags": ["食", "药"], "note": "食用香辛料（花椒）；中药“花椒”，温中止痛、杀虫止痒。"}, {"id": "f155", "name": "*土木香", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒", "药"], "note": "中药“土木香”（根），健脾和胃、行气止痛；有小毒，须遵医嘱。"}, {"id": "f156", "name": "*大花飞燕草", "life": "一年生", "role": "结构锚点-空间定位植物", "tags": ["毒"], "note": "飞燕草属，全株有毒（翠雀碱），严禁食用。"}, {"id": "f157", "name": "*龙舌兰", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒", "药"], "note": "汁液有刺激性（草酸钙针晶），接触可致皮痒；民间药用，植株不作食用（龙舌兰酒的原料为同属特定栽培种）。"}, {"id": "f158", "name": "*美洲龙舌兰", "life": "多年生", "role": "结构锚点-空间定位植物", "tags": ["毒", "药"], "note": "同 f157：汁液刺激，民间药用；不作食用。"}];
+const TAG_NAME = {毒:'⚠️ 有毒', 食:'🍽️ 可食用', 药:'🌿 中药材'};
+const TAG_CLS  = {毒:'tox', 食:'eat', 药:'med'};
+const tb = document.getElementById('tb');
+const empty = document.getElementById('empty');
+let filter = 'all', kw = '';
+
+function render(){
+  const list = ROWS.filter(r=>{
+    if(filter!=='all' && !r.tags.includes(filter)) return false;
+    if(kw){
+      const hay = (r.id+' '+r.name+' '+r.note+' '+r.tags.join(' ')).toLowerCase();
+      if(!hay.includes(kw)) return false;
+    }
+    return true;
+  });
+  tb.innerHTML = list.map(r=>{
+    const tags = r.tags.length
+      ? r.tags.map(t=>'<span class="tag '+TAG_CLS[t]+'">'+TAG_NAME[t]+'</span>').join('')
+      : '<span class="tag none">纯观赏</span>';
+    return '<tr>'
+      + '<td class="idc">'+r.id+'</td>'
+      + '<td class="nm">'+r.name+'</td>'
+      + '<td class="life hide-sm">'+r.life+'</td>'
+      + '<td>'+tags+'</td>'
+      + '<td class="note">'+r.note+'</td>'
+      + '</tr>';
+  }).join('');
+  empty.style.display = list.length ? 'none' : 'block';
+}
+document.querySelectorAll('.btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    filter = b.dataset.f;
+    render();
+  });
+});
+document.getElementById('q').addEventListener('input', e=>{ kw = e.target.value.trim().toLowerCase(); render(); });
+render();
+</script>
+</body>
+</html>
